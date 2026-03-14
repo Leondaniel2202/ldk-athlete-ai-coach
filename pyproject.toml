@@ -26,7 +26,10 @@ dev = [
 ]
 
 [tool.uv]
-package = false
+package = true
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/ldk_athlete_ai_coach"]
 
 [tool.ruff]
 line-length = 100
