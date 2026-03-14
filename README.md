@@ -2,7 +2,7 @@
 
 Minimal backend foundation for the LDK Athlete AI Coach project.
 
-## Planned stack
+## Stack
 
 - Python 3.12
 - uv
@@ -14,16 +14,121 @@ Minimal backend foundation for the LDK Athlete AI Coach project.
 - ruff
 - mypy
 
-## Current status
+## Included in this foundation
 
-The repository is being built step by step. The current baseline includes the
-Python project configuration, dependency management, and local environment
-template. The application scaffold will be added in the next step.
+- `src`-layout FastAPI application
+- Centralized settings via `pydantic-settings`
+- PostgreSQL via Docker Compose
+- SQLAlchemy session/base setup
+- Alembic migration scaffold
+- Basic API and config tests
+- Simple developer commands via `Makefile`
 
-## Local setup
+## Project structure
 
-1. Install `uv`.
-2. Copy the sample environment file:
-   `Copy-Item .env.example .env`
-3. Install the project dependencies:
-   `uv sync --group dev`
+```text
+src/
+  ldk_athlete_ai_coach/
+    api/
+    core/
+    db/
+    main.py
+tests/
+alembic/
+```
+
+## Prerequisites
+
+- Python 3.12
+- `uv`
+- Docker Desktop or a compatible Docker runtime
+
+## Setup
+
+1. Create the local environment file.
+
+```powershell
+Copy-Item .env.example .env
+```
+
+2. Install dependencies.
+
+```powershell
+make install
+```
+
+If `make` is not available, run:
+
+```powershell
+uv --cache-dir .uv-cache sync --group dev
+```
+
+## Run the database
+
+```powershell
+make db-up
+```
+
+To stop the containers:
+
+```powershell
+make db-down
+```
+
+## Run the API
+
+```powershell
+make api
+```
+
+The service exposes:
+
+- `GET /`
+- `GET /api/v1/health`
+
+## Quality checks
+
+Run the test suite:
+
+```powershell
+make test
+```
+
+Run linting:
+
+```powershell
+make lint
+```
+
+Run formatting checks:
+
+```powershell
+make format-check
+```
+
+Run type checking:
+
+```powershell
+make type-check
+```
+
+## Database migrations
+
+Apply migrations:
+
+```powershell
+make alembic-up
+```
+
+Create a new migration:
+
+```powershell
+make alembic-revision MSG="describe_change"
+```
+
+## Troubleshooting
+
+If you see an error similar to `No Python at ...` from `.venv` on Windows, the
+virtual environment was likely created from an unavailable interpreter. Install
+Python 3.12, recreate the virtual environment, and then rerun the `uv` install
+command.
