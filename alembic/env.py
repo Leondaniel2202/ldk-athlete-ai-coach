@@ -1,19 +1,15 @@
+"""Alembic migration environment configuration."""
+
 from __future__ import annotations
 
-import sys
 from logging.config import fileConfig
-from pathlib import Path
 
 from alembic import context
 from sqlalchemy import engine_from_config, pool
 
-PROJECT_SRC = Path(__file__).resolve().parents[1] / "src"
-if str(PROJECT_SRC) not in sys.path:
-    sys.path.insert(0, str(PROJECT_SRC))
-
+import ldk_athlete_ai_coach.db.models  # noqa: F401
 from ldk_athlete_ai_coach.core.config import get_settings
 from ldk_athlete_ai_coach.db.base import Base
-import ldk_athlete_ai_coach.db.models  # noqa: F401
 
 config = context.config
 
@@ -27,6 +23,11 @@ target_metadata = Base.metadata
 
 
 def run_migrations_offline() -> None:
+    """Run migrations in offline mode.
+
+    Offline mode configures the context with only a database URL and emits
+    SQL statements without opening a database connection.
+    """
     url = config.get_main_option("sqlalchemy.url")
     context.configure(
         url=url,
@@ -41,6 +42,11 @@ def run_migrations_offline() -> None:
 
 
 def run_migrations_online() -> None:
+    """Run migrations in online mode.
+
+    Online mode creates an engine, opens a connection, and applies migration
+    operations directly against the target database.
+    """
     connectable = engine_from_config(
         config.get_section(config.config_ini_section, {}),
         prefix="sqlalchemy.",

@@ -1,3 +1,5 @@
+"""Test package bootstrap and path setup."""
+
 from pathlib import Path
 import sys
 
