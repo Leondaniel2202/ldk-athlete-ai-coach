@@ -21,6 +21,9 @@ test:
 lint:
 	$(UV) run ruff check .
 
+lint-fix:
+	$(UV) run ruff check . --fix	
+
 format-check:
 	$(UV) run ruff format --check .
 

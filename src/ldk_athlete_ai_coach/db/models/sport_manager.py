@@ -41,23 +41,18 @@ class Event(NotionSyncMixin, Base):
     place_latitude: Mapped[float | None] = mapped_column(Float)
     place_longitude: Mapped[float | None] = mapped_column(Float)
     place_google_place_id: Mapped[str | None] = mapped_column(String(255))
-    plan_id: Mapped[int | None] = mapped_column(ForeignKey("plans.id"))
+    plan_id: Mapped[int | None] = mapped_column(ForeignKey("plans.id"), unique=True)
     race_workout_id: Mapped[int | None] = mapped_column(ForeignKey("workouts.id"))
 
     plan: Mapped[Plan | None] = relationship(
         "Plan",
-        back_populates="events",
+        back_populates="primary_event",
         foreign_keys=[plan_id],
     )
     race_workout: Mapped[Workout | None] = relationship(
         "Workout",
         back_populates="race_events",
         foreign_keys=[race_workout_id],
-    )
-    primary_for_plans: Mapped[list[Plan]] = relationship(
-        "Plan",
-        back_populates="primary_event",
-        foreign_keys="Plan.primary_event_id",
     )
 
 
@@ -76,18 +71,12 @@ class Plan(NotionSyncMixin, Base):
     end_date_start: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     end_date_end: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     end_date_is_datetime: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
-    primary_event_id: Mapped[int | None] = mapped_column(ForeignKey("events.id"))
 
     primary_event: Mapped[Event | None] = relationship(
         "Event",
-        back_populates="primary_for_plans",
-        foreign_keys=[primary_event_id],
-        post_update=True,
-    )
-    events: Mapped[list[Event]] = relationship(
-        "Event",
         back_populates="plan",
         foreign_keys="Event.plan_id",
+        uselist=False,
     )
     phases: Mapped[list[Phase]] = relationship("Phase", back_populates="plan")
 
@@ -131,19 +120,12 @@ class Phase(NotionSyncMixin, Base):
     nutrition_guideline_id: Mapped[int | None] = mapped_column(
         ForeignKey("nutrition_guidelines.id")
     )
-    parent_phase_id: Mapped[int | None] = mapped_column(ForeignKey("phases.id"))
 
     plan: Mapped[Plan | None] = relationship("Plan", back_populates="phases")
     nutrition_guideline: Mapped[NutritionGuideline | None] = relationship(
         "NutritionGuideline",
         back_populates="phases",
     )
-    parent_phase: Mapped[Phase | None] = relationship(
-        "Phase",
-        remote_side="Phase.id",
-        back_populates="sub_phases",
-    )
-    sub_phases: Mapped[list[Phase]] = relationship("Phase", back_populates="parent_phase")
     workouts: Mapped[list[Workout]] = relationship("Workout", back_populates="phase")
     feedback_entries: Mapped[list[Feedback]] = relationship("Feedback", back_populates="phase")
 

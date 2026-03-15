@@ -24,7 +24,7 @@ class Settings(BaseSettings):
     postgres_host: str
     postgres_port: int = 5432
 
-    @computed_field
+    @computed_field # type: ignore[prop-decorator]
     @property
     def database_url(self) -> str:
         """Build SQLAlchemy connection URL from database environment variables."""
@@ -42,4 +42,4 @@ def get_settings() -> Settings:
     Returns:
         Settings: Parsed application settings instance.
     """
-    return Settings()  # pyright: ignore[reportCallIssue]
+    return Settings()  # type: ignore[call-arg]  # pyright: ignore[reportCallIssue]

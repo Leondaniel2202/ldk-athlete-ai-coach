@@ -4,7 +4,6 @@ from fastapi.testclient import TestClient
 
 from ldk_athlete_ai_coach.main import app
 
-
 client = TestClient(app)
 
 
