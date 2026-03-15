@@ -1,19 +1,44 @@
 """Configuration loading and override behavior tests."""
+from pathlib import Path
+
 import pytest
+from pydantic import ValidationError
 
 from ldk_athlete_ai_coach.core.config import Settings, get_settings
 
 
-def test_settings_use_default_values_when_environment_is_missing(
-    monkeypatch,
+def test_settings_require_database_environment_values(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
 ) -> None:
-    """Ensure defaults are used when relevant environment variables are absent."""
+    """Ensure required database settings are provided via environment variables."""
+    monkeypatch.chdir(tmp_path)
     monkeypatch.delenv("APP_NAME", raising=False)
     monkeypatch.delenv("APP_ENV", raising=False)
     monkeypatch.delenv("DEBUG", raising=False)
-    monkeypatch.delenv("DATABASE_URL", raising=False)
+    monkeypatch.delenv("POSTGRES_DB", raising=False)
+    monkeypatch.delenv("POSTGRES_USER", raising=False)
+    monkeypatch.delenv("POSTGRES_PASSWORD", raising=False)
+    monkeypatch.delenv("POSTGRES_HOST", raising=False)
+    monkeypatch.delenv("POSTGRES_PORT", raising=False)
 
-    settings = Settings(_env_file=None)
+    with pytest.raises(ValidationError):
+        Settings()  # pyright: ignore[reportCallIssue]
+
+
+def test_settings_builds_database_url_from_component_values(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    """Ensure DB URL is derived from POSTGRES_* variables."""
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setenv("POSTGRES_DB", "ldk_athlete_ai_coach")
+    monkeypatch.setenv("POSTGRES_USER", "postgres")
+    monkeypatch.setenv("POSTGRES_PASSWORD", "postgres")
+    monkeypatch.setenv("POSTGRES_HOST", "localhost")
+    monkeypatch.delenv("POSTGRES_PORT", raising=False)
+
+    settings = Settings()  # pyright: ignore[reportCallIssue]
 
     assert settings.app_name == "ldk-athlete-ai-coach"
     assert settings.app_env == "local"
@@ -24,15 +49,20 @@ def test_settings_use_default_values_when_environment_is_missing(
     )
 
 
-def test_get_settings_reads_environment_overrides(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_get_settings_reads_environment_overrides(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
     """Ensure cached settings reflect environment variable overrides."""
+    monkeypatch.chdir(tmp_path)
     monkeypatch.setenv("APP_NAME", "test-app")
     monkeypatch.setenv("APP_ENV", "test")
     monkeypatch.setenv("DEBUG", "true")
-    monkeypatch.setenv(
-        "DATABASE_URL",
-        "postgresql+psycopg://postgres:postgres@db:5432/test_db",
-    )
+    monkeypatch.setenv("POSTGRES_DB", "test_db")
+    monkeypatch.setenv("POSTGRES_USER", "postgres")
+    monkeypatch.setenv("POSTGRES_PASSWORD", "postgres")
+    monkeypatch.setenv("POSTGRES_HOST", "db")
+    monkeypatch.setenv("POSTGRES_PORT", "5432")
 
     get_settings.cache_clear()
     settings = get_settings()
