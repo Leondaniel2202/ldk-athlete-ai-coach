@@ -1,3 +1,5 @@
+"""Database engine and session factory configuration."""
+
 from collections.abc import Generator
 
 from sqlalchemy import create_engine
@@ -18,6 +20,11 @@ SessionLocal = sessionmaker(
 
 
 def get_db_session() -> Generator[Session, None, None]:
+    """Yield a database session for a request scope.
+
+    Yields:
+        Session: Active SQLAlchemy session.
+    """
     session = SessionLocal()
     try:
         yield session

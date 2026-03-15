@@ -1,3 +1,5 @@
+"""Application settings management using pydantic-settings."""
+
 from functools import lru_cache
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -26,4 +28,9 @@ class Settings(BaseSettings):
 
 @lru_cache
 def get_settings() -> Settings:
+    """Return cached application settings.
+
+    Returns:
+        Settings: Parsed application settings instance.
+    """
     return Settings()

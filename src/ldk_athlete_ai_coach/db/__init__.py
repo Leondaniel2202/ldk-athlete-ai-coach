@@ -1,3 +1,5 @@
+"""Database-layer exports for models and sessions."""
+
 from ldk_athlete_ai_coach.db.base import Base
 from ldk_athlete_ai_coach.db.session import SessionLocal, engine, get_db_session
 

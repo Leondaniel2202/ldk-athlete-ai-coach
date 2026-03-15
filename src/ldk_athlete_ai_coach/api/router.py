@@ -1,3 +1,5 @@
+"""Top-level API router composition."""
+
 from fastapi import APIRouter
 
 from ldk_athlete_ai_coach.api.v1 import health_router
