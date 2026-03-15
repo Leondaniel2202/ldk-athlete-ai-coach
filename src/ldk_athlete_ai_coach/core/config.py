@@ -1,7 +1,9 @@
 """Application settings management using pydantic-settings."""
 
 from functools import lru_cache
+from urllib.parse import quote_plus
 
+from pydantic import computed_field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -16,14 +18,21 @@ class Settings(BaseSettings):
     app_env: str = "local"
     debug: bool = False
 
-    postgres_db: str = "ldk_athlete_ai_coach"
-    postgres_user: str = "postgres"
-    postgres_password: str = "postgres"
-    postgres_host: str = "localhost"
+    postgres_db: str
+    postgres_user: str
+    postgres_password: str
+    postgres_host: str
     postgres_port: int = 5432
-    database_url: str = (
-        "postgresql+psycopg://postgres:postgres@localhost:5432/ldk_athlete_ai_coach"
-    )
+
+    @computed_field
+    @property
+    def database_url(self) -> str:
+        """Build SQLAlchemy connection URL from database environment variables."""
+        return (
+            "postgresql+psycopg://"
+            f"{quote_plus(self.postgres_user)}:{quote_plus(self.postgres_password)}"
+            f"@{self.postgres_host}:{self.postgres_port}/{self.postgres_db}"
+        )
 
 
 @lru_cache
@@ -33,4 +42,4 @@ def get_settings() -> Settings:
     Returns:
         Settings: Parsed application settings instance.
     """
-    return Settings()
+    return Settings()  # pyright: ignore[reportCallIssue]
