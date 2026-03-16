@@ -9,5 +9,5 @@ permissions: read-all
 
 jobs:
   python-ci:
-    uses: Leondaniel2202/ldk-infra/.github/workflows/python-ci.yml@main
+    uses: Leondaniel2202/ldk-personal-infra/.github/workflows/python-ci.yml@main
     secrets: inherit
