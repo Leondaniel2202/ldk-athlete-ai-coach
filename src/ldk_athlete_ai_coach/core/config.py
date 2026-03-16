@@ -24,7 +24,18 @@ class Settings(BaseSettings):
     postgres_host: str
     postgres_port: int = 5432
 
-    @computed_field # type: ignore[prop-decorator]
+    # Notion integration – all optional so the app boots without them
+    notion_api_token: str | None = None
+    notion_db_events: str | None = None
+    notion_db_plans: str | None = None
+    notion_db_phases: str | None = None
+    notion_db_workouts: str | None = None
+    notion_db_tracked_sessions: str | None = None
+    notion_db_nutrition_guidelines: str | None = None
+    notion_db_training_loads: str | None = None
+    notion_db_feedback: str | None = None
+
+    @computed_field  # type: ignore[prop-decorator]
     @property
     def database_url(self) -> str:
         """Build SQLAlchemy connection URL from database environment variables."""

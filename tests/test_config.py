@@ -1,4 +1,5 @@
 """Configuration loading and override behavior tests."""
+
 from pathlib import Path
 
 import pytest
@@ -23,7 +24,7 @@ def test_settings_require_database_environment_values(
     monkeypatch.delenv("POSTGRES_PORT", raising=False)
 
     with pytest.raises(ValidationError):
-        Settings()  # type: ignore[call-arg] # pyright: ignore[reportCallIssue] 
+        Settings()  # type: ignore[call-arg] # pyright: ignore[reportCallIssue]
 
 
 def test_settings_builds_database_url_from_component_values(
@@ -38,7 +39,7 @@ def test_settings_builds_database_url_from_component_values(
     monkeypatch.setenv("POSTGRES_HOST", "localhost")
     monkeypatch.delenv("POSTGRES_PORT", raising=False)
 
-    settings = Settings() # type: ignore[call-arg] # pyright: ignore[reportCallIssue]
+    settings = Settings()  # type: ignore[call-arg] # pyright: ignore[reportCallIssue]
 
     assert (
         settings.database_url
