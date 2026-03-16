@@ -1,0 +1,13 @@
+name: CI
+
+on:
+  pull_request:
+    branches:
+      - main
+
+permissions: read-all
+
+jobs:
+  python-ci:
+    uses: Leondaniel2202/ldk-infra/.github/workflows/python-ci.yml@main
+    secrets: inherit
