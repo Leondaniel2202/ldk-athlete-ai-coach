@@ -182,13 +182,13 @@ class TestQueryDatabase:
 
 
 # ---------------------------------------------------------------------------
-# query_all_pages
+# iter_database_entries
 # ---------------------------------------------------------------------------
 
 
-class TestQueryAllPages:
+class TestIterDatabaseEntries:
     def test_single_page_yields_all_results(self) -> None:
-        """query_all_pages yields all items when there is only one page."""
+        """iter_database_entries yields all items when there is only one page."""
         client, sdk = _make_client()
         sdk.databases.query.return_value = {
             "results": [{"id": "page-1"}, {"id": "page-2"}],
@@ -196,14 +196,14 @@ class TestQueryAllPages:
             "next_cursor": None,
         }
 
-        results = list(client.query_all_pages("db-123"))
+        results = list(client.iter_database_entries("db-123"))
 
         assert len(results) == 2
         assert results[0]["id"] == "page-1"
         assert results[1]["id"] == "page-2"
 
     def test_multi_page_yields_all_results(self) -> None:
-        """query_all_pages follows pagination cursors until has_more is False."""
+        """iter_database_entries follows pagination cursors until has_more is False."""
         client, sdk = _make_client()
         sdk.databases.query.side_effect = [
             {"results": [{"id": "p1"}, {"id": "p2"}], "has_more": True, "next_cursor": "cur-1"},
@@ -211,7 +211,7 @@ class TestQueryAllPages:
             {"results": [{"id": "p5"}], "has_more": False, "next_cursor": None},
         ]
 
-        results = list(client.query_all_pages("db-123"))
+        results = list(client.iter_database_entries("db-123"))
 
         assert [r["id"] for r in results] == ["p1", "p2", "p3", "p4", "p5"]
         assert sdk.databases.query.call_count == 3
@@ -221,24 +221,24 @@ class TestQueryAllPages:
         assert sdk.databases.query.call_args_list[2][1]["start_cursor"] == "cur-2"
 
     def test_multi_page_passes_cursor(self) -> None:
-        """query_all_pages sends the cursor from one page to the next request."""
+        """iter_database_entries sends the cursor from one page to the next request."""
         client, sdk = _make_client()
         sdk.databases.query.side_effect = [
             {"results": [{"id": "p1"}], "has_more": True, "next_cursor": "cursor-x"},
             {"results": [{"id": "p2"}], "has_more": False, "next_cursor": None},
         ]
 
-        list(client.query_all_pages("db-123"))
+        list(client.iter_database_entries("db-123"))
 
         second_call_kwargs = sdk.databases.query.call_args_list[1][1]
         assert second_call_kwargs["start_cursor"] == "cursor-x"
 
     def test_empty_database_yields_nothing(self) -> None:
-        """query_all_pages yields no items for an empty database."""
+        """iter_database_entries yields no items for an empty database."""
         client, sdk = _make_client()
         sdk.databases.query.return_value = {"results": [], "has_more": False, "next_cursor": None}
 
-        results = list(client.query_all_pages("db-123"))
+        results = list(client.iter_database_entries("db-123"))
 
         assert results == []
 
@@ -275,13 +275,31 @@ class TestRateLimitHandling:
             with pytest.raises(NotionRateLimitError):
                 client.query_database("db-123")
 
-    def test_api_response_error_429_raises_rate_limit_error(self) -> None:
-        """Client raises NotionRateLimitError on APIResponseError with 429 status."""
+    def test_retries_on_api_response_error_429_and_succeeds(self) -> None:
+        """Client retries on APIResponseError 429 and returns result when retry succeeds."""
+        client, sdk = _make_client(notion_max_retries=3)
+        rate_limit_error = _make_api_error(429, "rate_limited")
+        success_payload: dict[str, Any] = {
+            "results": [{"id": "p1"}],
+            "has_more": False,
+            "next_cursor": None,
+        }
+        sdk.databases.query.side_effect = [rate_limit_error, success_payload]
+
+        with patch("ldk_athlete_ai_coach.core.integrations.notion.client.time.sleep") as mock_sleep:
+            result = client.query_database("db-123")
+
+        mock_sleep.assert_called_once()
+        assert result is success_payload
+
+    def test_raises_rate_limit_error_when_api_error_retries_exhausted(self) -> None:
+        """Client raises NotionRateLimitError on APIResponseError 429 when retries exhausted."""
         client, sdk = _make_client(notion_max_retries=1)
         sdk.databases.query.side_effect = _make_api_error(429, "rate_limited")
 
-        with pytest.raises(NotionRateLimitError):
-            client.query_database("db-123")
+        with patch("ldk_athlete_ai_coach.core.integrations.notion.client.time.sleep"):
+            with pytest.raises(NotionRateLimitError):
+                client.query_database("db-123")
 
 
 # ---------------------------------------------------------------------------
