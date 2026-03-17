@@ -249,9 +249,7 @@ class NotionClient:
                     raise NotionRateLimitError(
                         f"Rate limit retries exhausted after {max_attempts} attempts"
                     ) from exc
-                if isinstance(exc, APIResponseError):
-                    self._handle_api_error(exc)
-                raise NotionAPIError(f"Unexpected HTTP error: {exc}") from exc
+                self._translate_error(exc)
 
         # Should not be reached, but satisfies static analysis.
         raise NotionAPIError(  # pragma: no cover
@@ -259,11 +257,12 @@ class NotionClient:
         )
 
     @staticmethod
-    def _handle_api_error(exc: APIResponseError) -> NoReturn:
-        """Translate an :class:`APIResponseError` into a domain-specific exception.
+    def _translate_error(exc: APIResponseError | HTTPResponseError) -> NoReturn:
+        """Translate a Notion SDK exception into a domain-specific exception by HTTP status.
 
-        Does not handle 429 — rate-limit retries are managed by :meth:`_call` before
-        this method is invoked.
+        Applies consistent status-based mapping regardless of whether the SDK raised an
+        :class:`APIResponseError` or an :class:`HTTPResponseError`. Does not handle 429 —
+        rate-limit retries are managed by :meth:`_call` before this method is invoked.
 
         Args:
             exc: The original SDK exception.

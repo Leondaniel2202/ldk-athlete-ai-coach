@@ -127,6 +127,30 @@ class TestGetDatabase:
         with pytest.raises(NotionDatabaseNotFoundError):
             client.get_database("db-123")
 
+    def test_http_error_401_raises_auth_error(self) -> None:
+        """get_database raises NotionAuthError on HTTPResponseError with status 401."""
+        client, sdk = _make_client()
+        sdk.databases.retrieve.side_effect = _make_http_error(401)
+
+        with pytest.raises(NotionAuthError):
+            client.get_database("db-123")
+
+    def test_http_error_403_raises_not_found(self) -> None:
+        """get_database raises NotionDatabaseNotFoundError on HTTPResponseError with status 403."""
+        client, sdk = _make_client()
+        sdk.databases.retrieve.side_effect = _make_http_error(403)
+
+        with pytest.raises(NotionDatabaseNotFoundError):
+            client.get_database("db-123")
+
+    def test_http_error_404_raises_not_found(self) -> None:
+        """get_database raises NotionDatabaseNotFoundError on HTTPResponseError with status 404."""
+        client, sdk = _make_client()
+        sdk.databases.retrieve.side_effect = _make_http_error(404)
+
+        with pytest.raises(NotionDatabaseNotFoundError):
+            client.get_database("db-123")
+
 
 # ---------------------------------------------------------------------------
 # query_database
