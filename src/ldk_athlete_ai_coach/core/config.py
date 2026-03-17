@@ -24,7 +24,18 @@ class Settings(BaseSettings):
     postgres_host: str
     postgres_port: int = 5432
 
-    @computed_field # type: ignore[prop-decorator]
+    # Notion API configuration — required only when using the Notion client
+    notion_api_key: str | None = None
+    notion_phase_db_id: str | None = None
+    notion_workout_db_id: str | None = None
+    notion_session_db_id: str | None = None
+    notion_feedback_db_id: str | None = None
+
+    notion_page_size: int = 100
+    notion_timeout: float = 30.0
+    notion_max_retries: int = 3
+
+    @computed_field  # type: ignore[prop-decorator]
     @property
     def database_url(self) -> str:
         """Build SQLAlchemy connection URL from database environment variables."""
