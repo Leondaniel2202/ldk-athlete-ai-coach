@@ -20,8 +20,9 @@ Typical usage::
     # Fetch a single page of query results
     page = client.query_database(database_id="<uuid>")
 
-    # Fetch *all* results, handling pagination automatically
-    pages = list(client.query_all_pages(database_id="<uuid>"))
+    # Iterate over all individual entries across all pages
+    for entry in client.iter_database_entries(database_id="<uuid>"):
+        ...
 """
 
 from __future__ import annotations
@@ -29,7 +30,7 @@ from __future__ import annotations
 import logging
 import time
 from collections.abc import Iterator
-from typing import Any
+from typing import Any, NoReturn
 
 from notion_client import Client
 from notion_client.errors import APIResponseError, HTTPResponseError
@@ -87,7 +88,7 @@ class NotionClient:
     * Authenticated access using the configured ``NOTION_API_KEY``.
     * Database metadata retrieval (:meth:`get_database`).
     * Single-page database queries (:meth:`query_database`).
-    * Full paginated queries (:meth:`query_all_pages`).
+    * Full paginated iteration (:meth:`iter_database_entries`).
     * Basic 429 rate-limit handling with configurable retries.
     * Structured logging for all major operations.
 
@@ -124,7 +125,7 @@ class NotionClient:
             NotionDatabaseNotFoundError: If the database cannot be found or accessed.
             NotionAPIError: For any other unexpected API error.
         """
-        logger.info("Fetching database metadata for database_id=%s", database_id)
+        logger.debug("Fetching database metadata for database_id=%s", database_id)
         return self._call(self._client.databases.retrieve, database_id=database_id)
 
     def query_database(
@@ -146,7 +147,7 @@ class NotionClient:
             NotionDatabaseNotFoundError: If the database cannot be found or accessed.
             NotionAPIError: For any other unexpected API error.
         """
-        logger.info(
+        logger.debug(
             "Querying database_id=%s start_cursor=%s page_size=%d",
             database_id,
             start_cursor,
@@ -161,20 +162,21 @@ class NotionClient:
 
         response: dict[str, Any] = self._call(self._client.databases.query, **kwargs)
         result_count = len(response.get("results", []))
-        logger.info("Fetched %d result(s) from database_id=%s", result_count, database_id)
+        logger.debug("Fetched %d result(s) from database_id=%s", result_count, database_id)
         return response
 
-    def query_all_pages(self, database_id: str) -> Iterator[dict[str, Any]]:
-        """Yield every page returned by a database query, handling pagination.
+    def iter_database_entries(self, database_id: str) -> Iterator[dict[str, Any]]:
+        """Iterate over every individual entry in a database, handling pagination.
 
-        Iterates through all response pages until ``has_more`` is ``False`` and
-        yields each raw Notion page object individually.
+        Follows ``next_cursor`` across all response pages and yields each raw Notion
+        entry (page object) one at a time. Callers do not need to manage cursors or
+        loop over response pages themselves.
 
         Args:
             database_id: The UUID of the target Notion database.
 
         Yields:
-            Individual raw Notion page objects from the database query results.
+            Individual raw Notion page objects (database entries) from the query results.
 
         Raises:
             NotionAuthError: If credentials are invalid or missing.
@@ -207,9 +209,10 @@ class NotionClient:
     def _call(self, api_method: Any, **kwargs: Any) -> dict[str, Any]:
         """Execute a Notion SDK call with retry and error-translation logic.
 
-        Handles 429 rate-limit responses by waiting (respecting ``Retry-After`` when
-        available) and retrying up to ``settings.notion_max_retries`` times. Other
-        errors are translated into :class:`NotionClientError` subclasses.
+        Handles 429 rate-limit responses by sleeping for a fixed interval and retrying
+        up to ``settings.notion_max_retries`` times. Both :class:`APIResponseError` and
+        :class:`HTTPResponseError` with status 429 go through the same retry path.
+        Other errors are translated into :class:`NotionClientError` subclasses.
 
         Args:
             api_method: A callable from the Notion SDK (e.g. ``client.databases.query``).
@@ -230,25 +233,24 @@ class NotionClient:
             try:
                 result: dict[str, Any] = api_method(**kwargs)
                 return result
-            except APIResponseError as exc:
-                self._handle_api_error(exc)
-            except HTTPResponseError as exc:
+            except (APIResponseError, HTTPResponseError) as exc:
                 status = exc.status
                 if status == _HTTP_TOO_MANY_REQUESTS:
-                    wait = _DEFAULT_RETRY_WAIT_SECONDS
                     if attempt < max_attempts:
                         logger.warning(
                             "Rate limited by Notion API (attempt %d/%d), retrying in %.1fs",
                             attempt,
                             max_attempts,
-                            wait,
+                            _DEFAULT_RETRY_WAIT_SECONDS,
                         )
-                        time.sleep(wait)
+                        time.sleep(_DEFAULT_RETRY_WAIT_SECONDS)
                         continue
                     logger.error("Rate limit retries exhausted after %d attempts", max_attempts)
                     raise NotionRateLimitError(
                         f"Rate limit retries exhausted after {max_attempts} attempts"
                     ) from exc
+                if isinstance(exc, APIResponseError):
+                    self._handle_api_error(exc)
                 raise NotionAPIError(f"Unexpected HTTP error: {exc}") from exc
 
         # Should not be reached, but satisfies static analysis.
@@ -257,8 +259,11 @@ class NotionClient:
         )
 
     @staticmethod
-    def _handle_api_error(exc: APIResponseError) -> None:
+    def _handle_api_error(exc: APIResponseError) -> NoReturn:
         """Translate an :class:`APIResponseError` into a domain-specific exception.
+
+        Does not handle 429 — rate-limit retries are managed by :meth:`_call` before
+        this method is invoked.
 
         Args:
             exc: The original SDK exception.
@@ -266,7 +271,6 @@ class NotionClient:
         Raises:
             NotionAuthError: On 401 status.
             NotionDatabaseNotFoundError: On 403 or 404 status.
-            NotionRateLimitError: On 429 status.
             NotionAPIError: For all other status codes.
         """
         status = exc.status
@@ -278,7 +282,5 @@ class NotionClient:
             raise NotionDatabaseNotFoundError(
                 f"Database not found or access denied (status={status}): {exc}"
             ) from exc
-        if status == _HTTP_TOO_MANY_REQUESTS:
-            raise NotionRateLimitError(f"Rate limited: {exc}") from exc
         logger.error("Unexpected Notion API error (status=%d): %s", status, exc)
         raise NotionAPIError(f"Unexpected Notion API error (status={status}): {exc}") from exc
