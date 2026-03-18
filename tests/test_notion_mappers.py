@@ -11,11 +11,13 @@ from ldk_athlete_ai_coach.core.integrations.notion.mappers.nutrition import (
     map_nutrition_guideline,
 )
 from ldk_athlete_ai_coach.core.integrations.notion.mappers.phase import map_phase
+from ldk_athlete_ai_coach.core.integrations.notion.mappers.session import map_session
 from ldk_athlete_ai_coach.core.integrations.notion.mappers.workout import map_workout
 from ldk_athlete_ai_coach.core.integrations.notion.schemas.notion_nutrition_guideline import (
     NotionNutritionGuideline,
 )
 from ldk_athlete_ai_coach.core.integrations.notion.schemas.notion_phase import NotionPhase
+from ldk_athlete_ai_coach.core.integrations.notion.schemas.notion_session import NotionSession
 from ldk_athlete_ai_coach.core.integrations.notion.schemas.notion_weekly_feedback import (
     NotionWeeklyFeedback,
 )
@@ -24,6 +26,7 @@ from ldk_athlete_ai_coach.db.models.sport_manager import (
     Feedback,
     NutritionGuideline,
     Phase,
+    TrackedSession,
     Workout,
 )
 
@@ -495,3 +498,141 @@ class TestMapNutritionGuideline:
         assert result.goal == "Performance"
         assert result.applies_to == ["Race", "Training"]
         assert result.carb_strategy == "High carb on race days"
+
+
+# ===========================================================================
+# TrackedSession mapper
+# ===========================================================================
+
+
+def _make_notion_session(**overrides: object) -> NotionSession:
+    defaults: dict[str, object] = {
+        "notion_id": "session-abc",
+        "name": "Morning Run",
+        "source": "Apple Health",
+        "session_type": "Running",
+        "external_id": "ext-123",
+        "start_start": _DT,
+        "start_end": None,
+        "start_is_datetime": True,
+        "end_start": _DT2,
+        "end_end": None,
+        "end_is_datetime": True,
+        "active_energy_kj": 1200.0,
+        "active_energy_burned_kj": 1100.0,
+        "avg_hr": 145.0,
+        "max_hr": 175.0,
+        "calories_kcal": 500.0,
+        "distance_km": 10.5,
+        "duration_min": 60.0,
+        "elevation_ascended_m": 120.0,
+        "elevation_descended_m": 115.0,
+        "intensity_kcal_per_hr_kg": 8.5,
+        "step_cadence_count_per_min": 170.0,
+        "steps": 9800.0,
+        "workout_notion_id": "workout-xyz",
+        "url": "https://notion.so/session-abc",
+        "archived": False,
+    }
+    defaults.update(overrides)
+    return NotionSession(**defaults)  # type: ignore[arg-type]
+
+
+class TestMapSession:
+    def test_create_new_entity(self) -> None:
+        source = _make_notion_session()
+        entity = map_session(source)
+
+        assert isinstance(entity, TrackedSession)
+        assert entity.notion_page_id == "session-abc"
+        assert entity.notion_url == "https://notion.so/session-abc"
+        assert entity.name == "Morning Run"
+        assert entity.source == "Apple Health"
+        assert entity.session_type == "Running"
+        assert entity.external_id == "ext-123"
+        assert entity.start_start == _DT
+        assert entity.start_end is None
+        assert entity.start_is_datetime is True
+        assert entity.end_start == _DT2
+        assert entity.end_end is None
+        assert entity.end_is_datetime is True
+        assert entity.active_energy_kj == pytest.approx(1200.0)
+        assert entity.active_energy_burned_kj == pytest.approx(1100.0)
+        assert entity.avg_hr == pytest.approx(145.0)
+        assert entity.max_hr == pytest.approx(175.0)
+        assert entity.calories_kcal == pytest.approx(500.0)
+        assert entity.distance_km == pytest.approx(10.5)
+        assert entity.duration_min == pytest.approx(60.0)
+        assert entity.elevation_ascended_m == pytest.approx(120.0)
+        assert entity.elevation_descended_m == pytest.approx(115.0)
+        assert entity.intensity_kcal_per_hr_kg == pytest.approx(8.5)
+        assert entity.step_cadence_count_per_min == pytest.approx(170.0)
+        assert entity.steps == pytest.approx(9800.0)
+
+    def test_create_new_entity_has_no_workout_id_by_default(self) -> None:
+        source = _make_notion_session()
+        entity = map_session(source)
+
+        assert entity.workout_id is None
+
+    def test_scalar_foreign_key_workout_id_is_assigned(self) -> None:
+        source = _make_notion_session()
+        entity = map_session(source, workout_id=42)
+
+        assert entity.workout_id == 42
+
+    def test_update_existing_entity(self) -> None:
+        existing = TrackedSession()
+        existing.name = "Old Session"
+        existing.avg_hr = 130.0
+
+        source = _make_notion_session(name="Updated Session", avg_hr=150.0)
+        result = map_session(source, existing)
+
+        assert result is existing
+        assert result.name == "Updated Session"
+        assert result.avg_hr == pytest.approx(150.0)
+
+    def test_overwrite_existing_workout_id(self) -> None:
+        existing = TrackedSession()
+        existing.workout_id = 99
+
+        source = _make_notion_session()
+        result = map_session(source, existing, workout_id=7)
+
+        assert result.workout_id == 7
+
+    def test_none_values_are_propagated(self) -> None:
+        source = _make_notion_session(
+            source=None,
+            session_type=None,
+            external_id=None,
+            start_start=None,
+            end_start=None,
+            avg_hr=None,
+            max_hr=None,
+            distance_km=None,
+            duration_min=None,
+            url=None,
+        )
+        entity = map_session(source)
+
+        assert entity.source is None
+        assert entity.session_type is None
+        assert entity.external_id is None
+        assert entity.start_start is None
+        assert entity.end_start is None
+        assert entity.avg_hr is None
+        assert entity.max_hr is None
+        assert entity.distance_km is None
+        assert entity.duration_min is None
+        assert entity.notion_url is None
+
+    def test_fk_field_reset_to_none_when_not_passed(self) -> None:
+        existing = TrackedSession()
+        existing.workout_id = 5
+
+        source = _make_notion_session()
+        result = map_session(source, existing)
+
+        assert result.workout_id is None
