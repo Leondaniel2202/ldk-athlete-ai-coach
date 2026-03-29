@@ -19,8 +19,11 @@ Typical usage::
 
 from __future__ import annotations
 
+from collections.abc import Callable
+from contextlib import contextmanager
 import logging
 from dataclasses import dataclass, field
+from typing import Any
 
 from ldk_athlete_ai_coach.core.config import Settings
 from ldk_athlete_ai_coach.core.integrations.notion.client import NotionClient
@@ -39,9 +42,25 @@ from ldk_athlete_ai_coach.core.integrations.notion.mappers.feedback import map_f
 from ldk_athlete_ai_coach.core.integrations.notion.mappers.phase import map_phase
 from ldk_athlete_ai_coach.core.integrations.notion.mappers.session import map_session
 from ldk_athlete_ai_coach.core.integrations.notion.mappers.workout import map_workout
-from ldk_athlete_ai_coach.db.models.sport_manager import Feedback, Phase, TrackedSession, Workout
+from ldk_athlete_ai_coach.db.models.sport_manager import Feedback, Phase, TrackedSession, WeeklyFeedback, Workout
+from ldk_athlete_ai_coach.db.repositories.sport_manager_base_repository import SportManagerBaseRepository
+from ldk_athlete_ai_coach.db.session import get_db_session
 
 logger = logging.getLogger(__name__)
+
+
+# ---------------------------------------------------------------------------
+# Sync defintion
+# ---------------------------------------------------------------------------
+
+
+@dataclass(frozen=True)
+class SyncDefinition:
+    entity_name: str
+    database_id: str
+    extractor: Callable[[dict[str, Any]], Any]
+    mapper: Callable[[Any], object]
+    repository: SportManagerBaseRepository
 
 
 # ---------------------------------------------------------------------------
@@ -61,7 +80,7 @@ class SyncResult:
         entities: Mapped SQLAlchemy entity instances ready for persistence.
     """
 
-    entity: str
+    entity_name: str
     fetched: int = 0
     success: int = 0
     failed: int = 0
@@ -69,7 +88,7 @@ class SyncResult:
 
     def __repr__(self) -> str:  # pragma: no cover
         return (
-            f"SyncResult(entity={self.entity!r}, fetched={self.fetched}, "
+            f"SyncResult(entity={self.entity_name!r}, fetched={self.fetched}, "
             f"success={self.success}, failed={self.failed})"
         )
 
@@ -105,11 +124,64 @@ class NotionSyncService:
     def __init__(self, client: NotionClient, settings: Settings) -> None:
         self._client = client
         self._settings = settings
+        self._definitions = self._build_definitions()
+        self._session = get_db_session()
 
-    # ------------------------------------------------------------------
-    # Per-entity sync methods
-    # ------------------------------------------------------------------
+    def _build_definitions(self) -> dict[str, SyncDefinition]:
+        return {
+            "phase": SyncDefinition(
+                entity_name="Phase",
+                database_id=self._settings.notion_phase_db_id,
+                extractor=extract_phase,
+                mapper=map_phase,
+                repository=SportManagerBaseRepository[Phase](self._session)
+            ),
+            "workout": SyncDefinition(
+                entity_name="Workout",
+                database_id=self._settings.notion_workout_db_id,
+                extractor=extract_workout,
+                mapper=map_workout,
+                repository=SportManagerBaseRepository[Workout](self._session)
+            ),
+            "session": SyncDefinition(
+                entity_name="TrackedSession",
+                database_id=self._settings.notion_session_db_id,
+                extractor=extract_session,
+                mapper=map_session,
+                repository=SportManagerBaseRepository[TrackedSession](self._session)
+            ),
+            "feedback": SyncDefinition(
+                entity_name="Feedback",
+                database_id=self._settings.notion_feedback_db_id,
+                extractor=extract_weekly_feedback,
+                mapper=map_feedback,
+                repository=SportManagerBaseRepository[WeeklyFeedback](self._session)
+            ),
+        }
+        
+    
+    def _log_result(self, result: SyncResult):
+            logger.info(
+            f"Sync completed for entity={result.entity_name} fetched=%d success=%d failed=%d",
+            result.fetched,
+            result.success,
+            result.failed,
+        )
 
+    def _page_generator(self, db_id: str, result: SyncResult):
+        for raw_page in self._client.iter_database_entries(db_id):
+            result.fetched += 1
+            try: 
+                yield raw_page
+                result.success += 1
+            except (NotionExtractionError, Exception) as exc:
+                    result.failed += 1
+                    logger.error(
+                        "Failed to process Phase page notion_id=%s: %s",
+                        raw_page.get("id", "<unknown>"),
+                        exc,
+                    )
+                    
     def sync_phases(self) -> SyncResult:
         """Fetch, extract, and map all Phase entries from Notion.
 
@@ -119,29 +191,15 @@ class NotionSyncService:
         """
         result = SyncResult(entity="Phase")
         db_id = self._settings.notion_phase_db_id
-        logger.info("Starting sync for entity=Phase database_id=%s", db_id)
 
-        for raw_page in self._client.iter_database_entries(db_id):
-            result.fetched += 1
-            try:
-                schema = extract_phase(raw_page)
-                entity: Phase = map_phase(schema)
-                result.entities.append(entity)
-                result.success += 1
-            except (NotionExtractionError, Exception) as exc:
-                result.failed += 1
-                logger.error(
-                    "Failed to process Phase page notion_id=%s: %s",
-                    raw_page.get("id", "<unknown>"),
-                    exc,
-                )
+        for raw_page in self._page_generator(db_id=db_id, result=result)
+            schema = extract_phase(raw_page)
+            entity: Phase = map_phase(schema)
+            result.entities.append(entity)
+            result.success += 1
+                
+        self._log_result(result)
 
-        logger.info(
-            "Sync completed for entity=Phase fetched=%d success=%d failed=%d",
-            result.fetched,
-            result.success,
-            result.failed,
-        )
         return result
 
     def sync_workouts(self) -> SyncResult:
