@@ -127,7 +127,7 @@ class Phase(NotionSyncMixin, Base):
         back_populates="phases",
     )
     workouts: Mapped[list[Workout]] = relationship("Workout", back_populates="phase")
-    feedback_entries: Mapped[list[Feedback]] = relationship("Feedback", back_populates="phase")
+    feedback_entries: Mapped[list[WeeklyFeedback]] = relationship("Feedback", back_populates="phase")
 
 
 class Workout(NotionSyncMixin, Base):
@@ -212,20 +212,20 @@ class TrackedSession(NotionSyncMixin, Base):
     workout: Mapped[Workout | None] = relationship("Workout", back_populates="tracked_sessions")
 
 
-class TrainingLoad(NotionSyncMixin, Base):
-    """Editable fields from the Notion Training Load database."""
+# class TrainingLoad(NotionSyncMixin, Base):
+#     """Editable fields from the Notion Training Load database."""
 
-    __tablename__ = "training_loads"
+#     __tablename__ = "training_loads"
 
-    name: Mapped[str] = mapped_column(String(255), nullable=False)
-    impact: Mapped[str | None] = mapped_column(String(32))
-    min_load: Mapped[float | None] = mapped_column(Float)
-    max_load: Mapped[float | None] = mapped_column(Float)
-    typical_avg_rpe: Mapped[float | None] = mapped_column(Float)
-    meaning: Mapped[str | None] = mapped_column(Text)
+#     name: Mapped[str] = mapped_column(String(255), nullable=False)
+#     impact: Mapped[str | None] = mapped_column(String(32))
+#     min_load: Mapped[float | None] = mapped_column(Float)
+#     max_load: Mapped[float | None] = mapped_column(Float)
+#     typical_avg_rpe: Mapped[float | None] = mapped_column(Float)
+#     meaning: Mapped[str | None] = mapped_column(Text)
 
 
-class Feedback(NotionSyncMixin, Base):
+class WeeklyFeedback(NotionSyncMixin, Base):
     """Editable fields from the Notion Feedback database."""
 
     __tablename__ = "feedback"
