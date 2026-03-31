@@ -4,18 +4,19 @@ from __future__ import annotations
 
 from datetime import datetime
 
-from pydantic import BaseModel, Field
+from pydantic import Field
+
+from ldk_athlete_ai_coach.core.integrations.notion.schemas.notion_base import NotionBaseSchema
 
 
-class NotionNutritionGuideline(BaseModel):
+class NotionNutritionGuideline(NotionBaseSchema):
     """Typed representation of a raw Notion Nutrition Guidelines database entry.
 
-    Fields map to the columns defined in
+    Inherits common Notion identity fields from :class:`NotionBaseSchema`.
+    The remaining fields map to the columns defined in
     :class:`~ldk_athlete_ai_coach.db.models.sport_manager.NutritionGuideline`.
     """
 
-    notion_id: str
-    name: str
     goal: str | None = None
     applies_to: list[str] = Field(default_factory=list)
     carb_strategy: str | None = None

@@ -4,17 +4,18 @@ from __future__ import annotations
 
 from datetime import datetime
 
-from pydantic import BaseModel
+from ldk_athlete_ai_coach.core.integrations.notion.schemas.notion_base import NotionBaseSchema
 
 
-class NotionWeeklyFeedback(BaseModel):
+class NotionWeeklyFeedback(NotionBaseSchema):
     """Typed representation of a raw Notion Feedback database entry.
 
-    Fields map to the columns defined in
-    :class:`~ldk_athlete_ai_coach.db.models.sport_manager.Feedback`.
+    Inherits common Notion identity fields from :class:`NotionBaseSchema`.
+    ``name`` mirrors ``week`` to provide a common title field across schemas.
+    The remaining fields map to the columns defined in
+    :class:`~ldk_athlete_ai_coach.db.models.sport_manager.WeeklyFeedback`.
     """
 
-    notion_id: str
     week: str
     energy: float | None = None
     leg_freshness: float | None = None

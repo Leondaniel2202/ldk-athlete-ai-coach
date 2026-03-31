@@ -7,7 +7,7 @@ from ldk_athlete_ai_coach.db.models.sport_manager import (
     Phase,
     Plan,
     TrackedSession,
-    TrainingLoad,
+    WeeklyFeedback,
     Workout,
 )
 
@@ -18,6 +18,6 @@ __all__ = [
     "Phase",
     "Plan",
     "TrackedSession",
-    "TrainingLoad",
+    "WeeklyFeedback",
     "Workout",
 ]

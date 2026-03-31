@@ -127,7 +127,10 @@ class Phase(NotionSyncMixin, Base):
         back_populates="phases",
     )
     workouts: Mapped[list[Workout]] = relationship("Workout", back_populates="phase")
-    feedback_entries: Mapped[list[WeeklyFeedback]] = relationship("Feedback", back_populates="phase")
+    feedback_entries: Mapped[list[WeeklyFeedback]] = relationship(
+        "WeeklyFeedback",
+        back_populates="phase",
+    )
 
 
 class Workout(NotionSyncMixin, Base):
@@ -239,3 +242,6 @@ class WeeklyFeedback(NotionSyncMixin, Base):
     phase_id: Mapped[int | None] = mapped_column(ForeignKey("phases.id"))
 
     phase: Mapped[Phase | None] = relationship("Phase", back_populates="feedback_entries")
+
+
+Feedback = WeeklyFeedback
