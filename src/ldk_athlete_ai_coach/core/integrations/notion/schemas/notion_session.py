@@ -4,18 +4,17 @@ from __future__ import annotations
 
 from datetime import datetime
 
-from pydantic import BaseModel
+from ldk_athlete_ai_coach.core.integrations.notion.schemas.notion_base import NotionBaseSchema
 
 
-class NotionSession(BaseModel):
+class NotionSession(NotionBaseSchema):
     """Typed representation of a raw Notion Tracked Session database entry.
 
-    Fields map to the columns defined in
+    Inherits common Notion identity fields from :class:`NotionBaseSchema`.
+    The remaining fields map to the columns defined in
     :class:`~ldk_athlete_ai_coach.db.models.sport_manager.TrackedSession`.
     """
 
-    notion_id: str
-    name: str
     source: str | None = None
     session_type: str | None = None
     external_id: str | None = None

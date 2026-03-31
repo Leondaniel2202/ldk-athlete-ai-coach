@@ -113,6 +113,7 @@ def _feedback_schema(
 ) -> NotionWeeklyFeedback:
     defaults = {
         "notion_id": notion_id,
+        "name": week,
         "week": week,
         "url": f"https://notion.so/{notion_id}",
     }

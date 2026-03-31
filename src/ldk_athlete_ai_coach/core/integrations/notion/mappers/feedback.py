@@ -5,20 +5,20 @@ from __future__ import annotations
 from ldk_athlete_ai_coach.core.integrations.notion.schemas.notion_weekly_feedback import (
     NotionWeeklyFeedback,
 )
-from ldk_athlete_ai_coach.db.models.sport_manager import Feedback
+from ldk_athlete_ai_coach.db.models.sport_manager import WeeklyFeedback
 
 
 def map_feedback(
     source: NotionWeeklyFeedback,
-    entity: Feedback | None = None,
+    entity: WeeklyFeedback | None = None,
     *,
     phase_id: int | None = None,
-) -> Feedback:
+) -> WeeklyFeedback:
     """Map a validated :class:`NotionWeeklyFeedback` onto a :class:`Feedback` SQLAlchemy entity.
 
     Args:
         source: Validated Pydantic model extracted from the Notion Feedback database.
-        entity: An existing :class:`Feedback` instance to update in place.
+        entity: An existing :class:`WeeklyFeedback` instance to update in place.
             If ``None`` a new instance is created.
         phase_id: Resolved local primary key of the related :class:`Phase` row.
             Pass ``None`` when the relation is not yet resolved.
@@ -27,7 +27,7 @@ def map_feedback(
         The populated (new or updated) :class:`Feedback` entity.
     """
     if entity is None:
-        entity = Feedback()
+        entity = WeeklyFeedback()
 
     # --- identifier fields (NotionSyncMixin) ---------------------------------
     entity.notion_page_id = source.notion_id

@@ -306,6 +306,7 @@ class TestMapWorkout:
 def _make_notion_feedback(**overrides: object) -> NotionWeeklyFeedback:
     defaults: dict[str, object] = {
         "notion_id": "feedback-abc",
+        "name": "2024-W10",
         "week": "2024-W10",
         "energy": 4.0,
         "leg_freshness": 3.5,

@@ -4,18 +4,19 @@ from __future__ import annotations
 
 from datetime import datetime
 
-from pydantic import BaseModel, Field
+from pydantic import Field
+
+from ldk_athlete_ai_coach.core.integrations.notion.schemas.notion_base import NotionBaseSchema
 
 
-class NotionWorkout(BaseModel):
+class NotionWorkout(NotionBaseSchema):
     """Typed representation of a raw Notion Workout database entry.
 
-    Fields map to the columns defined in
+    Inherits common Notion identity fields from :class:`NotionBaseSchema`.
+    The remaining fields map to the columns defined in
     :class:`~ldk_athlete_ai_coach.db.models.sport_manager.Workout`.
     """
 
-    notion_id: str
-    name: str
     date_start: datetime | None = None
     date_end: datetime | None = None
     date_is_datetime: bool = False

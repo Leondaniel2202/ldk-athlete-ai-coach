@@ -2,30 +2,13 @@
 
 from __future__ import annotations
 
-from typing import TypeVar
-
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from ldk_athlete_ai_coach.db.entitys.sport_manager import (
-    NutritionGuideline,
-    Phase,
-    TrackedSession,
-    WeeklyFeedback,
-    Workout,
-)
-
-TEntity = TypeVar(
-    "TEntity",
-    Phase,
-    Workout,
-    NutritionGuideline,
-    TrackedSession,
-    WeeklyFeedback,
-)
+from ldk_athlete_ai_coach.db.models.sport_manager import NotionSyncMixin
 
 
-class SportManagerBaseRepository[TEntity]:
+class SportManagerBaseRepository[TEntity: NotionSyncMixin]:
     """Provide shared database operations for Notion-backed entities.
 
     This base repository is intentionally small. It only contains logic that is

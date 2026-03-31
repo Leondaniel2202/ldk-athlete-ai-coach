@@ -42,6 +42,7 @@ def extract_weekly_feedback(raw_page: dict[str, Any]) -> NotionWeeklyFeedback:
 
         return NotionWeeklyFeedback(
             notion_id=notion_id,
+            name=week,
             week=week,
             energy=get_number(props.get("Energy", {})),
             leg_freshness=get_number(props.get("Leg Freshness", {})),
