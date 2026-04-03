@@ -1,23 +1,21 @@
-﻿"""Database models package."""
+"""Database models package."""
 
 from ldk_athlete_ai_coach.db.models.sport_manager import (
-    Event,
     Feedback,
     NutritionGuideline,
     Phase,
     Plan,
     TrackedSession,
-    TrainingLoad,
+    WeeklyFeedback,
     Workout,
 )
 
 __all__ = [
-    "Event",
     "Feedback",
     "NutritionGuideline",
     "Phase",
     "Plan",
     "TrackedSession",
-    "TrainingLoad",
+    "WeeklyFeedback",
     "Workout",
 ]

@@ -19,41 +19,41 @@ class NotionSyncMixin:
     notion_url: Mapped[str] = mapped_column(String(512), unique=True, nullable=False)
 
 
-class Event(NotionSyncMixin, Base):
-    """Editable fields from the Notion Events database."""
-
-    __tablename__ = "events"
-
-    name: Mapped[str] = mapped_column(String(255), nullable=False)
-    event_type: Mapped[str | None] = mapped_column(String(64))
-    target: Mapped[str | None] = mapped_column(Text)
-    event_format: Mapped[str | None] = mapped_column(Text)
-    notes: Mapped[str | None] = mapped_column(Text)
-    priority: Mapped[str | None] = mapped_column(String(8))
-    start_date_start: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
-    start_date_end: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
-    start_date_is_datetime: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
-    end_date_start: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
-    end_date_end: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
-    end_date_is_datetime: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
-    place_name: Mapped[str | None] = mapped_column(String(255))
-    place_address: Mapped[str | None] = mapped_column(Text)
-    place_latitude: Mapped[float | None] = mapped_column(Float)
-    place_longitude: Mapped[float | None] = mapped_column(Float)
-    place_google_place_id: Mapped[str | None] = mapped_column(String(255))
-    plan_id: Mapped[int | None] = mapped_column(ForeignKey("plans.id"), unique=True)
-    race_workout_id: Mapped[int | None] = mapped_column(ForeignKey("workouts.id"))
-
-    plan: Mapped[Plan | None] = relationship(
-        "Plan",
-        back_populates="primary_event",
-        foreign_keys=[plan_id],
-    )
-    race_workout: Mapped[Workout | None] = relationship(
-        "Workout",
-        back_populates="race_events",
-        foreign_keys=[race_workout_id],
-    )
+# class Event(NotionSyncMixin, Base):
+#     """Editable fields from the Notion Events database."""
+#
+#     __tablename__ = "events"
+#
+#     name: Mapped[str] = mapped_column(String(255), nullable=False)
+#     event_type: Mapped[str | None] = mapped_column(String(64))
+#     target: Mapped[str | None] = mapped_column(Text)
+#     event_format: Mapped[str | None] = mapped_column(Text)
+#     notes: Mapped[str | None] = mapped_column(Text)
+#     priority: Mapped[str | None] = mapped_column(String(8))
+#     start_date_start: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+#     start_date_end: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+#     start_date_is_datetime: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+#     end_date_start: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+#     end_date_end: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+#     end_date_is_datetime: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+#     place_name: Mapped[str | None] = mapped_column(String(255))
+#     place_address: Mapped[str | None] = mapped_column(Text)
+#     place_latitude: Mapped[float | None] = mapped_column(Float)
+#     place_longitude: Mapped[float | None] = mapped_column(Float)
+#     place_google_place_id: Mapped[str | None] = mapped_column(String(255))
+#     plan_id: Mapped[int | None] = mapped_column(ForeignKey("plans.id"), unique=True)
+#     race_workout_id: Mapped[int | None] = mapped_column(ForeignKey("workouts.id"))
+#
+#     plan: Mapped[Plan | None] = relationship(
+#         "Plan",
+#         back_populates="primary_event",
+#         foreign_keys=[plan_id],
+#     )
+#     race_workout: Mapped[Workout | None] = relationship(
+#         "Workout",
+#         back_populates="race_events",
+#         foreign_keys=[race_workout_id],
+#     )
 
 
 class Plan(NotionSyncMixin, Base):
@@ -72,12 +72,6 @@ class Plan(NotionSyncMixin, Base):
     end_date_end: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     end_date_is_datetime: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
 
-    primary_event: Mapped[Event | None] = relationship(
-        "Event",
-        back_populates="plan",
-        foreign_keys="Event.plan_id",
-        uselist=False,
-    )
     phases: Mapped[list[Phase]] = relationship("Phase", back_populates="plan")
 
 
@@ -127,7 +121,10 @@ class Phase(NotionSyncMixin, Base):
         back_populates="phases",
     )
     workouts: Mapped[list[Workout]] = relationship("Workout", back_populates="phase")
-    feedback_entries: Mapped[list[Feedback]] = relationship("Feedback", back_populates="phase")
+    feedback_entries: Mapped[list[WeeklyFeedback]] = relationship(
+        "WeeklyFeedback",
+        back_populates="phase",
+    )
 
 
 class Workout(NotionSyncMixin, Base):
@@ -169,11 +166,11 @@ class Workout(NotionSyncMixin, Base):
     phase_id: Mapped[int | None] = mapped_column(ForeignKey("phases.id"))
 
     phase: Mapped[Phase | None] = relationship("Phase", back_populates="workouts")
-    race_events: Mapped[list[Event]] = relationship(
-        "Event",
-        back_populates="race_workout",
-        foreign_keys="Event.race_workout_id",
-    )
+    # race_events: Mapped[list[Event]] = relationship(
+    #     "Event",
+    #     back_populates="race_workout",
+    #     foreign_keys="Event.race_workout_id",
+    # )
     tracked_sessions: Mapped[list[TrackedSession]] = relationship(
         "TrackedSession",
         back_populates="workout",
@@ -212,20 +209,20 @@ class TrackedSession(NotionSyncMixin, Base):
     workout: Mapped[Workout | None] = relationship("Workout", back_populates="tracked_sessions")
 
 
-class TrainingLoad(NotionSyncMixin, Base):
-    """Editable fields from the Notion Training Load database."""
+# class TrainingLoad(NotionSyncMixin, Base):
+#     """Editable fields from the Notion Training Load database."""
+#
+#     __tablename__ = "training_loads"
+#
+#     name: Mapped[str] = mapped_column(String(255), nullable=False)
+#     impact: Mapped[str | None] = mapped_column(String(32))
+#     min_load: Mapped[float | None] = mapped_column(Float)
+#     max_load: Mapped[float | None] = mapped_column(Float)
+#     typical_avg_rpe: Mapped[float | None] = mapped_column(Float)
+#     meaning: Mapped[str | None] = mapped_column(Text)
 
-    __tablename__ = "training_loads"
 
-    name: Mapped[str] = mapped_column(String(255), nullable=False)
-    impact: Mapped[str | None] = mapped_column(String(32))
-    min_load: Mapped[float | None] = mapped_column(Float)
-    max_load: Mapped[float | None] = mapped_column(Float)
-    typical_avg_rpe: Mapped[float | None] = mapped_column(Float)
-    meaning: Mapped[str | None] = mapped_column(Text)
-
-
-class Feedback(NotionSyncMixin, Base):
+class WeeklyFeedback(NotionSyncMixin, Base):
     """Editable fields from the Notion Feedback database."""
 
     __tablename__ = "feedback"
@@ -239,3 +236,6 @@ class Feedback(NotionSyncMixin, Base):
     phase_id: Mapped[int | None] = mapped_column(ForeignKey("phases.id"))
 
     phase: Mapped[Phase | None] = relationship("Phase", back_populates="feedback_entries")
+
+
+Feedback = WeeklyFeedback
