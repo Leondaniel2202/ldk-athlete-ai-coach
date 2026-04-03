@@ -13,26 +13,54 @@ from typing import Any
 
 
 def _plain_text_from_array(items: list[Any]) -> str:
-    """Join ``plain_text`` values from a Notion rich-text or title array."""
+    """Join ``plain_text`` values from rich-text style arrays.
+
+    Args:
+        items: List of Notion rich-text/title fragments.
+
+    Returns:
+        Concatenated plain-text value.
+    """
     return "".join(item.get("plain_text", "") for item in items)
 
 
 def get_title(prop: dict[str, Any]) -> str | None:
-    """Return plain text from a Notion ``title`` property, or ``None`` if empty."""
+    """Extract plain text from a Notion ``title`` property.
+
+    Args:
+        prop: Raw Notion property dictionary.
+
+    Returns:
+        Extracted title text, or ``None`` when empty.
+    """
     items: list[Any] = prop.get("title", [])
     text = _plain_text_from_array(items)
     return text or None
 
 
 def get_rich_text(prop: dict[str, Any]) -> str | None:
-    """Return plain text from a Notion ``rich_text`` property, or ``None`` if empty."""
+    """Extract plain text from a Notion ``rich_text`` property.
+
+    Args:
+        prop: Raw Notion property dictionary.
+
+    Returns:
+        Extracted rich-text content, or ``None`` when empty.
+    """
     items: list[Any] = prop.get("rich_text", [])
     text = _plain_text_from_array(items)
     return text or None
 
 
 def get_select(prop: dict[str, Any]) -> str | None:
-    """Return the selected option name from a Notion ``select`` property."""
+    """Extract the selected option name from a ``select`` property.
+
+    Args:
+        prop: Raw Notion property dictionary.
+
+    Returns:
+        Selected option name, or ``None`` when unset.
+    """
     sel: dict[str, Any] | None = prop.get("select")
     if not sel:
         return None
@@ -40,26 +68,54 @@ def get_select(prop: dict[str, Any]) -> str | None:
 
 
 def get_multi_select(prop: dict[str, Any]) -> list[str]:
-    """Return option names from a Notion ``multi_select`` property."""
+    """Extract selected option names from a ``multi_select`` property.
+
+    Args:
+        prop: Raw Notion property dictionary.
+
+    Returns:
+        List of selected option names.
+    """
     items: list[Any] = prop.get("multi_select", [])
     return [item["name"] for item in items if "name" in item]
 
 
 def get_number(prop: dict[str, Any]) -> float | None:
-    """Return the numeric value from a Notion ``number`` property."""
+    """Extract numeric value from a ``number`` property.
+
+    Args:
+        prop: Raw Notion property dictionary.
+
+    Returns:
+        Numeric value, or ``None`` when unset.
+    """
     return prop.get("number")
 
 
 def get_checkbox(prop: dict[str, Any]) -> bool:
-    """Return the boolean value from a Notion ``checkbox`` property."""
+    """Extract boolean value from a ``checkbox`` property.
+
+    Args:
+        prop: Raw Notion property dictionary.
+
+    Returns:
+        Parsed checkbox value.
+    """
     return bool(prop.get("checkbox", False))
 
 
 def get_date(prop: dict[str, Any]) -> tuple[datetime | None, datetime | None, bool]:
-    """Parse a Notion ``date`` property into (start, end, is_datetime).
+    """Parse a Notion ``date`` property.
 
     ``is_datetime`` is ``True`` when the start value contains a time component
-    (i.e. the raw string contains ``"T"``), ``False`` for date-only values.
+    (that is, the raw string includes ``"T"``), ``False`` for date-only values.
+
+    Args:
+        prop: Raw Notion property dictionary containing a ``date`` object.
+
+    Returns:
+        A tuple of ``(start, end, is_datetime)`` where ``start`` and ``end``
+        are parsed datetimes when present.
     """
     date_obj: dict[str, Any] | None = prop.get("date")
     if not date_obj:
@@ -75,7 +131,14 @@ def get_date(prop: dict[str, Any]) -> tuple[datetime | None, datetime | None, bo
 
 
 def get_first_relation(prop: dict[str, Any]) -> str | None:
-    """Return the Notion page ID of the first entry in a ``relation`` property."""
+    """Extract the first related Notion page ID from a ``relation`` property.
+
+    Args:
+        prop: Raw Notion property dictionary.
+
+    Returns:
+        First relation page ID, or ``None`` when no relations exist.
+    """
     relations: list[Any] = prop.get("relation", [])
     if not relations:
         return None
@@ -83,7 +146,15 @@ def get_first_relation(prop: dict[str, Any]) -> str | None:
 
 
 def get_page_datetime(raw_page: dict[str, Any], key: str) -> datetime | None:
-    """Parse a top-level ISO-8601 datetime string from the raw Notion page object."""
+    """Parse a top-level ISO-8601 datetime field from a raw Notion page.
+
+    Args:
+        raw_page: Raw page payload from the Notion API.
+        key: Top-level datetime key (for example ``created_time``).
+
+    Returns:
+        Parsed datetime value, or ``None`` when missing.
+    """
     value: str | None = raw_page.get(key)
     if not value:
         return None

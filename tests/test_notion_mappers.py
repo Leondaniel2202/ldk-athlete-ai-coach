@@ -7,15 +7,9 @@ from datetime import UTC, datetime
 import pytest
 
 from ldk_athlete_ai_coach.core.integrations.notion.mappers.feedback import map_feedback
-from ldk_athlete_ai_coach.core.integrations.notion.mappers.nutrition import (
-    map_nutrition_guideline,
-)
 from ldk_athlete_ai_coach.core.integrations.notion.mappers.phase import map_phase
 from ldk_athlete_ai_coach.core.integrations.notion.mappers.session import map_session
 from ldk_athlete_ai_coach.core.integrations.notion.mappers.workout import map_workout
-from ldk_athlete_ai_coach.core.integrations.notion.schemas.notion_nutrition_guideline import (
-    NotionNutritionGuideline,
-)
 from ldk_athlete_ai_coach.core.integrations.notion.schemas.notion_phase import NotionPhase
 from ldk_athlete_ai_coach.core.integrations.notion.schemas.notion_session import NotionSession
 from ldk_athlete_ai_coach.core.integrations.notion.schemas.notion_weekly_feedback import (
@@ -24,7 +18,6 @@ from ldk_athlete_ai_coach.core.integrations.notion.schemas.notion_weekly_feedbac
 from ldk_athlete_ai_coach.core.integrations.notion.schemas.notion_workout import NotionWorkout
 from ldk_athlete_ai_coach.db.models.sport_manager import (
     Feedback,
-    NutritionGuideline,
     Phase,
     TrackedSession,
     Workout,
@@ -395,110 +388,6 @@ class TestMapFeedback:
         result = map_feedback(source, existing)
 
         assert result.phase_id is None
-
-
-# ===========================================================================
-# NutritionGuideline mapper
-# ===========================================================================
-
-
-def _make_notion_nutrition(**overrides: object) -> NotionNutritionGuideline:
-    defaults: dict[str, object] = {
-        "notion_id": "nutrition-abc",
-        "name": "Race Season Nutrition",
-        "goal": "Performance",
-        "applies_to": ["Race", "Training"],
-        "carb_strategy": "High carb on race days",
-        "protein_target_g_per_kg": "1.6-2.0",
-        "fat_target_g_per_kg": "0.8-1.0",
-        "hydration_electrolytes": "Sodium + potassium",
-        "supplements": "Caffeine, beet root",
-        "timing_rules": "Carbs 3h before",
-        "url": "https://notion.so/nutrition-abc",
-        "archived": False,
-    }
-    defaults.update(overrides)
-    return NotionNutritionGuideline(**defaults)  # type: ignore[arg-type]
-
-
-class TestMapNutritionGuideline:
-    def test_create_new_entity(self) -> None:
-        source = _make_notion_nutrition()
-        entity = map_nutrition_guideline(source)
-
-        assert isinstance(entity, NutritionGuideline)
-        assert entity.notion_page_id == "nutrition-abc"
-        assert entity.notion_url == "https://notion.so/nutrition-abc"
-        assert entity.name == "Race Season Nutrition"
-        assert entity.goal == "Performance"
-        assert entity.applies_to == ["Race", "Training"]
-        assert entity.carb_strategy == "High carb on race days"
-        assert entity.protein_target_g_per_kg == "1.6-2.0"
-        assert entity.fat_target_g_per_kg == "0.8-1.0"
-        assert entity.hydration_electrolytes == "Sodium + potassium"
-        assert entity.supplements == "Caffeine, beet root"
-        assert entity.timing_rules == "Carbs 3h before"
-
-    def test_update_existing_entity(self) -> None:
-        existing = NutritionGuideline()
-        existing.name = "Old Plan"
-        existing.goal = "Base"
-
-        source = _make_notion_nutrition(name="Updated Plan", goal="Performance")
-        result = map_nutrition_guideline(source, existing)
-
-        assert result is existing
-        assert result.name == "Updated Plan"
-        assert result.goal == "Performance"
-
-    def test_none_values_are_propagated(self) -> None:
-        source = _make_notion_nutrition(
-            goal=None,
-            carb_strategy=None,
-            protein_target_g_per_kg=None,
-            fat_target_g_per_kg=None,
-            hydration_electrolytes=None,
-            supplements=None,
-            timing_rules=None,
-            url=None,
-        )
-        entity = map_nutrition_guideline(source)
-
-        assert entity.goal is None
-        assert entity.carb_strategy is None
-        assert entity.protein_target_g_per_kg is None
-        assert entity.fat_target_g_per_kg is None
-        assert entity.hydration_electrolytes is None
-        assert entity.supplements is None
-        assert entity.timing_rules is None
-        assert entity.notion_url is None
-
-    def test_applies_to_list_is_copied(self) -> None:
-        applies = ["Race"]
-        source = _make_notion_nutrition(applies_to=applies)
-        entity = map_nutrition_guideline(source)
-
-        applies.append("Training")
-        assert entity.applies_to == ["Race"]
-
-    def test_overwrite_all_fields_on_existing_entity(self) -> None:
-        existing = NutritionGuideline()
-        existing.notion_page_id = "old-id"
-        existing.notion_url = "https://notion.so/old"
-        existing.name = "Old"
-        existing.goal = "Old goal"
-        existing.applies_to = ["Old"]
-        existing.carb_strategy = "Old strategy"
-
-        source = _make_notion_nutrition()
-        result = map_nutrition_guideline(source, existing)
-
-        assert result.notion_page_id == "nutrition-abc"
-        assert result.notion_url == "https://notion.so/nutrition-abc"
-        assert result.name == "Race Season Nutrition"
-        assert result.goal == "Performance"
-        assert result.applies_to == ["Race", "Training"]
-        assert result.carb_strategy == "High carb on race days"
 
 
 # ===========================================================================

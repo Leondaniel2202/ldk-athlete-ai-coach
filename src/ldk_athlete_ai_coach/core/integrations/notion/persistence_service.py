@@ -1,53 +1,116 @@
-"""Thin orchestration layer for persisting extracted Notion schemas."""
+"""Notion-aware persistence boundary for extracted schemas."""
 
 from __future__ import annotations
 
 from sqlalchemy.orm import Session
 
+from ldk_athlete_ai_coach.core.integrations.notion.mappers.feedback import map_feedback
+from ldk_athlete_ai_coach.core.integrations.notion.mappers.phase import map_phase
+from ldk_athlete_ai_coach.core.integrations.notion.mappers.session import map_session
+from ldk_athlete_ai_coach.core.integrations.notion.mappers.workout import map_workout
 from ldk_athlete_ai_coach.core.integrations.notion.schemas.notion_phase import NotionPhase
 from ldk_athlete_ai_coach.core.integrations.notion.schemas.notion_session import NotionSession
 from ldk_athlete_ai_coach.core.integrations.notion.schemas.notion_weekly_feedback import (
     NotionWeeklyFeedback,
 )
 from ldk_athlete_ai_coach.core.integrations.notion.schemas.notion_workout import NotionWorkout
-from ldk_athlete_ai_coach.db.models.sport_manager import Feedback, Phase, TrackedSession, Workout
-from ldk_athlete_ai_coach.db.repositories.feedback_repository import FeedbackRepository
-from ldk_athlete_ai_coach.db.repositories.phase_repository import PhaseRepository
-from ldk_athlete_ai_coach.db.repositories.session_repository import SessionRepository
-from ldk_athlete_ai_coach.db.repositories.workout_repository import WorkoutRepository
+from ldk_athlete_ai_coach.db.models.sport_manager import (
+    Feedback,
+    NotionSyncMixin,
+    Phase,
+    TrackedSession,
+    Workout,
+)
+from ldk_athlete_ai_coach.db.repositories.sport_manager_base_repository import (
+    SportManagerBaseRepository,
+)
 
 
 class NotionPersistenceService:
     """Persist extracted Notion schemas in dependency order using repositories."""
 
     def __init__(self, session: Session) -> None:
+        """Initialize the persistence service and typed repositories.
+
+        Args:
+            session: Active SQLAlchemy session used for all repository operations.
+        """
         self._session = session
-        self._phase_repository = PhaseRepository(session)
-        self._workout_repository = WorkoutRepository(session)
-        self._session_repository = SessionRepository(session)
-        self._feedback_repository = FeedbackRepository(session)
+        self._phase_repository = SportManagerBaseRepository[Phase](session, Phase)
+        self._workout_repository = SportManagerBaseRepository[Workout](session, Workout)
+        self._session_repository = SportManagerBaseRepository[TrackedSession](
+            session, TrackedSession
+        )
+        self._feedback_repository = SportManagerBaseRepository[Feedback](session, Feedback)
 
     def persist_phases(self, phase_schemas: list[NotionPhase]) -> list[Phase]:
-        """Persist phase schemas and flush generated primary keys."""
-        entities = [self._phase_repository.upsert(schema) for schema in phase_schemas]
+        """Map and persist phase schemas.
+
+        Args:
+            phase_schemas: Extracted Phase schemas from Notion.
+
+        Returns:
+            Persisted or updated Phase entities.
+        """
+        entities: list[Phase] = []
+        for schema in phase_schemas:
+            existing = self._phase_repository.get_by_notion_id(schema.notion_id)
+            entity = map_phase(schema, existing)
+            entities.append(self._add_if_new(self._phase_repository, existing, entity))
         self._session.flush()
         return entities
 
     def persist_workouts(self, workout_schemas: list[NotionWorkout]) -> list[Workout]:
-        """Persist workout schemas, resolving any parent phase references."""
-        entities = [self._workout_repository.upsert(schema) for schema in workout_schemas]
+        """Map and persist workout schemas, resolving phase foreign keys.
+
+        Args:
+            workout_schemas: Extracted Workout schemas from Notion.
+
+        Returns:
+            Persisted or updated Workout entities.
+        """
+        entities: list[Workout] = []
+        for schema in workout_schemas:
+            existing = self._workout_repository.get_by_notion_id(schema.notion_id)
+            phase_id = self._resolve_phase_id(schema.phase_notion_id)
+            entity = map_workout(schema, existing, phase_id=phase_id)
+            entities.append(self._add_if_new(self._workout_repository, existing, entity))
         self._session.flush()
         return entities
 
     def persist_sessions(self, session_schemas: list[NotionSession]) -> list[TrackedSession]:
-        """Persist tracked-session schemas, resolving any parent workout references."""
-        entities = [self._session_repository.upsert(schema) for schema in session_schemas]
+        """Map and persist tracked-session schemas, resolving workout foreign keys.
+
+        Args:
+            session_schemas: Extracted TrackedSession schemas from Notion.
+
+        Returns:
+            Persisted or updated TrackedSession entities.
+        """
+        entities: list[TrackedSession] = []
+        for schema in session_schemas:
+            existing = self._session_repository.get_by_notion_id(schema.notion_id)
+            workout_id = self._resolve_workout_id(schema.workout_notion_id)
+            entity = map_session(schema, existing, workout_id=workout_id)
+            entities.append(self._add_if_new(self._session_repository, existing, entity))
         self._session.flush()
         return entities
 
     def persist_feedback(self, feedback_schemas: list[NotionWeeklyFeedback]) -> list[Feedback]:
-        """Persist feedback schemas, resolving any parent phase references."""
-        entities = [self._feedback_repository.upsert(schema) for schema in feedback_schemas]
+        """Map and persist feedback schemas, resolving phase foreign keys.
+
+        Args:
+            feedback_schemas: Extracted Feedback schemas from Notion.
+
+        Returns:
+            Persisted or updated Feedback entities.
+        """
+        entities: list[Feedback] = []
+        for schema in feedback_schemas:
+            existing = self._feedback_repository.get_by_notion_id(schema.notion_id)
+            phase_id = self._resolve_phase_id(schema.phase_notion_id)
+            entity = map_feedback(schema, existing, phase_id=phase_id)
+            entities.append(self._add_if_new(self._feedback_repository, existing, entity))
         self._session.flush()
         return entities
 
@@ -59,8 +122,63 @@ class NotionPersistenceService:
         session_schemas: list[NotionSession],
         feedback_schemas: list[NotionWeeklyFeedback],
     ) -> None:
-        """Persist all extracted schema types in dependency order."""
+        """Persist all extracted schema types in dependency order.
+
+        Args:
+            phase_schemas: Extracted Phase schemas.
+            workout_schemas: Extracted Workout schemas.
+            session_schemas: Extracted TrackedSession schemas.
+            feedback_schemas: Extracted Feedback schemas.
+        """
         self.persist_phases(phase_schemas)
         self.persist_workouts(workout_schemas)
         self.persist_sessions(session_schemas)
         self.persist_feedback(feedback_schemas)
+
+    def _resolve_phase_id(self, notion_id: str | None) -> int | None:
+        """Resolve a phase Notion page ID to a local primary key.
+
+        Args:
+            notion_id: Notion page ID for a Phase, if present.
+
+        Returns:
+            Local Phase primary key, or ``None`` when unresolved.
+        """
+        if notion_id is None:
+            return None
+        phase = self._phase_repository.get_by_notion_id(notion_id)
+        return phase.id if phase is not None else None
+
+    def _resolve_workout_id(self, notion_id: str | None) -> int | None:
+        """Resolve a workout Notion page ID to a local primary key.
+
+        Args:
+            notion_id: Notion page ID for a Workout, if present.
+
+        Returns:
+            Local Workout primary key, or ``None`` when unresolved.
+        """
+        if notion_id is None:
+            return None
+        workout = self._workout_repository.get_by_notion_id(notion_id)
+        return workout.id if workout is not None else None
+
+    @staticmethod
+    def _add_if_new[TEntity: NotionSyncMixin](
+        repository: SportManagerBaseRepository[TEntity],
+        existing: TEntity | None,
+        entity: TEntity,
+    ) -> TEntity:
+        """Add an entity to the repository only when it is newly created.
+
+        Args:
+            repository: Repository that owns the entity type.
+            existing: Existing entity matched by Notion ID, if any.
+            entity: Newly mapped entity instance.
+
+        Returns:
+            The entity passed in, whether newly added or pre-existing.
+        """
+        if existing is None:
+            repository.add(entity)
+        return entity

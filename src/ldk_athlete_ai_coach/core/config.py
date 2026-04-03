@@ -35,10 +35,14 @@ class Settings(BaseSettings):
     notion_timeout_seconds: int = 30
     notion_max_retries: int = 3
 
-    @computed_field # type: ignore[prop-decorator]
+    @computed_field  # type: ignore[prop-decorator]
     @property
     def database_url(self) -> str:
-        """Build SQLAlchemy connection URL from database environment variables."""
+        """Build SQLAlchemy connection URL from database environment variables.
+
+        Returns:
+            Fully qualified SQLAlchemy URL for the configured Postgres connection.
+        """
         return (
             "postgresql+psycopg://"
             f"{quote_plus(self.postgres_user)}:{quote_plus(self.postgres_password)}"

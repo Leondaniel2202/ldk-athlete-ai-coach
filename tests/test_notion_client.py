@@ -24,12 +24,28 @@ from ldk_athlete_ai_coach.core.integrations.notion.client import (
 
 
 def _make_http_response(status: int, body: str = "error") -> httpx.Response:
-    """Build a minimal :class:`httpx.Response` with the given status code."""
+    """Build a minimal :class:`httpx.Response`.
+
+    Args:
+        status: HTTP status code for the synthetic response.
+        body: Response text body.
+
+    Returns:
+        Response object suitable for constructing Notion SDK errors in tests.
+    """
     return httpx.Response(status_code=status, text=body)
 
 
 def _make_http_error(status: int, message: str = "error") -> HTTPResponseError:
-    """Build a :class:`HTTPResponseError` with the given status code."""
+    """Build a :class:`HTTPResponseError`.
+
+    Args:
+        status: HTTP status code exposed by the exception response.
+        message: Error message attached to the exception.
+
+    Returns:
+        HTTPResponseError carrying a synthetic response.
+    """
     return HTTPResponseError(response=_make_http_response(status), message=message)
 
 
@@ -38,7 +54,16 @@ def _make_api_error(
     code: str = "unknown",
     message: str = "error",
 ) -> APIResponseError:
-    """Build an :class:`APIResponseError` with the given status code."""
+    """Build an :class:`APIResponseError`.
+
+    Args:
+        status: HTTP status code exposed by the exception response.
+        code: Notion API error code string.
+        message: Error message attached to the exception.
+
+    Returns:
+        APIResponseError carrying a synthetic response and code.
+    """
     from notion_client.errors import APIErrorCode
 
     # APIErrorCode is a string enum; cast the raw value so mypy is satisfied.
@@ -55,7 +80,14 @@ def _make_api_error(
 
 
 def _settings(**overrides: Any) -> Settings:
-    """Return a minimal :class:`Settings` instance with Notion fields populated."""
+    """Build a minimal :class:`Settings` object for Notion tests.
+
+    Args:
+        **overrides: Setting overrides applied on top of test defaults.
+
+    Returns:
+        Settings instance with required database and Notion fields populated.
+    """
     defaults: dict[str, Any] = {
         "postgres_db": "test_db",
         "postgres_user": "postgres",
@@ -76,7 +108,14 @@ def _settings(**overrides: Any) -> Settings:
 
 
 def _make_client(**setting_overrides: Any) -> tuple[NotionClient, MagicMock]:
-    """Return a :class:`NotionClient` with a mocked underlying SDK client."""
+    """Create a NotionClient with a mocked SDK backend.
+
+    Args:
+        **setting_overrides: Optional settings values passed to the test settings factory.
+
+    Returns:
+        Tuple containing the constructed client and mocked SDK client.
+    """
     settings = _settings(**setting_overrides)
     with patch("ldk_athlete_ai_coach.core.integrations.notion.client.Client") as mock_sdk_cls:
         mock_sdk = MagicMock()
