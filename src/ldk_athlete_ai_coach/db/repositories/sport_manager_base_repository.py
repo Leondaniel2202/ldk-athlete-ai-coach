@@ -12,11 +12,15 @@ class SportManagerBaseRepository[TEntity: NotionSyncMixin]:
     """Provide shared database operations for Notion-backed entities.
 
     This base repository is intentionally small. It only contains logic that is
-    truly common across all Notion-synced SQLAlchemy entitys.
+    truly common across all Notion-synced SQLAlchemy entities.
 
     All write operations are accumulated in the provided SQLAlchemy session.
     Callers are responsible for flushing or committing at the appropriate
     transaction boundary.
+
+    Attributes:
+        _session: Active SQLAlchemy session.
+        _entity_cls: SQLAlchemy model class managed by the repository.
     """
 
     def __init__(self, session: Session, entity_cls: type[TEntity]) -> None:

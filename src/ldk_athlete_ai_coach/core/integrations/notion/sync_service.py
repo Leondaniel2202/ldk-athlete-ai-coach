@@ -3,8 +3,8 @@
 This module orchestrates the full sync flow for the supported Notion databases.
 It connects the existing client, extractors, and mappers into a single
 coordinated service that fetches data from Notion, extracts it into validated
-Pydantic models, maps those models to SQLAlchemy entities, and hands the
-entities off to the persistence boundary.
+Pydantic models, and hands those extracted batches off to the persistence
+boundary.
 
 Typical usage::
 
@@ -24,6 +24,8 @@ from collections.abc import Callable
 from dataclasses import dataclass, field
 from typing import Any
 
+from sqlalchemy.orm import Session
+
 from ldk_athlete_ai_coach.core.config import Settings
 from ldk_athlete_ai_coach.core.integrations.notion.client import NotionClient
 from ldk_athlete_ai_coach.core.integrations.notion.extractors import NotionExtractionError
@@ -42,7 +44,7 @@ from ldk_athlete_ai_coach.core.integrations.notion.persistence_service import (
 )
 from ldk_athlete_ai_coach.core.integrations.notion.schemas.notion_base import NotionBaseSchema
 from ldk_athlete_ai_coach.db.models.sport_manager import NotionSyncMixin
-from ldk_athlete_ai_coach.db.session import get_db_session
+from ldk_athlete_ai_coach.db.session import SessionLocal
 
 logger = logging.getLogger(__name__)
 
@@ -59,7 +61,7 @@ class SyncDefinition[TSchema: NotionBaseSchema, TEntity: NotionSyncMixin]:
     entity_name: str
     database_id: str
     extractor: Callable[[dict[str, Any]], TSchema]
-    persister: Callable[[TSchema], TEntity]
+    persister: Callable[[NotionPersistenceService, list[TSchema]], list[TEntity]]
 
 
 # ---------------------------------------------------------------------------
@@ -74,9 +76,9 @@ class SyncResult:
     Attributes:
         entity: Human-readable name of the synced entity (e.g. ``"Phase"``).
         fetched: Total number of raw pages retrieved from Notion.
-        success: Number of pages successfully extracted and mapped.
-        failed: Number of pages that raised an error during extraction or mapping.
-        entities: Mapped SQLAlchemy entity instances ready for persistence.
+        success: Number of pages successfully extracted and committed.
+        failed: Number of pages that raised an error during extraction or persistence.
+        entities: Persisted SQLAlchemy entity instances committed for this sync.
     """
 
     entity: str
@@ -110,26 +112,27 @@ class NotionSyncService:
     1. Fetches raw pages from the Notion database via :class:`NotionClient`.
     2. Extracts each raw page into a validated Pydantic schema using the
         corresponding extractor.
-    3. Maps the validated schema to a SQLAlchemy entity using the corresponding
-        mapper.
-    4. Collects the mapped entities into a :class:`SyncResult` for the
-        persistence boundary to consume.
+    3. Persists the extracted batch inside a single transaction for that entity.
+    4. Returns a :class:`SyncResult` describing the committed outcome.
 
-    Foreign-key resolution (mapping Notion page IDs to local DB primary keys) is
-    intentionally left to the persistence layer; entities are handed off with
-    ``*_id`` fields set to ``None`` unless a resolution strategy is wired in
-    externally.
+    Foreign-key resolution and entity mapping are intentionally handled by the
+    persistence layer so the sync service stays focused on fetch/extract/commit
+    orchestration.
 
     Args:
         client: Authenticated :class:`NotionClient` instance.
         settings: Application settings providing the Notion database IDs.
     """
 
-    def __init__(self, client: NotionClient, settings: Settings) -> None:
+    def __init__(
+        self,
+        client: NotionClient,
+        settings: Settings,
+        session_factory: Callable[[], Session] = SessionLocal,
+    ) -> None:
         self._client = client
         self._settings = settings
-        self._session = next(get_db_session())
-        self._persistence = NotionPersistenceService(self._session)
+        self._session_factory = session_factory
         self._definitions = self._build_definitions()
 
     def _build_definitions(self) -> dict[str, SyncDefinition]:
@@ -143,25 +146,25 @@ class NotionSyncService:
                 entity_name="Phase",
                 database_id=self._settings.notion_phase_db_id,
                 extractor=extract_phase,
-                persister=lambda schema: self._persistence.persist_phases([schema])[0],
+                persister=lambda persistence, schemas: persistence.persist_phases(schemas),
             ),
             "workout": SyncDefinition(
                 entity_name="Workout",
                 database_id=self._settings.notion_workout_db_id,
                 extractor=extract_workout,
-                persister=lambda schema: self._persistence.persist_workouts([schema])[0],
+                persister=lambda persistence, schemas: persistence.persist_workouts(schemas),
             ),
             "session": SyncDefinition(
                 entity_name="TrackedSession",
                 database_id=self._settings.notion_session_db_id,
                 extractor=extract_session,
-                persister=lambda schema: self._persistence.persist_sessions([schema])[0],
+                persister=lambda persistence, schemas: persistence.persist_sessions(schemas),
             ),
             "feedback": SyncDefinition(
                 entity_name="Feedback",
                 database_id=self._settings.notion_feedback_db_id,
                 extractor=extract_weekly_feedback,
-                persister=lambda schema: self._persistence.persist_feedback([schema])[0],
+                persister=lambda persistence, schemas: persistence.persist_feedback(schemas),
             ),
         }
 
@@ -178,6 +181,7 @@ class NotionSyncService:
             The result of the sync operation.
         """
         result = SyncResult(entity=definition.entity_name)
+        schemas: list[TSchema] = []
         logger.info(
             "Starting sync for entity=%s database_id=%s",
             definition.entity_name,
@@ -186,18 +190,44 @@ class NotionSyncService:
         for raw_page in self._client.iter_database_entries(definition.database_id):
             result.fetched += 1
             try:
-                schema = definition.extractor(raw_page)
-                entity = definition.persister(schema)
-                result.entities.append(entity)
-                result.success += 1
+                schemas.append(definition.extractor(raw_page))
             except (NotionExtractionError, Exception) as exc:
                 result.failed += 1
                 logger.error(
-                    "Failed to process %s page notion_id=%s: %s",
+                    "Failed to extract %s page notion_id=%s: %s",
                     definition.entity_name,
                     raw_page.get("id", "<unknown>"),
                     exc,
                 )
+
+        if not schemas:
+            logger.info(
+                "Sync completed for entity=%s fetched=%d success=%d failed=%d",
+                definition.entity_name,
+                result.fetched,
+                result.success,
+                result.failed,
+            )
+            return result
+
+        session = self._session_factory()
+        try:
+            persistence = NotionPersistenceService(session)
+            entities = definition.persister(persistence, schemas)
+            session.commit()
+            result.entities.extend(entities)
+            result.success += len(entities)
+        except Exception as exc:
+            session.rollback()
+            result.failed += len(schemas)
+            logger.error(
+                "Failed to persist %s batch size=%d: %s",
+                definition.entity_name,
+                len(schemas),
+                exc,
+            )
+        finally:
+            session.close()
 
         logger.info(
             "Sync completed for entity=%s fetched=%d success=%d failed=%d",
@@ -209,10 +239,10 @@ class NotionSyncService:
         return result
 
     def sync_phases(self) -> SyncResult:
-        """Fetch, extract, and map all Phase entries from Notion.
+        """Fetch, extract, and persist all Phase entries from Notion.
 
         Returns:
-            :class:`SyncResult` for the Phase entity containing all mapped
+            :class:`SyncResult` for the Phase entity containing all persisted
             :class:`~ldk_athlete_ai_coach.db.models.sport_manager.Phase` instances.
         """
         definition = self._definitions["phase"]
@@ -221,10 +251,10 @@ class NotionSyncService:
         return result
 
     def sync_workouts(self) -> SyncResult:
-        """Fetch, extract, and map all Workout entries from Notion.
+        """Fetch, extract, and persist all Workout entries from Notion.
 
         Returns:
-            :class:`SyncResult` for the Workout entity containing all mapped
+            :class:`SyncResult` for the Workout entity containing all persisted
             :class:`~ldk_athlete_ai_coach.db.models.sport_manager.Workout` instances.
         """
         definition = self._definitions["workout"]
@@ -233,11 +263,11 @@ class NotionSyncService:
         return result
 
     def sync_sessions(self) -> SyncResult:
-        """Fetch, extract, and map all Tracked Session entries from Notion.
+        """Fetch, extract, and persist all Tracked Session entries from Notion.
 
         Returns:
             :class:`SyncResult` for the TrackedSession entity containing all
-            mapped :class:`~ldk_athlete_ai_coach.db.models.sport_manager.TrackedSession`
+            persisted :class:`~ldk_athlete_ai_coach.db.models.sport_manager.TrackedSession`
             instances.
         """
         definition = self._definitions["session"]
@@ -246,10 +276,10 @@ class NotionSyncService:
         return result
 
     def sync_weekly_feedback(self) -> SyncResult:
-        """Fetch, extract, and map all Weekly Feedback entries from Notion.
+        """Fetch, extract, and persist all Weekly Feedback entries from Notion.
 
         Returns:
-            :class:`SyncResult` for the Feedback entity containing all mapped
+            :class:`SyncResult` for the Feedback entity containing all persisted
             :class:`~ldk_athlete_ai_coach.db.models.sport_manager.Feedback` instances.
         """
         definition = self._definitions["feedback"]

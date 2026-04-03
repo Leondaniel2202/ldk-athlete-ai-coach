@@ -48,7 +48,7 @@ indent-style = "space"
 quote-style = "double"
 
 [tool.pytest.ini_options]
-addopts = "-ra"
+addopts = "-ra -p no:cacheprovider"
 testpaths = ["tests"]
 
 [tool.mypy]
