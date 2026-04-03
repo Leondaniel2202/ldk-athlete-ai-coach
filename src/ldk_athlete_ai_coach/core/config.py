@@ -24,10 +24,25 @@ class Settings(BaseSettings):
     postgres_host: str
     postgres_port: int = 5432
 
-    @computed_field # type: ignore[prop-decorator]
+    # Notion integration
+    notion_api_key: str
+    notion_phase_db_id: str
+    notion_workout_db_id: str
+    notion_session_db_id: str
+    notion_feedback_db_id: str
+
+    notion_page_size: int = 100
+    notion_timeout_seconds: int = 30
+    notion_max_retries: int = 3
+
+    @computed_field  # type: ignore[prop-decorator]
     @property
     def database_url(self) -> str:
-        """Build SQLAlchemy connection URL from database environment variables."""
+        """Build SQLAlchemy connection URL from database environment variables.
+
+        Returns:
+            Fully qualified SQLAlchemy URL for the configured Postgres connection.
+        """
         return (
             "postgresql+psycopg://"
             f"{quote_plus(self.postgres_user)}:{quote_plus(self.postgres_password)}"

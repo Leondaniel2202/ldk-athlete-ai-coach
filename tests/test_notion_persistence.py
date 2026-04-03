@@ -1,0 +1,395 @@
+"""Tests for the Notion persistence and repository layers."""
+
+from __future__ import annotations
+
+import pytest
+from sqlalchemy import create_engine, event, select
+from sqlalchemy.orm import Session
+
+from ldk_athlete_ai_coach.core.integrations.notion.persistence_service import (
+    NotionPersistenceService,
+)
+from ldk_athlete_ai_coach.core.integrations.notion.schemas.notion_phase import NotionPhase
+from ldk_athlete_ai_coach.core.integrations.notion.schemas.notion_session import NotionSession
+from ldk_athlete_ai_coach.core.integrations.notion.schemas.notion_weekly_feedback import (
+    NotionWeeklyFeedback,
+)
+from ldk_athlete_ai_coach.core.integrations.notion.schemas.notion_workout import NotionWorkout
+from ldk_athlete_ai_coach.db.base import Base
+from ldk_athlete_ai_coach.db.models.sport_manager import Feedback, Phase, TrackedSession, Workout
+from ldk_athlete_ai_coach.db.repositories.sport_manager_base_repository import (
+    SportManagerBaseRepository,
+)
+
+
+@pytest.fixture(scope="module")
+def engine():
+    """Create a shared in-memory SQLite engine with the full schema.
+
+    Yields:
+        SQLAlchemy engine configured with foreign keys and all metadata tables.
+    """
+    _engine = create_engine("sqlite:///:memory:")
+    event.listen(
+        _engine,
+        "connect",
+        lambda conn, _: conn.execute("PRAGMA foreign_keys=ON"),
+    )
+    Base.metadata.create_all(_engine)
+    yield _engine
+    _engine.dispose()
+
+
+@pytest.fixture()
+def session(engine):
+    """Yield a transactional session rolled back after each test.
+
+    Args:
+        engine: Shared test engine fixture.
+
+    Yields:
+        Session bound to a rollback-only transaction.
+    """
+    connection = engine.connect()
+    transaction = connection.begin()
+    _session = Session(bind=connection)
+    yield _session
+    _session.close()
+    transaction.rollback()
+    connection.close()
+
+
+def _phase_schema(notion_id: str = "phase-1", name: str = "Base Phase", **kwargs) -> NotionPhase:
+    defaults = {
+        "notion_id": notion_id,
+        "name": name,
+        "url": f"https://notion.so/{notion_id}",
+    }
+    defaults.update(kwargs)
+    return NotionPhase(**defaults)  # pyright: ignore[reportArgumentType]
+
+
+def _workout_schema(
+    notion_id: str = "workout-1",
+    name: str = "Long Run",
+    **kwargs,
+) -> NotionWorkout:
+    defaults = {
+        "notion_id": notion_id,
+        "name": name,
+        "url": f"https://notion.so/{notion_id}",
+    }
+    defaults.update(kwargs)
+    return NotionWorkout(**defaults)  # pyright: ignore[reportArgumentType]
+
+
+def _session_schema(
+    notion_id: str = "session-1",
+    name: str = "Morning Run",
+    **kwargs,
+) -> NotionSession:
+    defaults = {
+        "notion_id": notion_id,
+        "name": name,
+        "url": f"https://notion.so/{notion_id}",
+    }
+    defaults.update(kwargs)
+    return NotionSession(**defaults)  # pyright: ignore[reportArgumentType]
+
+
+def _feedback_schema(
+    notion_id: str = "feedback-1",
+    week: str = "2024-W10",
+    **kwargs,
+) -> NotionWeeklyFeedback:
+    defaults = {
+        "notion_id": notion_id,
+        "name": week,
+        "week": week,
+        "url": f"https://notion.so/{notion_id}",
+    }
+    defaults.update(kwargs)
+    return NotionWeeklyFeedback(**defaults)  # pyright: ignore[reportArgumentType]
+
+
+def _phase_entity(notion_id: str, name: str = "Base Phase") -> Phase:
+    entity = Phase()
+    entity.notion_page_id = notion_id
+    entity.notion_url = f"https://notion.so/{notion_id}"
+    entity.name = name
+    return entity
+
+
+def _workout_entity(notion_id: str, name: str = "Long Run") -> Workout:
+    entity = Workout()
+    entity.notion_page_id = notion_id
+    entity.notion_url = f"https://notion.so/{notion_id}"
+    entity.name = name
+    return entity
+
+
+def _session_entity(notion_id: str, name: str = "Morning Run") -> TrackedSession:
+    entity = TrackedSession()
+    entity.notion_page_id = notion_id
+    entity.notion_url = f"https://notion.so/{notion_id}"
+    entity.name = name
+    return entity
+
+
+def _feedback_entity(notion_id: str, week: str = "2024-W10") -> Feedback:
+    entity = Feedback()
+    entity.notion_page_id = notion_id
+    entity.notion_url = f"https://notion.so/{notion_id}"
+    entity.week = week
+    return entity
+
+
+class TestBaseRepositoryWithPhase:
+    def test_get_by_notion_id_returns_none_when_not_found(self, session: Session) -> None:
+        repo = SportManagerBaseRepository[Phase](session, Phase)
+
+        assert repo.get_by_notion_id("missing") is None
+
+    def test_add_persists_entity(self, session: Session) -> None:
+        repo = SportManagerBaseRepository[Phase](session, Phase)
+        entity = repo.add(_phase_entity("phase-added"))
+        session.flush()
+
+        assert entity.id is not None
+        assert repo.get_by_notion_id("phase-added") is entity
+
+
+class TestBaseRepositoryWithWorkout:
+    def test_get_by_notion_id_returns_none_when_not_found(self, session: Session) -> None:
+        repo = SportManagerBaseRepository[Workout](session, Workout)
+
+        assert repo.get_by_notion_id("missing") is None
+
+    def test_add_persists_entity(self, session: Session) -> None:
+        repo = SportManagerBaseRepository[Workout](session, Workout)
+        entity = repo.add(_workout_entity("workout-added"))
+        session.flush()
+
+        assert entity.id is not None
+        assert repo.get_by_notion_id("workout-added") is entity
+
+
+class TestBaseRepositoryWithTrackedSession:
+    def test_get_by_notion_id_returns_none_when_not_found(self, session: Session) -> None:
+        repo = SportManagerBaseRepository[TrackedSession](session, TrackedSession)
+
+        assert repo.get_by_notion_id("missing") is None
+
+    def test_add_persists_entity(self, session: Session) -> None:
+        repo = SportManagerBaseRepository[TrackedSession](session, TrackedSession)
+        entity = repo.add(_session_entity("session-added"))
+        session.flush()
+
+        assert entity.id is not None
+        assert repo.get_by_notion_id("session-added") is entity
+
+
+class TestBaseRepositoryWithFeedback:
+    def test_get_by_notion_id_returns_none_when_not_found(self, session: Session) -> None:
+        repo = SportManagerBaseRepository[Feedback](session, Feedback)
+
+        assert repo.get_by_notion_id("missing") is None
+
+    def test_add_persists_entity(self, session: Session) -> None:
+        repo = SportManagerBaseRepository[Feedback](session, Feedback)
+        entity = repo.add(_feedback_entity("feedback-added"))
+        session.flush()
+
+        assert entity.id is not None
+        assert repo.get_by_notion_id("feedback-added") is entity
+
+
+class TestNotionPersistenceService:
+    def test_persist_phases_inserts_new_rows(self, session: Session) -> None:
+        svc = NotionPersistenceService(session)
+
+        entities = svc.persist_phases([_phase_schema("ph-1"), _phase_schema("ph-2")])
+
+        assert len(entities) == 2
+        assert {entity.notion_page_id for entity in entities} == {"ph-1", "ph-2"}
+
+    def test_persist_phases_updates_existing_rows_in_place(self, session: Session) -> None:
+        svc = NotionPersistenceService(session)
+
+        [original] = svc.persist_phases([_phase_schema("ph-upd", name="Original")])
+        original_id = original.id
+        [updated] = svc.persist_phases([_phase_schema("ph-upd", name="Updated")])
+
+        assert updated.id == original_id
+        assert updated.name == "Updated"
+        rows = (
+            session.execute(select(Phase).where(Phase.notion_page_id == "ph-upd")).scalars().all()
+        )
+        assert len(rows) == 1
+
+    def test_persist_workouts_resolves_phase_fk_by_notion_id(self, session: Session) -> None:
+        svc = NotionPersistenceService(session)
+
+        [phase] = svc.persist_phases([_phase_schema("phase-parent")])
+        [workout] = svc.persist_workouts(
+            [_workout_schema("workout-child", phase_notion_id="phase-parent")]
+        )
+
+        assert workout.phase_id == phase.id
+
+    def test_persist_workouts_updates_existing_rows_in_place(self, session: Session) -> None:
+        svc = NotionPersistenceService(session)
+
+        [original] = svc.persist_workouts([_workout_schema("wo-upd", name="Old Name")])
+        original_id = original.id
+        [updated] = svc.persist_workouts([_workout_schema("wo-upd", name="New Name")])
+
+        assert updated.id == original_id
+        assert updated.name == "New Name"
+        rows = (
+            session.execute(select(Workout).where(Workout.notion_page_id == "wo-upd"))
+            .scalars()
+            .all()
+        )
+        assert len(rows) == 1
+
+    def test_persist_sessions_resolves_workout_fk_by_notion_id(self, session: Session) -> None:
+        svc = NotionPersistenceService(session)
+
+        [workout] = svc.persist_workouts([_workout_schema("workout-parent")])
+        [tracked] = svc.persist_sessions(
+            [_session_schema("session-child", workout_notion_id="workout-parent")]
+        )
+
+        assert tracked.workout_id == workout.id
+
+    def test_persist_sessions_updates_existing_rows_in_place(self, session: Session) -> None:
+        svc = NotionPersistenceService(session)
+
+        [original] = svc.persist_sessions([_session_schema("sess-upd", name="Old")])
+        original_id = original.id
+        [updated] = svc.persist_sessions([_session_schema("sess-upd", name="New")])
+
+        assert updated.id == original_id
+        assert updated.name == "New"
+        rows = (
+            session.execute(
+                select(TrackedSession).where(TrackedSession.notion_page_id == "sess-upd")
+            )
+            .scalars()
+            .all()
+        )
+        assert len(rows) == 1
+
+    def test_persist_feedback_resolves_phase_fk_by_notion_id(self, session: Session) -> None:
+        svc = NotionPersistenceService(session)
+
+        [phase] = svc.persist_phases([_phase_schema("phase-for-feedback")])
+        [feedback] = svc.persist_feedback(
+            [_feedback_schema("feedback-child", phase_notion_id="phase-for-feedback")]
+        )
+
+        assert feedback.phase_id == phase.id
+
+    def test_persist_feedback_updates_existing_rows_in_place(self, session: Session) -> None:
+        svc = NotionPersistenceService(session)
+
+        [original] = svc.persist_feedback([_feedback_schema("fb-upd", week="2024-W10")])
+        original_id = original.id
+        [updated] = svc.persist_feedback([_feedback_schema("fb-upd", week="2024-W11")])
+
+        assert updated.id == original_id
+        assert updated.week == "2024-W11"
+        rows = (
+            session.execute(select(Feedback).where(Feedback.notion_page_id == "fb-upd"))
+            .scalars()
+            .all()
+        )
+        assert len(rows) == 1
+
+    def test_persist_all_persists_all_entity_types_in_dependency_order(
+        self, session: Session
+    ) -> None:
+        svc = NotionPersistenceService(session)
+
+        svc.persist_all(
+            phase_schemas=[_phase_schema("dep-phase")],
+            workout_schemas=[_workout_schema("dep-workout", phase_notion_id="dep-phase")],
+            session_schemas=[_session_schema("dep-session", workout_notion_id="dep-workout")],
+            feedback_schemas=[_feedback_schema("dep-feedback", phase_notion_id="dep-phase")],
+        )
+
+        phase = session.execute(
+            select(Phase).where(Phase.notion_page_id == "dep-phase")
+        ).scalar_one()
+        workout = session.execute(
+            select(Workout).where(Workout.notion_page_id == "dep-workout")
+        ).scalar_one()
+        tracked = session.execute(
+            select(TrackedSession).where(TrackedSession.notion_page_id == "dep-session")
+        ).scalar_one()
+        feedback = session.execute(
+            select(Feedback).where(Feedback.notion_page_id == "dep-feedback")
+        ).scalar_one()
+
+        assert workout.phase_id == phase.id
+        assert tracked.workout_id == workout.id
+        assert feedback.phase_id == phase.id
+
+    def test_persist_all_is_idempotent_across_repeated_runs(self, session: Session) -> None:
+        svc = NotionPersistenceService(session)
+
+        svc.persist_all(
+            phase_schemas=[_phase_schema("idem-phase", name="Phase v1")],
+            workout_schemas=[_workout_schema("idem-workout", name="Workout v1")],
+            session_schemas=[_session_schema("idem-session", name="Session v1")],
+            feedback_schemas=[_feedback_schema("idem-feedback", week="2024-W01")],
+        )
+        svc.persist_all(
+            phase_schemas=[_phase_schema("idem-phase", name="Phase v2")],
+            workout_schemas=[_workout_schema("idem-workout", name="Workout v2")],
+            session_schemas=[_session_schema("idem-session", name="Session v2")],
+            feedback_schemas=[_feedback_schema("idem-feedback", week="2024-W02")],
+        )
+
+        phase_rows = (
+            session.execute(select(Phase).where(Phase.notion_page_id == "idem-phase"))
+            .scalars()
+            .all()
+        )
+        workout_rows = (
+            session.execute(select(Workout).where(Workout.notion_page_id == "idem-workout"))
+            .scalars()
+            .all()
+        )
+        session_rows = (
+            session.execute(
+                select(TrackedSession).where(TrackedSession.notion_page_id == "idem-session")
+            )
+            .scalars()
+            .all()
+        )
+        feedback_rows = (
+            session.execute(select(Feedback).where(Feedback.notion_page_id == "idem-feedback"))
+            .scalars()
+            .all()
+        )
+
+        assert len(phase_rows) == 1
+        assert len(workout_rows) == 1
+        assert len(session_rows) == 1
+        assert len(feedback_rows) == 1
+        assert phase_rows[0].name == "Phase v2"
+        assert workout_rows[0].name == "Workout v2"
+        assert session_rows[0].name == "Session v2"
+        assert feedback_rows[0].week == "2024-W02"
+
+    def test_persist_all_empty_lists_completes_without_error(self, session: Session) -> None:
+        svc = NotionPersistenceService(session)
+
+        svc.persist_all(
+            phase_schemas=[],
+            workout_schemas=[],
+            session_schemas=[],
+            feedback_schemas=[],
+        )
