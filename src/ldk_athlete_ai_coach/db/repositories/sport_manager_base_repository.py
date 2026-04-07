@@ -33,6 +33,17 @@ class SportManagerBaseRepository[TEntity: NotionSyncMixin]:
         self._session = session
         self._entity_cls = entity_cls
 
+    def get_by_id(self, entity_id: int) -> TEntity | None:
+        """Return the entity with the given primary-key ID, or ``None``.
+
+        Args:
+            entity_id: Integer primary key.
+
+        Returns:
+            The matching SQLAlchemy entity, or ``None`` if not found.
+        """
+        return self._session.get(self._entity_cls, entity_id)
+
     def get_by_notion_id(self, notion_id: str) -> TEntity | None:
         """Return the entity with the given Notion page ID, or ``None``.
 
