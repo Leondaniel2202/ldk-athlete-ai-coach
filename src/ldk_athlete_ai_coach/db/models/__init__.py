@@ -1,6 +1,6 @@
 """Database models package."""
 
-from ldk_athlete_ai_coach.db.models.sport_manager import (
+from ldk_athlete_ai_coach.db.models.training import (
     Feedback,
     NutritionGuideline,
     Phase,

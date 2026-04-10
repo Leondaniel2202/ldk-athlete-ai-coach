@@ -14,16 +14,14 @@ from ldk_athlete_ai_coach.core.integrations.notion.schemas.notion_weekly_feedbac
     NotionWeeklyFeedback,
 )
 from ldk_athlete_ai_coach.core.integrations.notion.schemas.notion_workout import NotionWorkout
-from ldk_athlete_ai_coach.db.models.sport_manager import (
+from ldk_athlete_ai_coach.db.models.training import (
     Feedback,
-    NotionSyncMixin,
     Phase,
     TrackedSession,
+    TrainingEntityMixin,
     Workout,
 )
-from ldk_athlete_ai_coach.db.repositories.sport_manager_base_repository import (
-    SportManagerBaseRepository,
-)
+from ldk_athlete_ai_coach.db.repositories.training_base_repository import TrainingBaseRepository
 
 
 class NotionPersistenceService:
@@ -36,12 +34,12 @@ class NotionPersistenceService:
             session: Active SQLAlchemy session used for all repository operations.
         """
         self._session = session
-        self._phase_repository = SportManagerBaseRepository[Phase](session, Phase)
-        self._workout_repository = SportManagerBaseRepository[Workout](session, Workout)
-        self._session_repository = SportManagerBaseRepository[TrackedSession](
+        self._phase_repository = TrainingBaseRepository[Phase](session, Phase)
+        self._workout_repository = TrainingBaseRepository[Workout](session, Workout)
+        self._session_repository = TrainingBaseRepository[TrackedSession](
             session, TrackedSession
         )
-        self._feedback_repository = SportManagerBaseRepository[Feedback](session, Feedback)
+        self._feedback_repository = TrainingBaseRepository[Feedback](session, Feedback)
 
     def persist_phases(self, phase_schemas: list[NotionPhase]) -> list[Phase]:
         """Map and persist phase schemas.
@@ -54,7 +52,7 @@ class NotionPersistenceService:
         """
         entities: list[Phase] = []
         for schema in phase_schemas:
-            existing = self._phase_repository.get_by_notion_id(schema.notion_id)
+            existing = self._phase_repository.get_by_source_page_id(schema.notion_id)
             entity = map_phase(schema, existing)
             entities.append(self._add_if_new(self._phase_repository, existing, entity))
         self._session.flush()
@@ -71,7 +69,7 @@ class NotionPersistenceService:
         """
         entities: list[Workout] = []
         for schema in workout_schemas:
-            existing = self._workout_repository.get_by_notion_id(schema.notion_id)
+            existing = self._workout_repository.get_by_source_page_id(schema.notion_id)
             phase_id = self._resolve_phase_id(schema.phase_notion_id)
             entity = map_workout(schema, existing, phase_id=phase_id)
             entities.append(self._add_if_new(self._workout_repository, existing, entity))
@@ -89,7 +87,7 @@ class NotionPersistenceService:
         """
         entities: list[TrackedSession] = []
         for schema in session_schemas:
-            existing = self._session_repository.get_by_notion_id(schema.notion_id)
+            existing = self._session_repository.get_by_source_page_id(schema.notion_id)
             workout_id = self._resolve_workout_id(schema.workout_notion_id)
             entity = map_session(schema, existing, workout_id=workout_id)
             entities.append(self._add_if_new(self._session_repository, existing, entity))
@@ -107,7 +105,7 @@ class NotionPersistenceService:
         """
         entities: list[Feedback] = []
         for schema in feedback_schemas:
-            existing = self._feedback_repository.get_by_notion_id(schema.notion_id)
+            existing = self._feedback_repository.get_by_source_page_id(schema.notion_id)
             phase_id = self._resolve_phase_id(schema.phase_notion_id)
             entity = map_feedback(schema, existing, phase_id=phase_id)
             entities.append(self._add_if_new(self._feedback_repository, existing, entity))
@@ -146,7 +144,7 @@ class NotionPersistenceService:
         """
         if notion_id is None:
             return None
-        phase = self._phase_repository.get_by_notion_id(notion_id)
+        phase = self._phase_repository.get_by_source_page_id(notion_id)
         return phase.id if phase is not None else None
 
     def _resolve_workout_id(self, notion_id: str | None) -> int | None:
@@ -160,12 +158,12 @@ class NotionPersistenceService:
         """
         if notion_id is None:
             return None
-        workout = self._workout_repository.get_by_notion_id(notion_id)
+        workout = self._workout_repository.get_by_source_page_id(notion_id)
         return workout.id if workout is not None else None
 
     @staticmethod
-    def _add_if_new[TEntity: NotionSyncMixin](
-        repository: SportManagerBaseRepository[TEntity],
+    def _add_if_new[TEntity: TrainingEntityMixin](
+        repository: TrainingBaseRepository[TEntity],
         existing: TEntity | None,
         entity: TEntity,
     ) -> TEntity:
