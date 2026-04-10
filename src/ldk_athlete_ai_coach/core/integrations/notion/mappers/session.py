@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from ldk_athlete_ai_coach.core.integrations.notion.schemas.notion_session import NotionSession
-from ldk_athlete_ai_coach.db.models.sport_manager import TrackedSession
+from ldk_athlete_ai_coach.db.models.training import TrackedSession
 
 
 def map_session(

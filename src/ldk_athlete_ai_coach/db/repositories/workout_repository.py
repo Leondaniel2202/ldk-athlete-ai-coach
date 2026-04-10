@@ -4,13 +4,11 @@ from __future__ import annotations
 
 from sqlalchemy.orm import Session
 
-from ldk_athlete_ai_coach.db.models.sport_manager import TrackedSession, Workout
-from ldk_athlete_ai_coach.db.repositories.sport_manager_base_repository import (
-    SportManagerBaseRepository,
-)
+from ldk_athlete_ai_coach.db.models.training import TrackedSession, Workout
+from ldk_athlete_ai_coach.db.repositories.training_base_repository import TrainingBaseRepository
 
 
-class WorkoutRepository(SportManagerBaseRepository[Workout]):
+class WorkoutRepository(TrainingBaseRepository[Workout]):
     """Persistence layer for :class:`Workout` entities."""
 
     def __init__(self, session: Session) -> None:
