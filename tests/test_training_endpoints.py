@@ -8,6 +8,7 @@ import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session, sessionmaker
+from sqlalchemy.pool import StaticPool
 
 from ldk_athlete_ai_coach.db.base import Base
 from ldk_athlete_ai_coach.db.models.sport_manager import Phase, TrackedSession, Workout
@@ -23,6 +24,7 @@ _SQLITE_URL = "sqlite:///:memory:"
 _engine = create_engine(
     _SQLITE_URL,
     connect_args={"check_same_thread": False},
+    poolclass=StaticPool,
 )
 _TestingSessionLocal = sessionmaker(bind=_engine, class_=Session)
 
