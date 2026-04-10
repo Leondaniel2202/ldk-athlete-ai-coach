@@ -8,8 +8,8 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
 from ldk_athlete_ai_coach.api.v1.schemas.training import SessionResponse
+from ldk_athlete_ai_coach.db.repositories.session_repository import SessionRepository
 from ldk_athlete_ai_coach.db.session import get_db_session
-from ldk_athlete_ai_coach.domain.services.session_service import SessionService
 
 router = APIRouter(prefix="/sessions", tags=["sessions"])
 
@@ -30,8 +30,8 @@ def get_recent_sessions(
     Returns:
         list[SessionResponse]: Recent sessions, newest first.
     """
-    service = SessionService(db)
-    sessions = service.get_recent_sessions(days)
+    repo = SessionRepository(db)
+    sessions = repo.get_recent(days)
     return [SessionResponse.model_validate(s) for s in sessions]
 
 
@@ -52,8 +52,8 @@ def get_session(
     Raises:
         HTTPException: 404 if the session does not exist.
     """
-    service = SessionService(db)
-    session = service.get_session(session_id)
+    repo = SessionRepository(db)
+    session = repo.get_by_id(session_id)
     if session is None:
         raise HTTPException(status_code=404, detail="Session not found")
     return SessionResponse.model_validate(session)

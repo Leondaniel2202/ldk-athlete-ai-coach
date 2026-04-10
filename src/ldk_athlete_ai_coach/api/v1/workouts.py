@@ -8,8 +8,8 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from ldk_athlete_ai_coach.api.v1.schemas.training import SessionResponse, WorkoutResponse
+from ldk_athlete_ai_coach.db.repositories.workout_repository import WorkoutRepository
 from ldk_athlete_ai_coach.db.session import get_db_session
-from ldk_athlete_ai_coach.domain.services.workout_service import WorkoutService
 
 router = APIRouter(prefix="/workouts", tags=["workouts"])
 
@@ -33,8 +33,8 @@ def get_workout(
     Raises:
         HTTPException: 404 if the workout does not exist.
     """
-    service = WorkoutService(db)
-    workout = service.get_workout(workout_id)
+    repo = WorkoutRepository(db)
+    workout = repo.get_by_id(workout_id)
     if workout is None:
         raise HTTPException(status_code=404, detail="Workout not found")
     return WorkoutResponse.model_validate(workout)
@@ -57,8 +57,8 @@ def get_workout_sessions(
     Raises:
         HTTPException: 404 if the workout does not exist.
     """
-    service = WorkoutService(db)
-    if service.get_workout(workout_id) is None:
+    repo = WorkoutRepository(db)
+    if repo.get_by_id(workout_id) is None:
         raise HTTPException(status_code=404, detail="Workout not found")
-    sessions = service.get_workout_sessions(workout_id)
+    sessions = repo.get_sessions(workout_id)
     return [SessionResponse.model_validate(s) for s in sessions]
