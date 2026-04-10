@@ -8,8 +8,8 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from ldk_athlete_ai_coach.api.v1.schemas.training import PhaseResponse, WorkoutResponse
+from ldk_athlete_ai_coach.db.repositories.phase_repository import PhaseRepository
 from ldk_athlete_ai_coach.db.session import get_db_session
-from ldk_athlete_ai_coach.domain.services.phase_service import PhaseService
 
 router = APIRouter(prefix="/phases", tags=["phases"])
 
@@ -33,8 +33,8 @@ def get_phase(
     Raises:
         HTTPException: 404 if the phase does not exist.
     """
-    service = PhaseService(db)
-    phase = service.get_phase(phase_id)
+    repo = PhaseRepository(db)
+    phase = repo.get_by_id(phase_id)
     if phase is None:
         raise HTTPException(status_code=404, detail="Phase not found")
     return PhaseResponse.model_validate(phase)
@@ -57,8 +57,8 @@ def get_phase_workouts(
     Raises:
         HTTPException: 404 if the phase does not exist.
     """
-    service = PhaseService(db)
-    if service.get_phase(phase_id) is None:
+    repo = PhaseRepository(db)
+    if repo.get_by_id(phase_id) is None:
         raise HTTPException(status_code=404, detail="Phase not found")
-    workouts = service.get_phase_workouts(phase_id)
+    workouts = repo.get_workouts(phase_id)
     return [WorkoutResponse.model_validate(w) for w in workouts]
