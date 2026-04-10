@@ -13,7 +13,7 @@ class NotionWeeklyFeedback(NotionBaseSchema):
     Inherits common Notion identity fields from :class:`NotionBaseSchema`.
     ``name`` mirrors ``week`` to provide a common title field across schemas.
     The remaining fields map to the columns defined in
-    :class:`~ldk_athlete_ai_coach.db.models.sport_manager.WeeklyFeedback`.
+    :class:`~ldk_athlete_ai_coach.db.models.training.WeeklyFeedback`.
     """
 
     week: str
