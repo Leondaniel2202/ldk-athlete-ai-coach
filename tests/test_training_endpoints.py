@@ -11,7 +11,7 @@ from sqlalchemy.orm import Session, sessionmaker
 from sqlalchemy.pool import StaticPool
 
 from ldk_athlete_ai_coach.db.base import Base
-from ldk_athlete_ai_coach.db.models.sport_manager import Phase, TrackedSession, Workout
+from ldk_athlete_ai_coach.db.models.training import Phase, TrackedSession, Workout
 from ldk_athlete_ai_coach.db.session import get_db_session
 from ldk_athlete_ai_coach.main import app
 

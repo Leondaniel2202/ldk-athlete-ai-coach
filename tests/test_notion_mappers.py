@@ -16,7 +16,7 @@ from ldk_athlete_ai_coach.core.integrations.notion.schemas.notion_weekly_feedbac
     NotionWeeklyFeedback,
 )
 from ldk_athlete_ai_coach.core.integrations.notion.schemas.notion_workout import NotionWorkout
-from ldk_athlete_ai_coach.db.models.sport_manager import (
+from ldk_athlete_ai_coach.db.models.training import (
     Feedback,
     Phase,
     TrackedSession,
