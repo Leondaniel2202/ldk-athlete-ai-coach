@@ -1,4 +1,4 @@
-"""Tests for V1 training domain endpoints (phases, workouts, sessions)."""
+"""Tests for V1 training domain endpoints (plans, phases, workouts, sessions)."""
 
 from __future__ import annotations
 
@@ -11,7 +11,7 @@ from sqlalchemy.orm import Session, sessionmaker
 from sqlalchemy.pool import StaticPool
 
 from ldk_athlete_ai_coach.db.base import Base
-from ldk_athlete_ai_coach.db.models.training import Phase, TrackedSession, Workout
+from ldk_athlete_ai_coach.db.models.training import Phase, Plan, TrackedSession, Workout
 from ldk_athlete_ai_coach.db.session import get_db_session
 from ldk_athlete_ai_coach.main import app
 
@@ -62,13 +62,27 @@ def client(db_session: Session) -> TestClient:
 # ---------------------------------------------------------------------------
 
 
-def _make_phase(db: Session, name: str = "Base Phase") -> Phase:
+def _make_plan(db: Session, name: str = "Base Plan") -> Plan:
+    plan = Plan(
+        notion_page_id=f"plan-{name}",
+        notion_url=f"https://notion.so/plan-{name}",
+        name=name,
+        start_date_is_datetime=False,
+        end_date_is_datetime=False,
+    )
+    db.add(plan)
+    db.flush()
+    return plan
+
+
+def _make_phase(db: Session, name: str = "Base Phase", plan: Plan | None = None) -> Phase:
     phase = Phase(
         notion_page_id=f"phase-{name}",
         notion_url=f"https://notion.so/phase-{name}",
         name=name,
         focus_tags=[],
         timeframe_is_datetime=False,
+        plan_id=plan.id if plan is not None else None,
     )
     db.add(phase)
     db.flush()
@@ -113,6 +127,63 @@ def _make_session(
     db.add(tracked)
     db.flush()
     return tracked
+
+
+# ---------------------------------------------------------------------------
+# Phase endpoints
+# ---------------------------------------------------------------------------
+
+
+def test_get_plan_returns_plan(client: TestClient, db_session: Session) -> None:
+    """GET /plans/{id} returns the plan for a known ID."""
+    plan = _make_plan(db_session)
+
+    response = client.get(f"/api/v1/plans/{plan.id}")
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data["id"] == plan.id
+    assert data["name"] == plan.name
+
+
+def test_get_plan_returns_404_for_missing_plan(client: TestClient) -> None:
+    """GET /plans/{id} returns 404 when the plan does not exist."""
+    response = client.get("/api/v1/plans/999")
+
+    assert response.status_code == 404
+    assert response.json()["detail"] == "Plan not found"
+
+
+def test_get_plan_phases_returns_list(client: TestClient, db_session: Session) -> None:
+    """GET /plans/{id}/phases returns all phases for the plan."""
+    plan = _make_plan(db_session)
+    p1 = _make_phase(db_session, name="Phase A", plan=plan)
+    p2 = _make_phase(db_session, name="Phase B", plan=plan)
+
+    response = client.get(f"/api/v1/plans/{plan.id}/phases")
+
+    assert response.status_code == 200
+    ids = {phase["id"] for phase in response.json()}
+    assert ids == {p1.id, p2.id}
+
+
+def test_get_plan_phases_returns_empty_list_when_no_phases(
+    client: TestClient, db_session: Session
+) -> None:
+    """GET /plans/{id}/phases returns [] when plan has no phases."""
+    plan = _make_plan(db_session)
+
+    response = client.get(f"/api/v1/plans/{plan.id}/phases")
+
+    assert response.status_code == 200
+    assert response.json() == []
+
+
+def test_get_plan_phases_returns_404_for_missing_plan(client: TestClient) -> None:
+    """GET /plans/{id}/phases returns 404 when the plan does not exist."""
+    response = client.get("/api/v1/plans/999/phases")
+
+    assert response.status_code == 404
 
 
 # ---------------------------------------------------------------------------
@@ -249,9 +320,7 @@ def test_get_recent_sessions_returns_sessions_within_window(
 ) -> None:
     """GET /sessions/recent returns only sessions within the requested window."""
     now = datetime.now(tz=UTC)
-    recent = _make_session(
-        db_session, start=now - timedelta(days=3), name="Recent Session"
-    )
+    recent = _make_session(db_session, start=now - timedelta(days=3), name="Recent Session")
     _make_session(db_session, start=now - timedelta(days=30), name="Old Session")
 
     response = client.get("/api/v1/sessions/recent?days=14")
@@ -265,14 +334,10 @@ def test_get_recent_sessions_returns_sessions_within_window(
         assert s["name"] != "Old Session"
 
 
-def test_get_recent_sessions_default_window(
-    client: TestClient, db_session: Session
-) -> None:
+def test_get_recent_sessions_default_window(client: TestClient, db_session: Session) -> None:
     """GET /sessions/recent uses a 14-day default when no days param is given."""
     now = datetime.now(tz=UTC)
-    recent = _make_session(
-        db_session, start=now - timedelta(days=7), name="Recent Default"
-    )
+    recent = _make_session(db_session, start=now - timedelta(days=7), name="Recent Default")
 
     response = client.get("/api/v1/sessions/recent")
 

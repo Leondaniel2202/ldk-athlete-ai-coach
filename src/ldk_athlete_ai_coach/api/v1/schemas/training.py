@@ -7,6 +7,26 @@ from datetime import datetime
 from pydantic import BaseModel, ConfigDict
 
 
+class PlanResponse(BaseModel):
+    """Response schema for a single Plan."""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    notion_page_id: str
+    notion_url: str
+    name: str
+    plan_goal: str | None
+    constraints: str | None
+    rules_weekly_rhythm: str | None
+    start_date_start: datetime | None
+    start_date_end: datetime | None
+    start_date_is_datetime: bool
+    end_date_start: datetime | None
+    end_date_end: datetime | None
+    end_date_is_datetime: bool
+
+
 class PhaseResponse(BaseModel):
     """Response schema for a single Phase."""
 
