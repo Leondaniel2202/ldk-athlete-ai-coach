@@ -14,7 +14,7 @@ class NotionPhase(NotionBaseSchema):
 
     Inherits common Notion identity fields from :class:`NotionBaseSchema`.
     The remaining fields map to the columns defined in
-    :class:`~ldk_athlete_ai_coach.db.models.sport_manager.Phase`.
+    :class:`~ldk_athlete_ai_coach.db.models.training.Phase`.
     Relation fields store the Notion page ID of the related entry so that the
     mapping layer can resolve them later without touching the Notion API again.
     """

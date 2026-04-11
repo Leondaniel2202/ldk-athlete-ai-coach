@@ -3,7 +3,7 @@
 from functools import lru_cache
 from urllib.parse import quote_plus
 
-from pydantic import computed_field
+from pydantic import AliasChoices, Field, computed_field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -12,6 +12,7 @@ class Settings(BaseSettings):
         env_file=".env",
         env_file_encoding="utf-8",
         extra="ignore",
+        populate_by_name=True,
     )
 
     app_name: str = "ldk-athlete-ai-coach"
@@ -24,12 +25,25 @@ class Settings(BaseSettings):
     postgres_host: str
     postgres_port: int = 5432
 
-    # Notion integration
+    # Notion integration. The public API now queries data sources rather than the
+    # old single-source database query endpoint, but the legacy *_DB_ID env vars
+    # are still accepted so existing local setups keep working during migration.
     notion_api_key: str
-    notion_phase_db_id: str
-    notion_workout_db_id: str
-    notion_session_db_id: str
-    notion_feedback_db_id: str
+    notion_phase_data_source_id: str = Field(
+        validation_alias=AliasChoices("NOTION_PHASE_DATA_SOURCE_ID", "NOTION_PHASE_DB_ID")
+    )
+    notion_workout_data_source_id: str = Field(
+        validation_alias=AliasChoices("NOTION_WORKOUT_DATA_SOURCE_ID", "NOTION_WORKOUT_DB_ID")
+    )
+    notion_session_data_source_id: str = Field(
+        validation_alias=AliasChoices("NOTION_SESSION_DATA_SOURCE_ID", "NOTION_SESSION_DB_ID")
+    )
+    notion_feedback_data_source_id: str = Field(
+        validation_alias=AliasChoices(
+            "NOTION_FEEDBACK_DATA_SOURCE_ID",
+            "NOTION_FEEDBACK_DB_ID",
+        )
+    )
 
     notion_page_size: int = 100
     notion_timeout_seconds: int = 30

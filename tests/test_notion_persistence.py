@@ -16,10 +16,8 @@ from ldk_athlete_ai_coach.core.integrations.notion.schemas.notion_weekly_feedbac
 )
 from ldk_athlete_ai_coach.core.integrations.notion.schemas.notion_workout import NotionWorkout
 from ldk_athlete_ai_coach.db.base import Base
-from ldk_athlete_ai_coach.db.models.sport_manager import Feedback, Phase, TrackedSession, Workout
-from ldk_athlete_ai_coach.db.repositories.sport_manager_base_repository import (
-    SportManagerBaseRepository,
-)
+from ldk_athlete_ai_coach.db.models.training import Feedback, Phase, TrackedSession, Workout
+from ldk_athlete_ai_coach.db.repositories.training_base_repository import TrainingBaseRepository
 
 
 @pytest.fixture(scope="module")
@@ -146,62 +144,62 @@ def _feedback_entity(notion_id: str, week: str = "2024-W10") -> Feedback:
 
 class TestBaseRepositoryWithPhase:
     def test_get_by_notion_id_returns_none_when_not_found(self, session: Session) -> None:
-        repo = SportManagerBaseRepository[Phase](session, Phase)
+        repo = TrainingBaseRepository[Phase](session, Phase)
 
-        assert repo.get_by_notion_id("missing") is None
+        assert repo.get_by_source_page_id("missing") is None
 
     def test_add_persists_entity(self, session: Session) -> None:
-        repo = SportManagerBaseRepository[Phase](session, Phase)
+        repo = TrainingBaseRepository[Phase](session, Phase)
         entity = repo.add(_phase_entity("phase-added"))
         session.flush()
 
         assert entity.id is not None
-        assert repo.get_by_notion_id("phase-added") is entity
+        assert repo.get_by_source_page_id("phase-added") is entity
 
 
 class TestBaseRepositoryWithWorkout:
     def test_get_by_notion_id_returns_none_when_not_found(self, session: Session) -> None:
-        repo = SportManagerBaseRepository[Workout](session, Workout)
+        repo = TrainingBaseRepository[Workout](session, Workout)
 
-        assert repo.get_by_notion_id("missing") is None
+        assert repo.get_by_source_page_id("missing") is None
 
     def test_add_persists_entity(self, session: Session) -> None:
-        repo = SportManagerBaseRepository[Workout](session, Workout)
+        repo = TrainingBaseRepository[Workout](session, Workout)
         entity = repo.add(_workout_entity("workout-added"))
         session.flush()
 
         assert entity.id is not None
-        assert repo.get_by_notion_id("workout-added") is entity
+        assert repo.get_by_source_page_id("workout-added") is entity
 
 
 class TestBaseRepositoryWithTrackedSession:
     def test_get_by_notion_id_returns_none_when_not_found(self, session: Session) -> None:
-        repo = SportManagerBaseRepository[TrackedSession](session, TrackedSession)
+        repo = TrainingBaseRepository[TrackedSession](session, TrackedSession)
 
-        assert repo.get_by_notion_id("missing") is None
+        assert repo.get_by_source_page_id("missing") is None
 
     def test_add_persists_entity(self, session: Session) -> None:
-        repo = SportManagerBaseRepository[TrackedSession](session, TrackedSession)
+        repo = TrainingBaseRepository[TrackedSession](session, TrackedSession)
         entity = repo.add(_session_entity("session-added"))
         session.flush()
 
         assert entity.id is not None
-        assert repo.get_by_notion_id("session-added") is entity
+        assert repo.get_by_source_page_id("session-added") is entity
 
 
 class TestBaseRepositoryWithFeedback:
     def test_get_by_notion_id_returns_none_when_not_found(self, session: Session) -> None:
-        repo = SportManagerBaseRepository[Feedback](session, Feedback)
+        repo = TrainingBaseRepository[Feedback](session, Feedback)
 
-        assert repo.get_by_notion_id("missing") is None
+        assert repo.get_by_source_page_id("missing") is None
 
     def test_add_persists_entity(self, session: Session) -> None:
-        repo = SportManagerBaseRepository[Feedback](session, Feedback)
+        repo = TrainingBaseRepository[Feedback](session, Feedback)
         entity = repo.add(_feedback_entity("feedback-added"))
         session.flush()
 
         assert entity.id is not None
-        assert repo.get_by_notion_id("feedback-added") is entity
+        assert repo.get_by_source_page_id("feedback-added") is entity
 
 
 class TestNotionPersistenceService:
