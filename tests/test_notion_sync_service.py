@@ -13,11 +13,11 @@ from ldk_athlete_ai_coach.core.integrations.notion.sync_service import (
     NotionSyncService,
     SyncResult,
 )
-from ldk_athlete_ai_coach.db.models.sport_manager import (
+from ldk_athlete_ai_coach.db.models.training import (
     Feedback,
-    NotionSyncMixin,
     Phase,
     TrackedSession,
+    TrainingEntityMixin,
     Workout,
 )
 
@@ -143,7 +143,7 @@ class TestSyncResult:
     def test_entities_list_is_independent(self) -> None:
         r1 = SyncResult(entity="A")
         r2 = SyncResult(entity="B")
-        r1.entities.append(cast(NotionSyncMixin, object()))
+        r1.entities.append(cast(TrainingEntityMixin, object()))
 
         assert r2.entities == []
 

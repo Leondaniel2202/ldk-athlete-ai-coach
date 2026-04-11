@@ -5,7 +5,7 @@ from __future__ import annotations
 from ldk_athlete_ai_coach.core.integrations.notion.schemas.notion_weekly_feedback import (
     NotionWeeklyFeedback,
 )
-from ldk_athlete_ai_coach.db.models.sport_manager import WeeklyFeedback
+from ldk_athlete_ai_coach.db.models.training import WeeklyFeedback
 
 
 def map_feedback(
