@@ -16,15 +16,6 @@ class PlanRepository(TrainingBaseRepository[Plan]):
     def __init__(self, session: Session) -> None:
         super().__init__(session, Plan)
 
-    def upsert(self, schema: NotionPlan) -> Plan:
-        """Insert or update a Plan row from a validated Notion schema."""
-
-        existing = self.get_by_source_page_id(schema.notion_id)
-        entity = map_plan(schema, existing)
-        if existing is None:
-            self.add(entity)
-        return entity
-
     def get_phases(self, plan_id: int) -> list[Phase]:
         """Return all phases that belong to the given plan.
 
