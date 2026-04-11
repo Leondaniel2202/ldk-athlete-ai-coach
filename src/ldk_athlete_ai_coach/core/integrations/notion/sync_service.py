@@ -43,7 +43,7 @@ from ldk_athlete_ai_coach.core.integrations.notion.persistence_service import (
     NotionPersistenceService,
 )
 from ldk_athlete_ai_coach.core.integrations.notion.schemas.notion_base import NotionBaseSchema
-from ldk_athlete_ai_coach.db.models.sport_manager import NotionSyncMixin
+from ldk_athlete_ai_coach.db.models.training import TrainingEntityMixin
 from ldk_athlete_ai_coach.db.session import SessionLocal
 
 logger = logging.getLogger(__name__)
@@ -55,7 +55,7 @@ logger = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True)
-class SyncDefinition[TSchema: NotionBaseSchema, TEntity: NotionSyncMixin]:
+class SyncDefinition[TSchema: NotionBaseSchema, TEntity: TrainingEntityMixin]:
     """Static wiring needed to sync one Notion-backed entity type."""
 
     entity_name: str
@@ -85,7 +85,7 @@ class SyncResult:
     fetched: int = 0
     success: int = 0
     failed: int = 0
-    entities: list[NotionSyncMixin] = field(default_factory=list)
+    entities: list[TrainingEntityMixin] = field(default_factory=list)
 
     @property
     def entity_name(self) -> str:
@@ -168,7 +168,7 @@ class NotionSyncService:
             ),
         }
 
-    def _sync_entity[TSchema: NotionBaseSchema, TEntity: NotionSyncMixin](
+    def _sync_entity[TSchema: NotionBaseSchema, TEntity: TrainingEntityMixin](
         self,
         definition: SyncDefinition[TSchema, TEntity],
     ) -> SyncResult:
@@ -243,7 +243,7 @@ class NotionSyncService:
 
         Returns:
             :class:`SyncResult` for the Phase entity containing all persisted
-            :class:`~ldk_athlete_ai_coach.db.models.sport_manager.Phase` instances.
+            :class:`~ldk_athlete_ai_coach.db.models.training.Phase` instances.
         """
         definition = self._definitions["phase"]
         result = self._sync_entity(definition)
@@ -255,7 +255,7 @@ class NotionSyncService:
 
         Returns:
             :class:`SyncResult` for the Workout entity containing all persisted
-            :class:`~ldk_athlete_ai_coach.db.models.sport_manager.Workout` instances.
+            :class:`~ldk_athlete_ai_coach.db.models.training.Workout` instances.
         """
         definition = self._definitions["workout"]
         result = self._sync_entity(definition)
@@ -267,7 +267,7 @@ class NotionSyncService:
 
         Returns:
             :class:`SyncResult` for the TrackedSession entity containing all
-            persisted :class:`~ldk_athlete_ai_coach.db.models.sport_manager.TrackedSession`
+            persisted :class:`~ldk_athlete_ai_coach.db.models.training.TrackedSession`
             instances.
         """
         definition = self._definitions["session"]
@@ -280,7 +280,7 @@ class NotionSyncService:
 
         Returns:
             :class:`SyncResult` for the Feedback entity containing all persisted
-            :class:`~ldk_athlete_ai_coach.db.models.sport_manager.Feedback` instances.
+            :class:`~ldk_athlete_ai_coach.db.models.training.Feedback` instances.
         """
         definition = self._definitions["feedback"]
         result = self._sync_entity(definition)
