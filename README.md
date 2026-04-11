@@ -81,10 +81,7 @@ make db-down
 make api
 ```
 
-The service exposes:
-
-- `GET /`
-- `GET /api/v1/health`
+The service exposes:`r`n`r`n- `GET /``r`n- `GET /api/v1/health``r`n- `POST /api/v1/notion/sync`
 
 ## Quality checks
 
@@ -132,3 +129,4 @@ If you see an error similar to `No Python at ...` from `.venv` on Windows, the
 virtual environment was likely created from an unavailable interpreter. Install
 Python 3.12, recreate the virtual environment, and then rerun the `uv` install
 command.
+
