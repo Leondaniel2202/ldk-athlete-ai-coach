@@ -18,10 +18,10 @@ import pytest
 _TEST_ENV_DEFAULTS: dict[str, str] = {
     # Notion integration
     "NOTION_API_KEY": "secret_test_key",
-    "NOTION_PHASE_DB_ID": "test-phase-db-id",
-    "NOTION_WORKOUT_DB_ID": "test-workout-db-id",
-    "NOTION_SESSION_DB_ID": "test-session-db-id",
-    "NOTION_FEEDBACK_DB_ID": "test-feedback-db-id",
+    "NOTION_PHASE_DATA_SOURCE_ID": "test-phase-data-source-id",
+    "NOTION_WORKOUT_DATA_SOURCE_ID": "test-workout-data-source-id",
+    "NOTION_SESSION_DATA_SOURCE_ID": "test-session-data-source-id",
+    "NOTION_FEEDBACK_DATA_SOURCE_ID": "test-feedback-data-source-id",
     # Database (required by db/session.py at import time)
     "POSTGRES_DB": "test_db",
     "POSTGRES_USER": "test_user",

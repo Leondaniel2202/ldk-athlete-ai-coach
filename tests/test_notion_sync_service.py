@@ -38,10 +38,10 @@ def _settings(**overrides: Any) -> Settings:
         "postgres_host": "localhost",
         "postgres_port": 5432,
         "notion_api_key": "secret_test_key",
-        "notion_phase_db_id": "phase-db-id",
-        "notion_workout_db_id": "workout-db-id",
-        "notion_session_db_id": "session-db-id",
-        "notion_feedback_db_id": "feedback-db-id",
+        "notion_phase_data_source_id": "phase-data-source-id",
+        "notion_workout_data_source_id": "workout-data-source-id",
+        "notion_session_data_source_id": "session-data-source-id",
+        "notion_feedback_data_source_id": "feedback-data-source-id",
         "notion_page_size": 100,
         "notion_timeout_seconds": 30,
         "notion_max_retries": 3,
@@ -51,14 +51,14 @@ def _settings(**overrides: Any) -> Settings:
 
 
 def _make_service(
-    raw_pages_by_db: dict[str, list[dict[str, Any]]],
+    raw_pages_by_data_source: dict[str, list[dict[str, Any]]],
     *,
     session_factory: MagicMock | None = None,
 ) -> NotionSyncService:
     """Create a NotionSyncService with controlled raw-page inputs.
 
     Args:
-        raw_pages_by_db: Mapping of database IDs to raw pages yielded by the mock client.
+        raw_pages_by_data_source: Mapping of data source IDs to raw pages yielded by the mock client.
         session_factory: Optional mock session factory.
 
     Returns:
@@ -67,10 +67,10 @@ def _make_service(
     settings = _settings()
     client = MagicMock(spec=NotionClient)
 
-    def _iter(database_id: str):
-        return iter(raw_pages_by_db.get(database_id, []))
+    def _iter(data_source_id: str):
+        return iter(raw_pages_by_data_source.get(data_source_id, []))
 
-    client.iter_database_entries.side_effect = _iter
+    client.iter_data_source_entries.side_effect = _iter
     return NotionSyncService(client, settings, session_factory=session_factory or MagicMock())
 
 
@@ -153,7 +153,7 @@ class TestSyncPhases:
         session = MagicMock()
         session_factory = MagicMock(return_value=session)
         service = _make_service(
-            {"phase-db-id": [_raw_phase("p1"), _raw_phase("p2")]},
+            {"phase-data-source-id": [_raw_phase("p1"), _raw_phase("p2")]},
             session_factory=session_factory,
         )
         persisted = [Phase(), Phase()]
@@ -184,7 +184,7 @@ class TestSyncPhases:
         session_factory = MagicMock(return_value=session)
         bad_page: dict[str, Any] = {"id": "bad-phase", "properties": {}}
         service = _make_service(
-            {"phase-db-id": [_raw_phase("p1"), bad_page, _raw_phase("p2")]},
+            {"phase-data-source-id": [_raw_phase("p1"), bad_page, _raw_phase("p2")]},
             session_factory=session_factory,
         )
 
@@ -208,7 +208,7 @@ class TestSyncPhases:
         session = MagicMock()
         session_factory = MagicMock(return_value=session)
         service = _make_service(
-            {"phase-db-id": [_raw_phase("p1"), _raw_phase("p2")]},
+            {"phase-data-source-id": [_raw_phase("p1"), _raw_phase("p2")]},
             session_factory=session_factory,
         )
 
@@ -233,7 +233,7 @@ class TestOtherEntitySyncs:
     def test_sync_workouts_returns_persisted_workouts(self) -> None:
         session = MagicMock()
         service = _make_service(
-            {"workout-db-id": [_raw_workout("w1"), _raw_workout("w2")]},
+            {"workout-data-source-id": [_raw_workout("w1"), _raw_workout("w2")]},
             session_factory=MagicMock(return_value=session),
         )
         persisted = [Workout(), Workout()]
@@ -254,7 +254,7 @@ class TestOtherEntitySyncs:
     def test_sync_sessions_returns_persisted_tracked_sessions(self) -> None:
         session = MagicMock()
         service = _make_service(
-            {"session-db-id": [_raw_session("s1")]},
+            {"session-data-source-id": [_raw_session("s1")]},
             session_factory=MagicMock(return_value=session),
         )
         persisted = [TrackedSession()]
@@ -275,7 +275,7 @@ class TestOtherEntitySyncs:
     def test_sync_weekly_feedback_returns_persisted_feedback(self) -> None:
         session = MagicMock()
         service = _make_service(
-            {"feedback-db-id": [_raw_feedback("f1")]},
+            {"feedback-data-source-id": [_raw_feedback("f1")]},
             session_factory=MagicMock(return_value=session),
         )
         persisted = [Feedback()]
@@ -300,10 +300,10 @@ class TestSyncAll:
         sessions.extend([MagicMock(name="tracked_session"), MagicMock(name="feedback_session")])
         service = _make_service(
             {
-                "phase-db-id": [_raw_phase("p1")],
-                "workout-db-id": [_raw_workout("w1")],
-                "session-db-id": [_raw_session("s1")],
-                "feedback-db-id": [_raw_feedback("f1")],
+                "phase-data-source-id": [_raw_phase("p1")],
+                "workout-data-source-id": [_raw_workout("w1")],
+                "session-data-source-id": [_raw_session("s1")],
+                "feedback-data-source-id": [_raw_feedback("f1")],
             },
             session_factory=MagicMock(side_effect=sessions),
         )
@@ -344,3 +344,4 @@ class TestSyncAll:
         assert len(results) == 4
         assert "Starting full Notion sync" in caplog.text
         assert "Full Notion sync completed" in caplog.text
+
