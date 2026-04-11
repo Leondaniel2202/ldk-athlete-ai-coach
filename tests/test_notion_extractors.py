@@ -48,6 +48,32 @@ def _number_prop(value: float) -> dict[str, Any]:
     return {"type": "number", "number": value}
 
 
+def _url_prop(value: str) -> dict[str, Any]:
+    return {"type": "url", "url": value}
+
+
+def _formula_number_prop(value: float | None) -> dict[str, Any]:
+    return {"type": "formula", "formula": {"type": "number", "number": value}}
+
+
+def _formula_string_prop(value: str | None) -> dict[str, Any]:
+    return {"type": "formula", "formula": {"type": "string", "string": value}}
+
+
+def _rollup_number_prop(value: float | None) -> dict[str, Any]:
+    return {"type": "rollup", "rollup": {"type": "number", "number": value}}
+
+
+def _rollup_date_prop(start: str | None, end: str | None = None) -> dict[str, Any]:
+    return {
+        "type": "rollup",
+        "rollup": {
+            "type": "date",
+            "date": None if start is None else {"start": start, "end": end},
+        },
+    }
+
+
 def _checkbox_prop(value: bool) -> dict[str, Any]:
     return {"type": "checkbox", "checkbox": value}
 
@@ -92,6 +118,7 @@ def _empty_prop(type_: str) -> dict[str, Any]:
         "date": {"type": "date", "date": None},
         "relation": {"type": "relation", "relation": []},
         "place": {"type": "place", "place": None},
+        "url": {"type": "url", "url": None},
     }
     return mapping[type_]
 
@@ -128,20 +155,30 @@ _WORKOUT_PAGE: dict[str, Any] = {
     "url": "https://www.notion.so/workout-page-id",
     "properties": {
         "Name": _title_prop("Long Run"),
-        "Date": _date_prop("2024-02-05"),
+        "Planned Date": _date_prop("2024-02-05"),
         "Category": _select_prop("Run"),
-        "Difficulty": _select_prop("Moderate"),
+        "Difficulty": _select_prop("3 - Moderate"),
         "Equipment": _multi_select_prop("Shoes", "HR Monitor"),
         "Impact": _select_prop("High"),
-        "Metrics to Record": _multi_select_prop("HR", "Pace"),
-        "Purpose": _multi_select_prop("Aerobic Capacity"),
-        "Primarily Used Muscle Group": _multi_select_prop("Legs"),
+        "Metrics to record": _multi_select_prop("Heart Rate", "Pace"),
+        "Purpose": _multi_select_prop("Aerobic"),
+        "Primarily used muscle group": _multi_select_prop("Legs"),
         "Planned Distance (km)": _number_prop(20.0),
-        "Planned Duration (min)": _number_prop(110.0),
+        "Planned duration (min)": _number_prop(110.0),
         "Planned RPE": _number_prop(6.0),
+        "Planned Training Load": _formula_number_prop(660.0),
         "Planned Week Number": _number_prop(3.0),
+        "Actual Duration (min)": _rollup_number_prop(108.0),
+        "Actual Distance": _rollup_number_prop(20.1),
+        "Actual Training Load": _rollup_number_prop(705.0),
+        "Actual calories burned (kcal)": _rollup_number_prop(1450.0),
+        "Weighted HRR Intensity Sum": _rollup_number_prop(312.4),
+        "Actual HRR Intensity": _formula_number_prop(2.89),
         "Actual RPE": _number_prop(7.0),
-        "Additional Info": _rich_text_prop("Easy pace throughout"),
+        "Done Date": _rollup_date_prop("2024-02-05T08:55:00+00:00"),
+        "Status": _formula_string_prop("Done"),
+        "Training Load Method": _formula_string_prop("Weighted HRR"),
+        "Additional Info": _url_prop("https://example.com/workouts/long-run"),
         "Cancelled": _checkbox_prop(False),
         "Skipped": _checkbox_prop(False),
         "Phase": _relation_prop("phase-page-id"),
@@ -371,18 +408,30 @@ class TestExtractWorkout:
         assert workout.date_end is None
         assert workout.date_is_datetime is False
         assert workout.category == "Run"
-        assert workout.difficulty == "Moderate"
+        assert workout.difficulty == "3 - Moderate"
         assert workout.equipment == ["Shoes", "HR Monitor"]
         assert workout.impact == "High"
-        assert workout.metrics_to_record == ["HR", "Pace"]
-        assert workout.purpose == ["Aerobic Capacity"]
+        assert workout.metrics_to_record == ["Heart Rate", "Pace"]
+        assert workout.purpose == ["Aerobic"]
         assert workout.primarily_used_muscle_group == ["Legs"]
         assert workout.planned_distance_km == 20.0
         assert workout.planned_duration_min == 110.0
         assert workout.planned_rpe == 6.0
+        assert workout.planned_training_load == 660.0
         assert workout.planned_week_number == 3.0
+        assert workout.actual_duration_min == 108.0
+        assert workout.actual_distance_km == 20.1
+        assert workout.actual_training_load == 705.0
+        assert workout.actual_calories_burned_kcal == 1450.0
+        assert workout.weighted_hrr_intensity_sum == 312.4
+        assert workout.actual_hrr_intensity == 2.89
         assert workout.actual_rpe == 7.0
-        assert workout.additional_info == "Easy pace throughout"
+        assert workout.done_date_start == datetime(2024, 2, 5, 8, 55, tzinfo=UTC)
+        assert workout.done_date_end is None
+        assert workout.done_date_is_datetime is True
+        assert workout.status == "Done"
+        assert workout.training_load_method == "Weighted HRR"
+        assert workout.additional_info == "https://example.com/workouts/long-run"
         assert workout.cancelled is False
         assert workout.skipped is False
         assert workout.phase_notion_id == "phase-page-id"
@@ -393,20 +442,30 @@ class TestExtractWorkout:
             **_WORKOUT_PAGE,
             "properties": {
                 "Name": _title_prop("Minimal Workout"),
-                "Date": _empty_prop("date"),
+                "Planned Date": _empty_prop("date"),
                 "Category": _empty_prop("select"),
                 "Difficulty": _empty_prop("select"),
                 "Equipment": _empty_prop("multi_select"),
                 "Impact": _empty_prop("select"),
-                "Metrics to Record": _empty_prop("multi_select"),
+                "Metrics to record": _empty_prop("multi_select"),
                 "Purpose": _empty_prop("multi_select"),
-                "Primarily Used Muscle Group": _empty_prop("multi_select"),
+                "Primarily used muscle group": _empty_prop("multi_select"),
                 "Planned Distance (km)": _empty_prop("number"),
-                "Planned Duration (min)": _empty_prop("number"),
+                "Planned duration (min)": _empty_prop("number"),
                 "Planned RPE": _empty_prop("number"),
+                "Planned Training Load": _formula_number_prop(None),
                 "Planned Week Number": _empty_prop("number"),
+                "Actual Duration (min)": _rollup_number_prop(None),
+                "Actual Distance": _rollup_number_prop(None),
+                "Actual Training Load": _rollup_number_prop(None),
+                "Actual calories burned (kcal)": _rollup_number_prop(None),
+                "Weighted HRR Intensity Sum": _rollup_number_prop(None),
+                "Actual HRR Intensity": _formula_number_prop(None),
                 "Actual RPE": _empty_prop("number"),
-                "Additional Info": _empty_prop("rich_text"),
+                "Done Date": _rollup_date_prop(None),
+                "Status": _formula_string_prop(None),
+                "Training Load Method": _formula_string_prop(None),
+                "Additional Info": _empty_prop("url"),
                 "Cancelled": _empty_prop("checkbox"),
                 "Skipped": _empty_prop("checkbox"),
                 "Phase": _empty_prop("relation"),
@@ -419,8 +478,53 @@ class TestExtractWorkout:
         assert workout.category is None
         assert workout.equipment == []
         assert workout.planned_distance_km is None
+        assert workout.planned_training_load is None
+        assert workout.actual_duration_min is None
+        assert workout.actual_distance_km is None
+        assert workout.actual_training_load is None
+        assert workout.actual_calories_burned_kcal is None
+        assert workout.weighted_hrr_intensity_sum is None
+        assert workout.actual_hrr_intensity is None
+        assert workout.done_date_start is None
+        assert workout.status is None
+        assert workout.training_load_method is None
+        assert workout.additional_info is None
         assert workout.cancelled is False
         assert workout.phase_notion_id is None
+
+    def test_legacy_property_aliases_supported(self) -> None:
+        page: dict[str, Any] = {
+            **_WORKOUT_PAGE,
+            "properties": {
+                "Name": _title_prop("Legacy Workout"),
+                "Date": _date_prop("2024-02-05"),
+                "Category": _select_prop("Run"),
+                "Difficulty": _select_prop("Moderate"),
+                "Equipment": _multi_select_prop("Shoes"),
+                "Impact": _select_prop("High"),
+                "Metrics to Record": _multi_select_prop("HR", "Pace"),
+                "Purpose": _multi_select_prop("Aerobic Capacity"),
+                "Primarily Used Muscle Group": _multi_select_prop("Legs"),
+                "Planned Distance (km)": _number_prop(18.0),
+                "Planned Duration (min)": _number_prop(95.0),
+                "Planned RPE": _number_prop(5.0),
+                "Planned Week Number": _number_prop(2.0),
+                "Actual RPE": _number_prop(6.0),
+                "Additional Info": _rich_text_prop("Legacy text content"),
+                "Cancelled": _checkbox_prop(False),
+                "Skipped": _checkbox_prop(False),
+                "Phase": _relation_prop("phase-page-id"),
+            },
+        }
+
+        workout = extract_workout(page)
+
+        assert workout.name == "Legacy Workout"
+        assert workout.date_start == datetime(2024, 2, 5, 0, 0)
+        assert workout.metrics_to_record == ["HR", "Pace"]
+        assert workout.primarily_used_muscle_group == ["Legs"]
+        assert workout.planned_duration_min == 95.0
+        assert workout.additional_info == "Legacy text content"
 
     def test_missing_name_raises_extraction_error(self) -> None:
         page: dict[str, Any] = {**_WORKOUT_PAGE, "properties": {"Name": _empty_prop("title")}}
@@ -432,7 +536,7 @@ class TestExtractWorkout:
             **_WORKOUT_PAGE,
             "properties": {
                 **_WORKOUT_PAGE["properties"],
-                "Date": _date_prop("2024-02-05T07:00:00+00:00", "2024-02-05T09:00:00+00:00"),
+                "Planned Date": _date_prop("2024-02-05T07:00:00+00:00", "2024-02-05T09:00:00+00:00"),
             },
         }
         workout = extract_workout(page)

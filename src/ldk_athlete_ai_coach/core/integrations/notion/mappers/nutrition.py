@@ -19,6 +19,7 @@ def map_nutrition(
 
     entity.notion_page_id = source.notion_id
     entity.notion_url = source.url  # type: ignore[assignment]  # enforced by DB constraint
+    entity.notion_page_content = source.notion_page_content
 
     entity.name = source.name
     entity.goal = source.goal

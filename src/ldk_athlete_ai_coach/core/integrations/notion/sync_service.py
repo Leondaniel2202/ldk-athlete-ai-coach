@@ -215,7 +215,9 @@ class NotionSyncService:
         for raw_page in self._client.iter_data_source_entries(definition.data_source_id):
             result.fetched += 1
             try:
-                schemas.append(definition.extractor(raw_page))
+                schema = definition.extractor(raw_page)
+                schema.notion_page_content = self._client.get_page_plain_text(schema.notion_id)
+                schemas.append(schema)
             except (NotionExtractionError, Exception) as exc:
                 result.failed += 1
                 logger.error(

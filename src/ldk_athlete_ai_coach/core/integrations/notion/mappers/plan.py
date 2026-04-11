@@ -14,6 +14,7 @@ def map_plan(source: NotionPlan, entity: Plan | None = None) -> Plan:
 
     entity.notion_page_id = source.notion_id
     entity.notion_url = source.url  # type: ignore[assignment]  # enforced by DB constraint
+    entity.notion_page_content = source.notion_page_content
 
     entity.name = source.name
     entity.plan_goal = source.plan_goal

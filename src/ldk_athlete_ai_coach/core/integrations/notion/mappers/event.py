@@ -20,6 +20,7 @@ def map_event(
 
     entity.notion_page_id = source.notion_id
     entity.notion_url = source.url  # type: ignore[assignment]  # enforced by DB constraint
+    entity.notion_page_content = source.notion_page_content
 
     entity.name = source.name
     entity.event_type = source.event_type

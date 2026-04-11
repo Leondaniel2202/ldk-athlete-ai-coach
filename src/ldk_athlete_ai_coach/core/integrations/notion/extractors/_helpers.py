@@ -52,6 +52,12 @@ def get_rich_text(prop: dict[str, Any]) -> str | None:
     return text or None
 
 
+def get_url(prop: dict[str, Any]) -> str | None:
+    """Extract a URL value from a Notion ``url`` property."""
+    value: str | None = prop.get("url")
+    return value or None
+
+
 def get_property_by_alias(props: dict[str, Any], *names: str) -> dict[str, Any]:
     """Return the first matching property payload for the provided names.
 
@@ -137,6 +143,31 @@ def get_number(prop: dict[str, Any]) -> float | None:
     return prop.get("number")
 
 
+def get_formula_number(prop: dict[str, Any]) -> float | None:
+    """Extract numeric output from a Notion ``formula`` property."""
+    formula: dict[str, Any] | None = prop.get("formula")
+    if not formula or formula.get("type") != "number":
+        return None
+    return formula.get("number")
+
+
+def get_formula_string(prop: dict[str, Any]) -> str | None:
+    """Extract string output from a Notion ``formula`` property."""
+    formula: dict[str, Any] | None = prop.get("formula")
+    if not formula or formula.get("type") != "string":
+        return None
+    value: str | None = formula.get("string")
+    return value or None
+
+
+def get_rollup_number(prop: dict[str, Any]) -> float | None:
+    """Extract numeric output from a Notion ``rollup`` property."""
+    rollup: dict[str, Any] | None = prop.get("rollup")
+    if not rollup or rollup.get("type") != "number":
+        return None
+    return rollup.get("number")
+
+
 def get_checkbox(prop: dict[str, Any]) -> bool:
     """Extract boolean value from a ``checkbox`` property.
 
@@ -147,6 +178,22 @@ def get_checkbox(prop: dict[str, Any]) -> bool:
         Parsed checkbox value.
     """
     return bool(prop.get("checkbox", False))
+
+
+def _parse_date_object(
+    date_obj: dict[str, Any] | None,
+) -> tuple[datetime | None, datetime | None, bool]:
+    """Parse a raw Notion date object into datetimes and a datetime flag."""
+    if not date_obj:
+        return None, None, False
+
+    start_raw: str | None = date_obj.get("start")
+    end_raw: str | None = date_obj.get("end")
+    is_datetime = "T" in (start_raw or "")
+
+    start = datetime.fromisoformat(start_raw) if start_raw else None
+    end = datetime.fromisoformat(end_raw) if end_raw else None
+    return start, end, is_datetime
 
 
 def get_date(prop: dict[str, Any]) -> tuple[datetime | None, datetime | None, bool]:
@@ -162,17 +209,15 @@ def get_date(prop: dict[str, Any]) -> tuple[datetime | None, datetime | None, bo
         A tuple of ``(start, end, is_datetime)`` where ``start`` and ``end``
         are parsed datetimes when present.
     """
-    date_obj: dict[str, Any] | None = prop.get("date")
-    if not date_obj:
+    return _parse_date_object(prop.get("date"))
+
+
+def get_rollup_date(prop: dict[str, Any]) -> tuple[datetime | None, datetime | None, bool]:
+    """Parse date output from a Notion ``rollup`` property."""
+    rollup: dict[str, Any] | None = prop.get("rollup")
+    if not rollup or rollup.get("type") != "date":
         return None, None, False
-
-    start_raw: str | None = date_obj.get("start")
-    end_raw: str | None = date_obj.get("end")
-    is_datetime = "T" in (start_raw or "")
-
-    start = datetime.fromisoformat(start_raw) if start_raw else None
-    end = datetime.fromisoformat(end_raw) if end_raw else None
-    return start, end, is_datetime
+    return _parse_date_object(rollup.get("date"))
 
 
 def get_first_relation(prop: dict[str, Any]) -> str | None:

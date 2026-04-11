@@ -230,9 +230,99 @@ class NotionClient:
         """Backward-compatible alias for :meth:`iter_data_source_entries`."""
         return self.iter_data_source_entries(database_id)
 
+    def get_block_children(
+        self,
+        block_id: str,
+        start_cursor: str | None = None,
+    ) -> dict[str, Any]:
+        """Retrieve a single page of children for a block or page."""
+        kwargs: dict[str, Any] = {
+            "block_id": block_id,
+            "page_size": self._settings.notion_page_size,
+        }
+        if start_cursor is not None:
+            kwargs["start_cursor"] = start_cursor
+        return self._call(self._client.blocks.children.list, **kwargs)
+
+    def iter_block_children(self, block_id: str) -> Iterator[dict[str, Any]]:
+        """Iterate over all children for a block or page, handling pagination."""
+        cursor: str | None = None
+
+        while True:
+            response = self.get_block_children(block_id, start_cursor=cursor)
+            results: list[dict[str, Any]] = response.get("results", [])
+            yield from results
+
+            if not response.get("has_more"):
+                break
+            cursor = response.get("next_cursor")
+
+    def get_page_plain_text(self, page_id: str) -> str | None:
+        """Flatten a page body into newline-delimited plain text."""
+        lines = self._get_block_plain_text_lines(page_id)
+        text = "\n".join(line for line in lines if line).strip()
+        return text or None
+
     # ------------------------------------------------------------------
     # Internal helpers
     # ------------------------------------------------------------------
+
+    def _get_block_plain_text_lines(self, block_id: str) -> list[str]:
+        """Collect plain-text lines for a block tree."""
+        lines: list[str] = []
+        for block in self.iter_block_children(block_id):
+            text = self._extract_block_plain_text(block)
+            if text:
+                lines.append(text)
+            if block.get("has_children"):
+                child_id = block.get("id")
+                if isinstance(child_id, str):
+                    lines.extend(self._get_block_plain_text_lines(child_id))
+        return lines
+
+    @staticmethod
+    def _extract_block_plain_text(block: dict[str, Any]) -> str | None:
+        """Extract the most useful plain-text representation for a single block."""
+        block_type = block.get("type")
+        if not isinstance(block_type, str):
+            return None
+
+        payload = block.get(block_type)
+        if not isinstance(payload, dict):
+            return None
+
+        rich_text = payload.get("rich_text")
+        if isinstance(rich_text, list):
+            text = NotionClient._rich_text_to_plain_text(rich_text)
+            return text or None
+
+        if block_type in {"child_page", "child_database"}:
+            title: str | None = payload.get("title")
+            return title or None
+        if block_type == "equation":
+            expression: str | None = payload.get("expression")
+            return expression or None
+        if block_type in {"bookmark", "embed", "link_preview"}:
+            url: str | None = payload.get("url")
+            return url or None
+        if block_type == "table_row":
+            cells: list[Any] = payload.get("cells", [])
+            cell_text = [
+                NotionClient._rich_text_to_plain_text(cell)
+                for cell in cells
+                if isinstance(cell, list)
+            ]
+            joined = " | ".join(text for text in cell_text if text)
+            return joined or None
+
+        return None
+
+    @staticmethod
+    def _rich_text_to_plain_text(items: list[Any]) -> str:
+        """Join ``plain_text`` fragments from a Notion rich-text array."""
+        return "".join(
+            item.get("plain_text", "") for item in items if isinstance(item, dict)
+        ).strip()
 
     def _call(self, api_method: Any, **kwargs: Any) -> dict[str, Any]:
         """Execute a Notion SDK call with retry and error-translation logic.

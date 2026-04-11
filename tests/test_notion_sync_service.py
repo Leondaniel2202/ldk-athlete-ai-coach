@@ -60,12 +60,14 @@ def _make_service(
     raw_pages_by_data_source: dict[str, list[dict[str, Any]]],
     *,
     session_factory: MagicMock | None = None,
+    page_content_by_page_id: dict[str, str | None] | None = None,
 ) -> NotionSyncService:
     """Create a NotionSyncService with controlled raw-page inputs.
 
     Args:
         raw_pages_by_data_source: Mapping of data source IDs to raw pages yielded by the mock client.
         session_factory: Optional mock session factory.
+        page_content_by_page_id: Optional plain-text page bodies keyed by Notion page ID.
 
     Returns:
         Sync service configured with mocked client and session factory.
@@ -77,6 +79,7 @@ def _make_service(
         return iter(raw_pages_by_data_source.get(data_source_id, []))
 
     client.iter_data_source_entries.side_effect = _iter
+    client.get_page_plain_text.side_effect = (page_content_by_page_id or {}).get
     return NotionSyncService(client, settings, session_factory=session_factory or MagicMock())
 
 
@@ -319,6 +322,27 @@ class TestOtherEntitySyncs:
         assert result.success == 2
         assert result.entities == persisted
         persistence.persist_nutrition_guidelines.assert_called_once()
+
+    def test_sync_workouts_attaches_page_content_before_persisting(self) -> None:
+        session = MagicMock()
+        service = _make_service(
+            {"workout-data-source-id": [_raw_workout("w1")]},
+            session_factory=MagicMock(return_value=session),
+            page_content_by_page_id={"w1": "Workout instructions"},
+        )
+        persisted = [Workout()]
+
+        with patch(
+            "ldk_athlete_ai_coach.core.integrations.notion.sync_service.NotionPersistenceService"
+        ) as persistence_cls:
+            persistence = persistence_cls.return_value
+            persistence.persist_workouts.return_value = persisted
+
+            result = service.sync_workouts()
+
+        assert result.success == 1
+        [schemas] = persistence.persist_workouts.call_args.args
+        assert schemas[0].notion_page_content == "Workout instructions"
 
     def test_sync_workouts_returns_persisted_workouts(self) -> None:
         session = MagicMock()

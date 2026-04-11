@@ -15,3 +15,4 @@ class NotionBaseSchema(BaseModel):
 
     notion_id: str
     name: str
+    notion_page_content: str | None = None

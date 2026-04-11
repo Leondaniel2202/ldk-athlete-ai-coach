@@ -224,6 +224,117 @@ class TestIterDataSourceEntries:
         assert results == []
 
 
+class TestBlockChildren:
+    def test_get_block_children_returns_raw_response(self) -> None:
+        client, sdk = _make_client()
+        expected: dict[str, Any] = {
+            "results": [{"id": "block-1"}],
+            "has_more": False,
+            "next_cursor": None,
+        }
+        sdk.blocks.children.list.return_value = expected
+
+        result = client.get_block_children("page-123")
+
+        sdk.blocks.children.list.assert_called_once_with(block_id="page-123", page_size=100)
+        assert result is expected
+
+    def test_iter_block_children_paginates(self) -> None:
+        client, sdk = _make_client()
+        sdk.blocks.children.list.side_effect = [
+            {
+                "results": [{"id": "block-1"}],
+                "has_more": True,
+                "next_cursor": "cursor-1",
+            },
+            {
+                "results": [{"id": "block-2"}],
+                "has_more": False,
+                "next_cursor": None,
+            },
+        ]
+
+        results = list(client.iter_block_children("page-123"))
+
+        assert [block["id"] for block in results] == ["block-1", "block-2"]
+        assert sdk.blocks.children.list.call_args_list[0][1] == {
+            "block_id": "page-123",
+            "page_size": 100,
+        }
+        assert sdk.blocks.children.list.call_args_list[1][1] == {
+            "block_id": "page-123",
+            "page_size": 100,
+            "start_cursor": "cursor-1",
+        }
+
+    def test_get_page_plain_text_flattens_nested_blocks(self) -> None:
+        client, sdk = _make_client()
+        sdk.blocks.children.list.side_effect = [
+            {
+                "results": [
+                    {
+                        "id": "block-1",
+                        "type": "heading_2",
+                        "heading_2": {"rich_text": [{"plain_text": "Warm-up"}]},
+                        "has_children": False,
+                    },
+                    {
+                        "id": "block-2",
+                        "type": "toggle",
+                        "toggle": {"rich_text": [{"plain_text": "Main Set"}]},
+                        "has_children": True,
+                    },
+                    {
+                        "id": "block-3",
+                        "type": "table_row",
+                        "table_row": {
+                            "cells": [
+                                [{"plain_text": "Pace"}],
+                                [{"plain_text": "4:20/km"}],
+                            ]
+                        },
+                        "has_children": False,
+                    },
+                ],
+                "has_more": False,
+                "next_cursor": None,
+            },
+            {
+                "results": [
+                    {
+                        "id": "block-2-1",
+                        "type": "bulleted_list_item",
+                        "bulleted_list_item": {"rich_text": [{"plain_text": "6 x 800m"}]},
+                        "has_children": False,
+                    }
+                ],
+                "has_more": False,
+                "next_cursor": None,
+            },
+        ]
+
+        result = client.get_page_plain_text("page-123")
+
+        assert result == "Warm-up\nMain Set\n6 x 800m\nPace | 4:20/km"
+
+    def test_get_page_plain_text_returns_none_for_empty_pages(self) -> None:
+        client, sdk = _make_client()
+        sdk.blocks.children.list.return_value = {
+            "results": [
+                {
+                    "id": "block-1",
+                    "type": "divider",
+                    "divider": {},
+                    "has_children": False,
+                }
+            ],
+            "has_more": False,
+            "next_cursor": None,
+        }
+
+        assert client.get_page_plain_text("page-123") is None
+
+
 class TestRateLimitHandling:
     def test_retries_on_http_429_and_succeeds(self) -> None:
         client, sdk = _make_client(notion_max_retries=3)

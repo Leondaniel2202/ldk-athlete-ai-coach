@@ -17,6 +17,7 @@ class TrainingEntityMixin:
     id: Mapped[int] = mapped_column(primary_key=True)
     notion_page_id: Mapped[str] = mapped_column(String(64), unique=True, nullable=False, index=True)
     notion_url: Mapped[str] = mapped_column(String(512), unique=True, nullable=False)
+    notion_page_content: Mapped[str | None] = mapped_column(Text)
 
 
 class Event(TrainingEntityMixin, Base):
@@ -164,8 +165,20 @@ class Workout(TrainingEntityMixin, Base):
     planned_distance_km: Mapped[float | None] = mapped_column(Float)
     planned_duration_min: Mapped[float | None] = mapped_column(Float)
     planned_rpe: Mapped[float | None] = mapped_column(Float)
+    planned_training_load: Mapped[float | None] = mapped_column(Float)
     planned_week_number: Mapped[float | None] = mapped_column(Float)
+    actual_duration_min: Mapped[float | None] = mapped_column(Float)
+    actual_distance_km: Mapped[float | None] = mapped_column(Float)
+    actual_training_load: Mapped[float | None] = mapped_column(Float)
+    actual_calories_burned_kcal: Mapped[float | None] = mapped_column(Float)
+    weighted_hrr_intensity_sum: Mapped[float | None] = mapped_column(Float)
+    actual_hrr_intensity: Mapped[float | None] = mapped_column(Float)
     actual_rpe: Mapped[float | None] = mapped_column(Float)
+    done_date_start: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    done_date_end: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    done_date_is_datetime: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    status: Mapped[str | None] = mapped_column(String(64))
+    training_load_method: Mapped[str | None] = mapped_column(String(64))
     additional_info: Mapped[str | None] = mapped_column(String(512))
     cancelled: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     skipped: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
