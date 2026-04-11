@@ -6,9 +6,11 @@ from sqlalchemy.orm import Session
 
 from ldk_athlete_ai_coach.core.integrations.notion.mappers.feedback import map_feedback
 from ldk_athlete_ai_coach.core.integrations.notion.mappers.phase import map_phase
+from ldk_athlete_ai_coach.core.integrations.notion.mappers.plan import map_plan
 from ldk_athlete_ai_coach.core.integrations.notion.mappers.session import map_session
 from ldk_athlete_ai_coach.core.integrations.notion.mappers.workout import map_workout
 from ldk_athlete_ai_coach.core.integrations.notion.schemas.notion_phase import NotionPhase
+from ldk_athlete_ai_coach.core.integrations.notion.schemas.notion_plan import NotionPlan
 from ldk_athlete_ai_coach.core.integrations.notion.schemas.notion_session import NotionSession
 from ldk_athlete_ai_coach.core.integrations.notion.schemas.notion_weekly_feedback import (
     NotionWeeklyFeedback,
@@ -17,6 +19,7 @@ from ldk_athlete_ai_coach.core.integrations.notion.schemas.notion_workout import
 from ldk_athlete_ai_coach.db.models.training import (
     Feedback,
     Phase,
+    Plan,
     TrackedSession,
     TrainingEntityMixin,
     Workout,
@@ -34,12 +37,28 @@ class NotionPersistenceService:
             session: Active SQLAlchemy session used for all repository operations.
         """
         self._session = session
+        self._plan_repository = TrainingBaseRepository[Plan](session, Plan)
         self._phase_repository = TrainingBaseRepository[Phase](session, Phase)
         self._workout_repository = TrainingBaseRepository[Workout](session, Workout)
-        self._session_repository = TrainingBaseRepository[TrackedSession](
-            session, TrackedSession
-        )
+        self._session_repository = TrainingBaseRepository[TrackedSession](session, TrackedSession)
         self._feedback_repository = TrainingBaseRepository[Feedback](session, Feedback)
+
+    def persist_plans(self, plan_schemas: list[NotionPlan]) -> list[Plan]:
+        """Map and persist plan schemas.
+
+        Args:
+            plan_schemas: Extracted Plan schemas from Notion.
+
+        Returns:
+            Persisted or updated Plan entities.
+        """
+        entities: list[Plan] = []
+        for schema in plan_schemas:
+            existing = self._plan_repository.get_by_source_page_id(schema.notion_id)
+            entity = map_plan(schema, existing)
+            entities.append(self._add_if_new(self._plan_repository, existing, entity))
+        self._session.flush()
+        return entities
 
     def persist_phases(self, phase_schemas: list[NotionPhase]) -> list[Phase]:
         """Map and persist phase schemas.
@@ -53,7 +72,8 @@ class NotionPersistenceService:
         entities: list[Phase] = []
         for schema in phase_schemas:
             existing = self._phase_repository.get_by_source_page_id(schema.notion_id)
-            entity = map_phase(schema, existing)
+            plan_id = self._resolve_plan_id(schema.plan_notion_id)
+            entity = map_phase(schema, existing, plan_id=plan_id)
             entities.append(self._add_if_new(self._phase_repository, existing, entity))
         self._session.flush()
         return entities
@@ -115,6 +135,7 @@ class NotionPersistenceService:
     def persist_all(
         self,
         *,
+        plan_schemas: list[NotionPlan],
         phase_schemas: list[NotionPhase],
         workout_schemas: list[NotionWorkout],
         session_schemas: list[NotionSession],
@@ -123,15 +144,31 @@ class NotionPersistenceService:
         """Persist all extracted schema types in dependency order.
 
         Args:
+            plan_schemas: Extracted Plan schemas.
             phase_schemas: Extracted Phase schemas.
             workout_schemas: Extracted Workout schemas.
             session_schemas: Extracted TrackedSession schemas.
             feedback_schemas: Extracted Feedback schemas.
         """
+        self.persist_plans(plan_schemas)
         self.persist_phases(phase_schemas)
         self.persist_workouts(workout_schemas)
         self.persist_sessions(session_schemas)
         self.persist_feedback(feedback_schemas)
+
+    def _resolve_plan_id(self, notion_id: str | None) -> int | None:
+        """Resolve a plan Notion page ID to a local primary key.
+
+        Args:
+            notion_id: Notion page ID for a Plan, if present.
+
+        Returns:
+            Local Plan primary key, or ``None`` when unresolved.
+        """
+        if notion_id is None:
+            return None
+        plan = self._plan_repository.get_by_source_page_id(notion_id)
+        return plan.id if plan is not None else None
 
     def _resolve_phase_id(self, notion_id: str | None) -> int | None:
         """Resolve a phase Notion page ID to a local primary key.

@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from ldk_athlete_ai_coach.core.integrations.notion.schemas.notion_plan import NotionPlan
-from ldk_athlete_ai_coach.db.models.sport_manager import Plan
+from ldk_athlete_ai_coach.db.models.training import Plan
 
 
 def map_plan(source: NotionPlan, entity: Plan | None = None) -> Plan:

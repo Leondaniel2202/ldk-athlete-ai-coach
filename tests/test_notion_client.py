@@ -58,6 +58,7 @@ def _settings(**overrides: Any) -> Settings:
         "postgres_host": "localhost",
         "postgres_port": 5432,
         "notion_api_key": "secret_test_key",
+        "notion_plan_data_source_id": "plan-data-source-id",
         "notion_phase_data_source_id": "phase-data-source-id",
         "notion_workout_data_source_id": "workout-data-source-id",
         "notion_session_data_source_id": "session-data-source-id",
@@ -281,10 +282,12 @@ class TestNotionSettings:
 
         monkeypatch.chdir(tmp_path)
         monkeypatch.delenv("NOTION_API_KEY", raising=False)
+        monkeypatch.delenv("NOTION_PLAN_DATA_SOURCE_ID", raising=False)
         monkeypatch.delenv("NOTION_PHASE_DATA_SOURCE_ID", raising=False)
         monkeypatch.delenv("NOTION_WORKOUT_DATA_SOURCE_ID", raising=False)
         monkeypatch.delenv("NOTION_SESSION_DATA_SOURCE_ID", raising=False)
         monkeypatch.delenv("NOTION_FEEDBACK_DATA_SOURCE_ID", raising=False)
+        monkeypatch.delenv("NOTION_PLAN_DB_ID", raising=False)
         monkeypatch.delenv("NOTION_PHASE_DB_ID", raising=False)
         monkeypatch.delenv("NOTION_WORKOUT_DB_ID", raising=False)
         monkeypatch.delenv("NOTION_SESSION_DB_ID", raising=False)
@@ -301,21 +304,26 @@ class TestNotionSettings:
         settings = _settings()
 
         assert settings.notion_api_key == "secret_test_key"
+        assert settings.notion_plan_data_source_id == "plan-data-source-id"
         assert settings.notion_phase_data_source_id == "phase-data-source-id"
         assert settings.notion_page_size == 100
         assert settings.notion_max_retries == 3
 
-    def test_settings_accept_legacy_db_env_names(self, monkeypatch: pytest.MonkeyPatch, tmp_path: Any) -> None:
+    def test_settings_accept_legacy_db_env_names(
+        self, monkeypatch: pytest.MonkeyPatch, tmp_path: Any
+    ) -> None:
         monkeypatch.chdir(tmp_path)
         monkeypatch.setenv("POSTGRES_DB", "db")
         monkeypatch.setenv("POSTGRES_USER", "user")
         monkeypatch.setenv("POSTGRES_PASSWORD", "password")
         monkeypatch.setenv("POSTGRES_HOST", "localhost")
         monkeypatch.setenv("NOTION_API_KEY", "secret")
+        monkeypatch.delenv("NOTION_PLAN_DATA_SOURCE_ID", raising=False)
         monkeypatch.delenv("NOTION_PHASE_DATA_SOURCE_ID", raising=False)
         monkeypatch.delenv("NOTION_WORKOUT_DATA_SOURCE_ID", raising=False)
         monkeypatch.delenv("NOTION_SESSION_DATA_SOURCE_ID", raising=False)
         monkeypatch.delenv("NOTION_FEEDBACK_DATA_SOURCE_ID", raising=False)
+        monkeypatch.setenv("NOTION_PLAN_DB_ID", "legacy-plan")
         monkeypatch.setenv("NOTION_PHASE_DB_ID", "legacy-phase")
         monkeypatch.setenv("NOTION_WORKOUT_DB_ID", "legacy-workout")
         monkeypatch.setenv("NOTION_SESSION_DB_ID", "legacy-session")
@@ -323,8 +331,8 @@ class TestNotionSettings:
 
         settings = Settings()  # type: ignore[call-arg]  # pyright: ignore[reportCallIssue]
 
+        assert settings.notion_plan_data_source_id == "legacy-plan"
         assert settings.notion_phase_data_source_id == "legacy-phase"
         assert settings.notion_workout_data_source_id == "legacy-workout"
         assert settings.notion_session_data_source_id == "legacy-session"
         assert settings.notion_feedback_data_source_id == "legacy-feedback"
-

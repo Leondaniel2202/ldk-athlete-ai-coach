@@ -29,6 +29,9 @@ class Settings(BaseSettings):
     # old single-source database query endpoint, but the legacy *_DB_ID env vars
     # are still accepted so existing local setups keep working during migration.
     notion_api_key: str
+    notion_plan_data_source_id: str = Field(
+        validation_alias=AliasChoices("NOTION_PLAN_DATA_SOURCE_ID", "NOTION_PLAN_DB_ID")
+    )
     notion_phase_data_source_id: str = Field(
         validation_alias=AliasChoices("NOTION_PHASE_DATA_SOURCE_ID", "NOTION_PHASE_DB_ID")
     )

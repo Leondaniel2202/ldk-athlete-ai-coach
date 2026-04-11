@@ -1,7 +1,7 @@
 UV_CACHE_DIR ?= .uv-cache
 UV = uv --cache-dir $(UV_CACHE_DIR)
 
-.PHONY: help install update lock add remove api db-up db-down test lint lint-fix format-check type-check alembic-up alembic-revision
+.PHONY: help install update lock add remove api db-up db-down test test-cov lint lint-fix format-check type-check alembic-up alembic-revision
 
 help: ## Show this help message
 	@$(UV) run python -c "import re; [print('  {:<22} {}'.format(*m.groups())) for line in open('Makefile') for m in [re.match(r'^([a-zA-Z_-]+):.*##\s*(.*)', line)] if m]"
@@ -49,6 +49,9 @@ alembic-revision: ## Generate a new Alembic migration, e.g. make alembic-revisio
 
 test: ## Run the test suite
 	$(UV) run pytest
+
+test-cov: ## Run tests with coverage output
+	$(UV) run pytest --cov=ldk_athlete_ai_coach --cov-report=term-missing
 
 lint: ## Check code with ruff
 	$(UV) run ruff check .
