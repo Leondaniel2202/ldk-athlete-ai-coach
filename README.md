@@ -91,6 +91,12 @@ Run the test suite:
 make test
 ```
 
+Run tests with coverage:
+
+```powershell
+make test-cov
+```
+
 Run linting:
 
 ```powershell

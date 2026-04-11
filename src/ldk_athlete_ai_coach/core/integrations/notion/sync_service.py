@@ -30,6 +30,7 @@ from ldk_athlete_ai_coach.core.config import Settings
 from ldk_athlete_ai_coach.core.integrations.notion.client import NotionClient
 from ldk_athlete_ai_coach.core.integrations.notion.extractors import NotionExtractionError
 from ldk_athlete_ai_coach.core.integrations.notion.extractors.phase_extractor import extract_phase
+from ldk_athlete_ai_coach.core.integrations.notion.extractors.plan_extractor import extract_plan
 from ldk_athlete_ai_coach.core.integrations.notion.extractors.session_extractor import (
     extract_session,
 )
@@ -142,6 +143,12 @@ class NotionSyncService:
             Dictionary mapping sync keys to their configured definitions.
         """
         return {
+            "plan": SyncDefinition(
+                entity_name="Plan",
+                data_source_id=self._settings.notion_plan_data_source_id,
+                extractor=extract_plan,
+                persister=lambda persistence, schemas: persistence.persist_plans(schemas),
+            ),
             "phase": SyncDefinition(
                 entity_name="Phase",
                 data_source_id=self._settings.notion_phase_data_source_id,
@@ -250,6 +257,18 @@ class NotionSyncService:
 
         return result
 
+    def sync_plans(self) -> SyncResult:
+        """Fetch, extract, and persist all Plan entries from Notion.
+
+        Returns:
+            :class:`SyncResult` for the Plan entity containing all persisted
+            :class:`~ldk_athlete_ai_coach.db.models.training.Plan` instances.
+        """
+        definition = self._definitions["plan"]
+        result = self._sync_entity(definition)
+
+        return result
+
     def sync_workouts(self) -> SyncResult:
         """Fetch, extract, and persist all Workout entries from Notion.
 
@@ -295,16 +314,18 @@ class NotionSyncService:
         """Run a full sync across all supported entities in dependency order.
 
         Sync order:
-        1. **Phase** - no upstream Notion dependencies within scope.
-        2. **Workout** - depends on Phase.
-        3. **TrackedSession** - depends on Workout.
-        4. **Feedback** - depends on Phase.
+        1. **Plan** - no upstream Notion dependencies within scope.
+        2. **Phase** - depends on Plan.
+        3. **Workout** - depends on Phase.
+        4. **TrackedSession** - depends on Workout.
+        5. **Feedback** - depends on Phase.
 
         Returns:
             A list of :class:`SyncResult` instances, one per entity, in sync order.
         """
         logger.info("Starting full Notion sync")
         results = [
+            self.sync_plans(),
             self.sync_phases(),
             self.sync_workouts(),
             self.sync_sessions(),
