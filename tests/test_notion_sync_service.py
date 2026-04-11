@@ -16,6 +16,7 @@ from ldk_athlete_ai_coach.core.integrations.notion.sync_service import (
 from ldk_athlete_ai_coach.db.models.training import (
     Feedback,
     Phase,
+    Plan,
     TrackedSession,
     TrainingEntityMixin,
     Workout,
@@ -38,6 +39,7 @@ def _settings(**overrides: Any) -> Settings:
         "postgres_host": "localhost",
         "postgres_port": 5432,
         "notion_api_key": "secret_test_key",
+        "notion_plan_data_source_id": "plan-data-source-id",
         "notion_phase_data_source_id": "phase-data-source-id",
         "notion_workout_data_source_id": "workout-data-source-id",
         "notion_session_data_source_id": "session-data-source-id",
@@ -79,6 +81,19 @@ def _title_prop(text: str) -> dict[str, Any]:
 
 
 def _raw_phase(notion_id: str = "phase-1", name: str = "Base Phase") -> dict[str, Any]:
+    return {
+        "id": notion_id,
+        "url": f"https://notion.so/{notion_id}",
+        "archived": False,
+        "created_time": "2024-03-01T08:00:00.000Z",
+        "last_edited_time": "2024-03-01T08:00:00.000Z",
+        "properties": {
+            "Name": _title_prop(name),
+        },
+    }
+
+
+def _raw_plan(notion_id: str = "plan-1", name: str = "Base Plan") -> dict[str, Any]:
     return {
         "id": notion_id,
         "url": f"https://notion.so/{notion_id}",
@@ -230,6 +245,27 @@ class TestSyncPhases:
 
 
 class TestOtherEntitySyncs:
+    def test_sync_plans_returns_persisted_plans(self) -> None:
+        session = MagicMock()
+        service = _make_service(
+            {"plan-data-source-id": [_raw_plan("pl1"), _raw_plan("pl2")]},
+            session_factory=MagicMock(return_value=session),
+        )
+        persisted = [Plan(), Plan()]
+
+        with patch(
+            "ldk_athlete_ai_coach.core.integrations.notion.sync_service.NotionPersistenceService"
+        ) as persistence_cls:
+            persistence = persistence_cls.return_value
+            persistence.persist_plans.return_value = persisted
+
+            result = service.sync_plans()
+
+        assert result.entity == "Plan"
+        assert result.success == 2
+        assert result.entities == persisted
+        persistence.persist_plans.assert_called_once()
+
     def test_sync_workouts_returns_persisted_workouts(self) -> None:
         session = MagicMock()
         service = _make_service(
@@ -296,10 +332,17 @@ class TestOtherEntitySyncs:
 
 class TestSyncAll:
     def test_sync_all_continues_after_one_entity_persistence_failure(self) -> None:
-        sessions = [MagicMock(name="phase_session"), MagicMock(name="workout_session")]
-        sessions.extend([MagicMock(name="tracked_session"), MagicMock(name="feedback_session")])
+        sessions = [MagicMock(name="plan_session"), MagicMock(name="phase_session")]
+        sessions.extend(
+            [
+                MagicMock(name="workout_session"),
+                MagicMock(name="tracked_session"),
+                MagicMock(name="feedback_session"),
+            ]
+        )
         service = _make_service(
             {
+                "plan-data-source-id": [_raw_plan("pl1")],
                 "phase-data-source-id": [_raw_phase("p1")],
                 "workout-data-source-id": [_raw_workout("w1")],
                 "session-data-source-id": [_raw_session("s1")],
@@ -312,6 +355,7 @@ class TestSyncAll:
             "ldk_athlete_ai_coach.core.integrations.notion.sync_service.NotionPersistenceService"
         ) as persistence_cls:
             persistence = persistence_cls.return_value
+            persistence.persist_plans.return_value = [Plan()]
             persistence.persist_phases.side_effect = RuntimeError("phase db error")
             persistence.persist_workouts.return_value = [Workout()]
             persistence.persist_sessions.return_value = [TrackedSession()]
@@ -320,20 +364,23 @@ class TestSyncAll:
             results = service.sync_all()
 
         assert [result.entity for result in results] == [
+            "Plan",
             "Phase",
             "Workout",
             "TrackedSession",
             "Feedback",
         ]
-        assert results[0].success == 0
-        assert results[0].failed == 1
-        assert results[1].success == 1
+        assert results[0].success == 1
+        assert results[1].success == 0
+        assert results[1].failed == 1
         assert results[2].success == 1
         assert results[3].success == 1
-        sessions[0].rollback.assert_called_once_with()
-        sessions[1].commit.assert_called_once_with()
+        assert results[4].success == 1
+        sessions[0].commit.assert_called_once_with()
+        sessions[1].rollback.assert_called_once_with()
         sessions[2].commit.assert_called_once_with()
         sessions[3].commit.assert_called_once_with()
+        sessions[4].commit.assert_called_once_with()
 
     def test_sync_all_logs_start_and_completion(self, caplog: pytest.LogCaptureFixture) -> None:
         service = _make_service({})
@@ -341,7 +388,6 @@ class TestSyncAll:
         with caplog.at_level("INFO", logger="ldk_athlete_ai_coach"):
             results = service.sync_all()
 
-        assert len(results) == 4
+        assert len(results) == 5
         assert "Starting full Notion sync" in caplog.text
         assert "Full Notion sync completed" in caplog.text
-
