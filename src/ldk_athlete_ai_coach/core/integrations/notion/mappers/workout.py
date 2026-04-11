@@ -30,6 +30,7 @@ def map_workout(
     # --- identifier fields (NotionSyncMixin) ---------------------------------
     entity.notion_page_id = source.notion_id
     entity.notion_url = source.url  # type: ignore[assignment]  # enforced by DB constraint
+    entity.notion_page_content = source.notion_page_content
 
     # --- direct 1:1 field mappings -------------------------------------------
     entity.name = source.name
@@ -46,8 +47,20 @@ def map_workout(
     entity.planned_distance_km = source.planned_distance_km
     entity.planned_duration_min = source.planned_duration_min
     entity.planned_rpe = source.planned_rpe
+    entity.planned_training_load = source.planned_training_load
     entity.planned_week_number = source.planned_week_number
+    entity.actual_duration_min = source.actual_duration_min
+    entity.actual_distance_km = source.actual_distance_km
+    entity.actual_training_load = source.actual_training_load
+    entity.actual_calories_burned_kcal = source.actual_calories_burned_kcal
+    entity.weighted_hrr_intensity_sum = source.weighted_hrr_intensity_sum
+    entity.actual_hrr_intensity = source.actual_hrr_intensity
     entity.actual_rpe = source.actual_rpe
+    entity.done_date_start = source.done_date_start
+    entity.done_date_end = source.done_date_end
+    entity.done_date_is_datetime = source.done_date_is_datetime
+    entity.status = source.status
+    entity.training_load_method = source.training_load_method
     entity.additional_info = source.additional_info
     entity.cancelled = source.cancelled
     entity.skipped = source.skipped

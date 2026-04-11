@@ -94,10 +94,20 @@ def _make_workout(db: Session, phase: Phase, name: str = "Long Run") -> Workout:
         notion_page_id=f"workout-{name}",
         notion_url=f"https://notion.so/workout-{name}",
         name=name,
+        notion_page_content="Warm-up\nMain set\nCool-down",
         equipment=[],
         metrics_to_record=[],
         purpose=[],
         primarily_used_muscle_group=[],
+        planned_training_load=360.0,
+        actual_duration_min=58.0,
+        actual_distance_km=10.2,
+        actual_training_load=390.0,
+        actual_calories_burned_kcal=720.0,
+        weighted_hrr_intensity_sum=145.5,
+        actual_hrr_intensity=2.51,
+        status="Done",
+        training_load_method="Weighted HRR",
         date_is_datetime=False,
         cancelled=False,
         skipped=False,
@@ -259,6 +269,16 @@ def test_get_workout_returns_workout(client: TestClient, db_session: Session) ->
     data = response.json()
     assert data["id"] == workout.id
     assert data["name"] == workout.name
+    assert data["notion_page_content"] == "Warm-up\nMain set\nCool-down"
+    assert data["planned_training_load"] == 360.0
+    assert data["actual_duration_min"] == 58.0
+    assert data["actual_distance_km"] == 10.2
+    assert data["actual_training_load"] == 390.0
+    assert data["actual_calories_burned_kcal"] == 720.0
+    assert data["weighted_hrr_intensity_sum"] == 145.5
+    assert data["actual_hrr_intensity"] == 2.51
+    assert data["status"] == "Done"
+    assert data["training_load_method"] == "Weighted HRR"
 
 
 def test_get_workout_returns_404_for_missing_workout(client: TestClient) -> None:

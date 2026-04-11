@@ -1,4 +1,4 @@
-"""Pydantic response models for the training domain (Phase → Workout → Session)."""
+"""Pydantic response models for the training domain."""
 
 from __future__ import annotations
 
@@ -48,7 +48,7 @@ class PhaseResponse(BaseModel):
 
 
 class WorkoutResponse(BaseModel):
-    """Response schema for a single Workout."""
+    """Response schema for a Workout."""
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -69,12 +69,30 @@ class WorkoutResponse(BaseModel):
     planned_distance_km: float | None
     planned_duration_min: float | None
     planned_rpe: float | None
+    planned_training_load: float | None
     planned_week_number: float | None
+    actual_duration_min: float | None
+    actual_distance_km: float | None
+    actual_training_load: float | None
+    actual_calories_burned_kcal: float | None
+    weighted_hrr_intensity_sum: float | None
+    actual_hrr_intensity: float | None
     actual_rpe: float | None
+    done_date_start: datetime | None
+    done_date_end: datetime | None
+    done_date_is_datetime: bool
+    status: str | None
+    training_load_method: str | None
     additional_info: str | None
     cancelled: bool
     skipped: bool
     phase_id: int | None
+
+
+class WorkoutDetailResponse(WorkoutResponse):
+    """Response schema for a single Workout including synced page content."""
+
+    notion_page_content: str | None
 
 
 class SessionResponse(BaseModel):

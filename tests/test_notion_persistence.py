@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from datetime import UTC, datetime
+
 import pytest
 from sqlalchemy import create_engine, event, select
 from sqlalchemy.orm import Session
@@ -78,6 +80,7 @@ def _nutrition_schema(
     defaults = {
         "notion_id": notion_id,
         "name": name,
+        "notion_page_content": f"Content for {notion_id}",
         "url": f"https://notion.so/{notion_id}",
     }
     defaults.update(kwargs)
@@ -88,6 +91,7 @@ def _phase_schema(notion_id: str = "phase-1", name: str = "Base Phase", **kwargs
     defaults = {
         "notion_id": notion_id,
         "name": name,
+        "notion_page_content": f"Content for {notion_id}",
         "url": f"https://notion.so/{notion_id}",
     }
     defaults.update(kwargs)
@@ -98,6 +102,7 @@ def _plan_schema(notion_id: str = "plan-1", name: str = "Base Plan", **kwargs) -
     defaults = {
         "notion_id": notion_id,
         "name": name,
+        "notion_page_content": f"Content for {notion_id}",
         "url": f"https://notion.so/{notion_id}",
     }
     defaults.update(kwargs)
@@ -112,6 +117,7 @@ def _workout_schema(
     defaults = {
         "notion_id": notion_id,
         "name": name,
+        "notion_page_content": f"Content for {notion_id}",
         "url": f"https://notion.so/{notion_id}",
     }
     defaults.update(kwargs)
@@ -122,6 +128,7 @@ def _event_schema(notion_id: str = "event-1", name: str = "Goal Race", **kwargs)
     defaults = {
         "notion_id": notion_id,
         "name": name,
+        "notion_page_content": f"Content for {notion_id}",
         "url": f"https://notion.so/{notion_id}",
     }
     defaults.update(kwargs)
@@ -136,6 +143,7 @@ def _session_schema(
     defaults = {
         "notion_id": notion_id,
         "name": name,
+        "notion_page_content": f"Content for {notion_id}",
         "url": f"https://notion.so/{notion_id}",
     }
     defaults.update(kwargs)
@@ -151,6 +159,7 @@ def _feedback_schema(
         "notion_id": notion_id,
         "name": week,
         "week": week,
+        "notion_page_content": f"Content for {notion_id}",
         "url": f"https://notion.so/{notion_id}",
     }
     defaults.update(kwargs)
@@ -349,6 +358,41 @@ class TestNotionPersistenceService:
 
         assert workout.phase_id == phase.id
 
+    def test_persist_workouts_stores_current_workout_fields(self, session: Session) -> None:
+        svc = NotionPersistenceService(session)
+
+        [workout] = svc.persist_workouts(
+            [
+                _workout_schema(
+                    "wo-fields",
+                    planned_training_load=410.0,
+                    actual_duration_min=58.0,
+                    actual_distance_km=10.2,
+                    actual_training_load=438.0,
+                    actual_calories_burned_kcal=720.0,
+                    weighted_hrr_intensity_sum=145.5,
+                    actual_hrr_intensity=2.51,
+                    done_date_start="2024-03-01T08:00:00+00:00",
+                    done_date_end=None,
+                    done_date_is_datetime=True,
+                    status="Done",
+                    training_load_method="Weighted HRR",
+                )
+            ]
+        )
+
+        assert workout.planned_training_load == pytest.approx(410.0)
+        assert workout.actual_duration_min == pytest.approx(58.0)
+        assert workout.actual_distance_km == pytest.approx(10.2)
+        assert workout.actual_training_load == pytest.approx(438.0)
+        assert workout.actual_calories_burned_kcal == pytest.approx(720.0)
+        assert workout.weighted_hrr_intensity_sum == pytest.approx(145.5)
+        assert workout.actual_hrr_intensity == pytest.approx(2.51)
+        assert workout.done_date_start == datetime(2024, 3, 1, 8, 0, tzinfo=UTC)
+        assert workout.done_date_is_datetime is True
+        assert workout.status == "Done"
+        assert workout.training_load_method == "Weighted HRR"
+
     def test_persist_workouts_updates_existing_rows_in_place(self, session: Session) -> None:
         svc = NotionPersistenceService(session)
 
@@ -490,6 +534,83 @@ class TestNotionPersistenceService:
         assert workout.phase_id == phase.id
         assert tracked.workout_id == workout.id
         assert feedback.phase_id == phase.id
+
+    def test_persist_all_stores_page_content_across_entities(self, session: Session) -> None:
+        svc = NotionPersistenceService(session)
+
+        svc.persist_all(
+            plan_schemas=[_plan_schema("content-plan", notion_page_content="Plan body")],
+            nutrition_guideline_schemas=[
+                _nutrition_schema("content-nutrition", notion_page_content="Nutrition body")
+            ],
+            phase_schemas=[
+                _phase_schema(
+                    "content-phase",
+                    plan_notion_id="content-plan",
+                    nutrition_guideline_notion_id="content-nutrition",
+                    notion_page_content="Phase body",
+                )
+            ],
+            workout_schemas=[
+                _workout_schema(
+                    "content-workout",
+                    phase_notion_id="content-phase",
+                    notion_page_content="Workout body",
+                )
+            ],
+            event_schemas=[
+                _event_schema(
+                    "content-event",
+                    plan_notion_id="content-plan",
+                    race_workout_notion_id="content-workout",
+                    notion_page_content="Event body",
+                )
+            ],
+            session_schemas=[
+                _session_schema(
+                    "content-session",
+                    workout_notion_id="content-workout",
+                    notion_page_content="Session body",
+                )
+            ],
+            feedback_schemas=[
+                _feedback_schema(
+                    "content-feedback",
+                    phase_notion_id="content-phase",
+                    notion_page_content="Feedback body",
+                )
+            ],
+        )
+
+        plan = session.execute(select(Plan).where(Plan.notion_page_id == "content-plan")).scalar_one()
+        nutrition = session.execute(
+            select(NutritionGuideline).where(
+                NutritionGuideline.notion_page_id == "content-nutrition"
+            )
+        ).scalar_one()
+        phase = session.execute(
+            select(Phase).where(Phase.notion_page_id == "content-phase")
+        ).scalar_one()
+        workout = session.execute(
+            select(Workout).where(Workout.notion_page_id == "content-workout")
+        ).scalar_one()
+        event_entity = session.execute(
+            select(Event).where(Event.notion_page_id == "content-event")
+        ).scalar_one()
+        tracked = session.execute(
+            select(TrackedSession).where(TrackedSession.notion_page_id == "content-session")
+        ).scalar_one()
+        feedback = session.execute(
+            select(Feedback).where(Feedback.notion_page_id == "content-feedback")
+        ).scalar_one()
+
+        assert plan.notion_page_content == "Plan body"
+        assert nutrition.notion_page_content == "Nutrition body"
+        assert phase.notion_page_content == "Phase body"
+        assert workout.notion_page_content == "Workout body"
+        assert event_entity.notion_page_content == "Event body"
+        assert tracked.notion_page_content == "Session body"
+        assert feedback.notion_page_content == "Feedback body"
 
     def test_persist_all_is_idempotent_across_repeated_runs(self, session: Session) -> None:
         svc = NotionPersistenceService(session)

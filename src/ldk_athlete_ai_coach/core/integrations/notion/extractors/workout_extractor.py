@@ -9,12 +9,18 @@ from ldk_athlete_ai_coach.core.integrations.notion.extractors._helpers import (
     get_checkbox,
     get_date,
     get_first_relation,
+    get_formula_number,
+    get_formula_string,
     get_multi_select,
     get_number,
     get_page_datetime,
+    get_property_by_alias,
     get_rich_text,
+    get_rollup_date,
+    get_rollup_number,
     get_select,
     get_title,
+    get_url,
 )
 from ldk_athlete_ai_coach.core.integrations.notion.schemas.notion_workout import NotionWorkout
 
@@ -42,7 +48,13 @@ def extract_workout(raw_page: dict[str, Any]) -> NotionWorkout:
                 f"Workout page {notion_id!r} is missing required 'Name' property"
             )
 
-        date_start, date_end, date_is_datetime = get_date(props.get("Date", {}))
+        date_start, date_end, date_is_datetime = get_date(
+            get_property_by_alias(props, "Planned Date", "Date")
+        )
+        done_date_start, done_date_end, done_date_is_datetime = get_rollup_date(
+            props.get("Done Date", {})
+        )
+        additional_info_prop = get_property_by_alias(props, "Additional Info")
 
         return NotionWorkout(
             notion_id=notion_id,
@@ -54,17 +66,41 @@ def extract_workout(raw_page: dict[str, Any]) -> NotionWorkout:
             difficulty=get_select(props.get("Difficulty", {})),
             equipment=get_multi_select(props.get("Equipment", {})),
             impact=get_select(props.get("Impact", {})),
-            metrics_to_record=get_multi_select(props.get("Metrics to Record", {})),
+            metrics_to_record=get_multi_select(
+                get_property_by_alias(props, "Metrics to record", "Metrics to Record")
+            ),
             purpose=get_multi_select(props.get("Purpose", {})),
             primarily_used_muscle_group=get_multi_select(
-                props.get("Primarily Used Muscle Group", {})
+                get_property_by_alias(
+                    props,
+                    "Primarily used muscle group",
+                    "Primarily Used Muscle Group",
+                )
             ),
             planned_distance_km=get_number(props.get("Planned Distance (km)", {})),
-            planned_duration_min=get_number(props.get("Planned Duration (min)", {})),
+            planned_duration_min=get_number(
+                get_property_by_alias(props, "Planned duration (min)", "Planned Duration (min)")
+            ),
             planned_rpe=get_number(props.get("Planned RPE", {})),
+            planned_training_load=get_formula_number(props.get("Planned Training Load", {})),
             planned_week_number=get_number(props.get("Planned Week Number", {})),
+            actual_duration_min=get_rollup_number(props.get("Actual Duration (min)", {})),
+            actual_distance_km=get_rollup_number(props.get("Actual Distance", {})),
+            actual_training_load=get_rollup_number(props.get("Actual Training Load", {})),
+            actual_calories_burned_kcal=get_rollup_number(
+                props.get("Actual calories burned (kcal)", {})
+            ),
+            weighted_hrr_intensity_sum=get_rollup_number(
+                props.get("Weighted HRR Intensity Sum", {})
+            ),
+            actual_hrr_intensity=get_formula_number(props.get("Actual HRR Intensity", {})),
             actual_rpe=get_number(props.get("Actual RPE", {})),
-            additional_info=get_rich_text(props.get("Additional Info", {})),
+            done_date_start=done_date_start,
+            done_date_end=done_date_end,
+            done_date_is_datetime=done_date_is_datetime,
+            status=get_formula_string(props.get("Status", {})),
+            training_load_method=get_formula_string(props.get("Training Load Method", {})),
+            additional_info=get_url(additional_info_prop) or get_rich_text(additional_info_prop),
             cancelled=get_checkbox(props.get("Cancelled", {})),
             skipped=get_checkbox(props.get("Skipped", {})),
             phase_notion_id=get_first_relation(props.get("Phase", {})),

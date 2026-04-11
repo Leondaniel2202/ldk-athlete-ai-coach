@@ -32,6 +32,7 @@ def map_feedback(
     # --- identifier fields (NotionSyncMixin) ---------------------------------
     entity.notion_page_id = source.notion_id
     entity.notion_url = source.url  # type: ignore[assignment]  # enforced by DB constraint
+    entity.notion_page_content = source.notion_page_content
 
     # --- direct 1:1 field mappings -------------------------------------------
     entity.week = source.week
