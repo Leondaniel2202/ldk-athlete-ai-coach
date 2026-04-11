@@ -29,6 +29,10 @@ from sqlalchemy.orm import Session
 from ldk_athlete_ai_coach.core.config import Settings
 from ldk_athlete_ai_coach.core.integrations.notion.client import NotionClient
 from ldk_athlete_ai_coach.core.integrations.notion.extractors import NotionExtractionError
+from ldk_athlete_ai_coach.core.integrations.notion.extractors.event_extractor import extract_event
+from ldk_athlete_ai_coach.core.integrations.notion.extractors.nutrition_guideline_extractor import (
+    extract_nutrition_guideline,
+)
 from ldk_athlete_ai_coach.core.integrations.notion.extractors.phase_extractor import extract_phase
 from ldk_athlete_ai_coach.core.integrations.notion.extractors.plan_extractor import extract_plan
 from ldk_athlete_ai_coach.core.integrations.notion.extractors.session_extractor import (
@@ -149,6 +153,14 @@ class NotionSyncService:
                 extractor=extract_plan,
                 persister=lambda persistence, schemas: persistence.persist_plans(schemas),
             ),
+            "nutrition_guideline": SyncDefinition(
+                entity_name="NutritionGuideline",
+                data_source_id=self._settings.notion_nutrition_guideline_data_source_id,
+                extractor=extract_nutrition_guideline,
+                persister=lambda persistence, schemas: persistence.persist_nutrition_guidelines(
+                    schemas
+                ),
+            ),
             "phase": SyncDefinition(
                 entity_name="Phase",
                 data_source_id=self._settings.notion_phase_data_source_id,
@@ -160,6 +172,12 @@ class NotionSyncService:
                 data_source_id=self._settings.notion_workout_data_source_id,
                 extractor=extract_workout,
                 persister=lambda persistence, schemas: persistence.persist_workouts(schemas),
+            ),
+            "event": SyncDefinition(
+                entity_name="Event",
+                data_source_id=self._settings.notion_event_data_source_id,
+                extractor=extract_event,
+                persister=lambda persistence, schemas: persistence.persist_events(schemas),
             ),
             "session": SyncDefinition(
                 entity_name="TrackedSession",
@@ -257,6 +275,14 @@ class NotionSyncService:
 
         return result
 
+    def sync_nutrition_guidelines(self) -> SyncResult:
+        """Fetch, extract, and persist all Nutrition Guideline entries from Notion."""
+
+        definition = self._definitions["nutrition_guideline"]
+        result = self._sync_entity(definition)
+
+        return result
+
     def sync_plans(self) -> SyncResult:
         """Fetch, extract, and persist all Plan entries from Notion.
 
@@ -277,6 +303,14 @@ class NotionSyncService:
             :class:`~ldk_athlete_ai_coach.db.models.training.Workout` instances.
         """
         definition = self._definitions["workout"]
+        result = self._sync_entity(definition)
+
+        return result
+
+    def sync_events(self) -> SyncResult:
+        """Fetch, extract, and persist all Event entries from Notion."""
+
+        definition = self._definitions["event"]
         result = self._sync_entity(definition)
 
         return result
@@ -315,10 +349,12 @@ class NotionSyncService:
 
         Sync order:
         1. **Plan** - no upstream Notion dependencies within scope.
-        2. **Phase** - depends on Plan.
-        3. **Workout** - depends on Phase.
-        4. **TrackedSession** - depends on Workout.
-        5. **Feedback** - depends on Phase.
+        2. **NutritionGuideline** - no upstream Notion dependencies within scope.
+        3. **Phase** - depends on Plan and NutritionGuideline.
+        4. **Workout** - depends on Phase.
+        5. **Event** - depends on Plan and optionally Workout.
+        6. **TrackedSession** - depends on Workout.
+        7. **Feedback** - depends on Phase.
 
         Returns:
             A list of :class:`SyncResult` instances, one per entity, in sync order.
@@ -326,8 +362,10 @@ class NotionSyncService:
         logger.info("Starting full Notion sync")
         results = [
             self.sync_plans(),
+            self.sync_nutrition_guidelines(),
             self.sync_phases(),
             self.sync_workouts(),
+            self.sync_events(),
             self.sync_sessions(),
             self.sync_weekly_feedback(),
         ]

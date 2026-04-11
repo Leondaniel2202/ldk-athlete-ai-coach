@@ -35,8 +35,17 @@ class Settings(BaseSettings):
     notion_phase_data_source_id: str = Field(
         validation_alias=AliasChoices("NOTION_PHASE_DATA_SOURCE_ID", "NOTION_PHASE_DB_ID")
     )
+    notion_nutrition_guideline_data_source_id: str = Field(
+        validation_alias=AliasChoices(
+            "NOTION_NUTRITION_GUIDELINE_DATA_SOURCE_ID",
+            "NOTION_NUTRITION_GUIDELINE_DB_ID",
+        )
+    )
     notion_workout_data_source_id: str = Field(
         validation_alias=AliasChoices("NOTION_WORKOUT_DATA_SOURCE_ID", "NOTION_WORKOUT_DB_ID")
+    )
+    notion_event_data_source_id: str = Field(
+        validation_alias=AliasChoices("NOTION_EVENT_DATA_SOURCE_ID", "NOTION_EVENT_DB_ID")
     )
     notion_session_data_source_id: str = Field(
         validation_alias=AliasChoices("NOTION_SESSION_DATA_SOURCE_ID", "NOTION_SESSION_DB_ID")

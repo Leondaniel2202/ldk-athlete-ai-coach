@@ -1,6 +1,7 @@
 """Database models package."""
 
 from ldk_athlete_ai_coach.db.models.training import (
+    Event,
     Feedback,
     NutritionGuideline,
     Phase,
@@ -11,6 +12,7 @@ from ldk_athlete_ai_coach.db.models.training import (
 )
 
 __all__ = [
+    "Event",
     "Feedback",
     "NutritionGuideline",
     "Phase",

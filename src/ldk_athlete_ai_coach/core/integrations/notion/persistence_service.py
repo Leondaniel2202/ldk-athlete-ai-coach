@@ -4,11 +4,17 @@ from __future__ import annotations
 
 from sqlalchemy.orm import Session
 
+from ldk_athlete_ai_coach.core.integrations.notion.mappers.event import map_event
 from ldk_athlete_ai_coach.core.integrations.notion.mappers.feedback import map_feedback
+from ldk_athlete_ai_coach.core.integrations.notion.mappers.nutrition import map_nutrition
 from ldk_athlete_ai_coach.core.integrations.notion.mappers.phase import map_phase
 from ldk_athlete_ai_coach.core.integrations.notion.mappers.plan import map_plan
 from ldk_athlete_ai_coach.core.integrations.notion.mappers.session import map_session
 from ldk_athlete_ai_coach.core.integrations.notion.mappers.workout import map_workout
+from ldk_athlete_ai_coach.core.integrations.notion.schemas.notion_event import NotionEvent
+from ldk_athlete_ai_coach.core.integrations.notion.schemas.notion_nutrition_guideline import (
+    NotionNutritionGuideline,
+)
 from ldk_athlete_ai_coach.core.integrations.notion.schemas.notion_phase import NotionPhase
 from ldk_athlete_ai_coach.core.integrations.notion.schemas.notion_plan import NotionPlan
 from ldk_athlete_ai_coach.core.integrations.notion.schemas.notion_session import NotionSession
@@ -17,7 +23,9 @@ from ldk_athlete_ai_coach.core.integrations.notion.schemas.notion_weekly_feedbac
 )
 from ldk_athlete_ai_coach.core.integrations.notion.schemas.notion_workout import NotionWorkout
 from ldk_athlete_ai_coach.db.models.training import (
+    Event,
     Feedback,
+    NutritionGuideline,
     Phase,
     Plan,
     TrackedSession,
@@ -38,8 +46,12 @@ class NotionPersistenceService:
         """
         self._session = session
         self._plan_repository = TrainingBaseRepository[Plan](session, Plan)
+        self._nutrition_guideline_repository = TrainingBaseRepository[NutritionGuideline](
+            session, NutritionGuideline
+        )
         self._phase_repository = TrainingBaseRepository[Phase](session, Phase)
         self._workout_repository = TrainingBaseRepository[Workout](session, Workout)
+        self._event_repository = TrainingBaseRepository[Event](session, Event)
         self._session_repository = TrainingBaseRepository[TrackedSession](session, TrackedSession)
         self._feedback_repository = TrainingBaseRepository[Feedback](session, Feedback)
 
@@ -60,6 +72,19 @@ class NotionPersistenceService:
         self._session.flush()
         return entities
 
+    def persist_nutrition_guidelines(
+        self,
+        nutrition_schemas: list[NotionNutritionGuideline],
+    ) -> list[NutritionGuideline]:
+        """Map and persist nutrition-guideline schemas."""
+        entities: list[NutritionGuideline] = []
+        for schema in nutrition_schemas:
+            existing = self._nutrition_guideline_repository.get_by_source_page_id(schema.notion_id)
+            entity = map_nutrition(schema, existing)
+            entities.append(self._add_if_new(self._nutrition_guideline_repository, existing, entity))
+        self._session.flush()
+        return entities
+
     def persist_phases(self, phase_schemas: list[NotionPhase]) -> list[Phase]:
         """Map and persist phase schemas.
 
@@ -73,7 +98,15 @@ class NotionPersistenceService:
         for schema in phase_schemas:
             existing = self._phase_repository.get_by_source_page_id(schema.notion_id)
             plan_id = self._resolve_plan_id(schema.plan_notion_id)
-            entity = map_phase(schema, existing, plan_id=plan_id)
+            nutrition_guideline_id = self._resolve_nutrition_guideline_id(
+                schema.nutrition_guideline_notion_id
+            )
+            entity = map_phase(
+                schema,
+                existing,
+                plan_id=plan_id,
+                nutrition_guideline_id=nutrition_guideline_id,
+            )
             entities.append(self._add_if_new(self._phase_repository, existing, entity))
         self._session.flush()
         return entities
@@ -93,6 +126,23 @@ class NotionPersistenceService:
             phase_id = self._resolve_phase_id(schema.phase_notion_id)
             entity = map_workout(schema, existing, phase_id=phase_id)
             entities.append(self._add_if_new(self._workout_repository, existing, entity))
+        self._session.flush()
+        return entities
+
+    def persist_events(self, event_schemas: list[NotionEvent]) -> list[Event]:
+        """Map and persist event schemas, resolving plan and workout foreign keys."""
+        entities: list[Event] = []
+        for schema in event_schemas:
+            existing = self._event_repository.get_by_source_page_id(schema.notion_id)
+            plan_id = self._resolve_plan_id(schema.plan_notion_id)
+            race_workout_id = self._resolve_workout_id(schema.race_workout_notion_id)
+            entity = map_event(
+                schema,
+                existing,
+                plan_id=plan_id,
+                race_workout_id=race_workout_id,
+            )
+            entities.append(self._add_if_new(self._event_repository, existing, entity))
         self._session.flush()
         return entities
 
@@ -136,8 +186,10 @@ class NotionPersistenceService:
         self,
         *,
         plan_schemas: list[NotionPlan],
+        nutrition_guideline_schemas: list[NotionNutritionGuideline],
         phase_schemas: list[NotionPhase],
         workout_schemas: list[NotionWorkout],
+        event_schemas: list[NotionEvent],
         session_schemas: list[NotionSession],
         feedback_schemas: list[NotionWeeklyFeedback],
     ) -> None:
@@ -145,14 +197,18 @@ class NotionPersistenceService:
 
         Args:
             plan_schemas: Extracted Plan schemas.
+            nutrition_guideline_schemas: Extracted Nutrition Guideline schemas.
             phase_schemas: Extracted Phase schemas.
             workout_schemas: Extracted Workout schemas.
+            event_schemas: Extracted Event schemas.
             session_schemas: Extracted TrackedSession schemas.
             feedback_schemas: Extracted Feedback schemas.
         """
         self.persist_plans(plan_schemas)
+        self.persist_nutrition_guidelines(nutrition_guideline_schemas)
         self.persist_phases(phase_schemas)
         self.persist_workouts(workout_schemas)
+        self.persist_events(event_schemas)
         self.persist_sessions(session_schemas)
         self.persist_feedback(feedback_schemas)
 
@@ -169,6 +225,13 @@ class NotionPersistenceService:
             return None
         plan = self._plan_repository.get_by_source_page_id(notion_id)
         return plan.id if plan is not None else None
+
+    def _resolve_nutrition_guideline_id(self, notion_id: str | None) -> int | None:
+        """Resolve a nutrition-guideline Notion page ID to a local primary key."""
+        if notion_id is None:
+            return None
+        guideline = self._nutrition_guideline_repository.get_by_source_page_id(notion_id)
+        return guideline.id if guideline is not None else None
 
     def _resolve_phase_id(self, notion_id: str | None) -> int | None:
         """Resolve a phase Notion page ID to a local primary key.

@@ -6,10 +6,16 @@ from datetime import UTC, datetime
 
 import pytest
 
+from ldk_athlete_ai_coach.core.integrations.notion.mappers.event import map_event
 from ldk_athlete_ai_coach.core.integrations.notion.mappers.feedback import map_feedback
+from ldk_athlete_ai_coach.core.integrations.notion.mappers.nutrition import map_nutrition
 from ldk_athlete_ai_coach.core.integrations.notion.mappers.phase import map_phase
 from ldk_athlete_ai_coach.core.integrations.notion.mappers.session import map_session
 from ldk_athlete_ai_coach.core.integrations.notion.mappers.workout import map_workout
+from ldk_athlete_ai_coach.core.integrations.notion.schemas.notion_event import NotionEvent
+from ldk_athlete_ai_coach.core.integrations.notion.schemas.notion_nutrition_guideline import (
+    NotionNutritionGuideline,
+)
 from ldk_athlete_ai_coach.core.integrations.notion.schemas.notion_phase import NotionPhase
 from ldk_athlete_ai_coach.core.integrations.notion.schemas.notion_session import NotionSession
 from ldk_athlete_ai_coach.core.integrations.notion.schemas.notion_weekly_feedback import (
@@ -17,7 +23,9 @@ from ldk_athlete_ai_coach.core.integrations.notion.schemas.notion_weekly_feedbac
 )
 from ldk_athlete_ai_coach.core.integrations.notion.schemas.notion_workout import NotionWorkout
 from ldk_athlete_ai_coach.db.models.training import (
+    Event,
     Feedback,
+    NutritionGuideline,
     Phase,
     TrackedSession,
     Workout,
@@ -289,6 +297,150 @@ class TestMapWorkout:
         result = map_workout(source, existing)
 
         assert result.phase_id is None
+
+
+# ===========================================================================
+# Event mapper
+# ===========================================================================
+
+
+def _make_notion_event(**overrides: object) -> NotionEvent:
+    defaults: dict[str, object] = {
+        "notion_id": "event-abc",
+        "name": "Goal Race",
+        "event_type": "Race",
+        "target": "Sub-3 marathon",
+        "event_format": "Road marathon",
+        "notes": "Primary event",
+        "priority": "A",
+        "start_date_start": _DT,
+        "start_date_end": None,
+        "start_date_is_datetime": False,
+        "end_date_start": _DT2,
+        "end_date_end": None,
+        "end_date_is_datetime": False,
+        "place_name": "Amsterdam",
+        "place_address": "Museumplein",
+        "place_latitude": 52.3584,
+        "place_longitude": 4.8811,
+        "place_google_place_id": "place-123",
+        "plan_notion_id": "plan-xyz",
+        "race_workout_notion_id": "workout-xyz",
+        "url": "https://notion.so/event-abc",
+        "archived": False,
+    }
+    defaults.update(overrides)
+    return NotionEvent(**defaults)  # type: ignore[arg-type]
+
+
+class TestMapEvent:
+    def test_create_new_entity(self) -> None:
+        source = _make_notion_event()
+        entity = map_event(source, plan_id=7, race_workout_id=11)
+
+        assert isinstance(entity, Event)
+        assert entity.notion_page_id == "event-abc"
+        assert entity.notion_url == "https://notion.so/event-abc"
+        assert entity.event_type == "Race"
+        assert entity.place_name == "Amsterdam"
+        assert entity.plan_id == 7
+        assert entity.race_workout_id == 11
+
+    def test_update_existing_entity(self) -> None:
+        existing = Event()
+        existing.name = "Old Event"
+        existing.priority = "C"
+
+        result = map_event(_make_notion_event(name="Updated Event", priority="A"), existing)
+
+        assert result is existing
+        assert result.name == "Updated Event"
+        assert result.priority == "A"
+
+    def test_foreign_keys_reset_to_none_when_not_passed(self) -> None:
+        existing = Event()
+        existing.plan_id = 9
+        existing.race_workout_id = 4
+
+        result = map_event(_make_notion_event(), existing)
+
+        assert result.plan_id is None
+        assert result.race_workout_id is None
+
+
+# ===========================================================================
+# NutritionGuideline mapper
+# ===========================================================================
+
+
+def _make_notion_nutrition(**overrides: object) -> NotionNutritionGuideline:
+    defaults: dict[str, object] = {
+        "notion_id": "nutrition-abc",
+        "name": "Performance Fueling",
+        "goal": "Performance",
+        "applies_to": ["Endurance", "Hybrid"],
+        "carb_strategy": "Fuel key sessions",
+        "protein_target_g_per_kg": "1.8",
+        "fat_target_g_per_kg": "0.8",
+        "hydration_electrolytes": "500-750ml/hr",
+        "supplements": "Creatine",
+        "timing_rules": "Carbs before and during sessions",
+        "url": "https://notion.so/nutrition-abc",
+        "archived": False,
+    }
+    defaults.update(overrides)
+    return NotionNutritionGuideline(**defaults)  # type: ignore[arg-type]
+
+
+class TestMapNutritionGuideline:
+    def test_create_new_entity(self) -> None:
+        source = _make_notion_nutrition()
+        entity = map_nutrition(source)
+
+        assert isinstance(entity, NutritionGuideline)
+        assert entity.notion_page_id == "nutrition-abc"
+        assert entity.notion_url == "https://notion.so/nutrition-abc"
+        assert entity.goal == "Performance"
+        assert entity.applies_to == ["Endurance", "Hybrid"]
+        assert entity.timing_rules == "Carbs before and during sessions"
+
+    def test_update_existing_entity(self) -> None:
+        existing = NutritionGuideline()
+        existing.name = "Old Guideline"
+        existing.goal = "Maintain"
+
+        result = map_nutrition(
+            _make_notion_nutrition(name="Updated Guideline", goal="Gain"), existing
+        )
+
+        assert result is existing
+        assert result.name == "Updated Guideline"
+        assert result.goal == "Gain"
+
+    def test_list_field_is_copied(self) -> None:
+        applies_to = ["Endurance"]
+        entity = map_nutrition(_make_notion_nutrition(applies_to=applies_to))
+
+        applies_to.append("Strength")
+        assert entity.applies_to == ["Endurance"]
+
+    def test_none_values_are_propagated(self) -> None:
+        entity = map_nutrition(
+            _make_notion_nutrition(
+                goal=None,
+                carb_strategy=None,
+                protein_target_g_per_kg=None,
+                hydration_electrolytes=None,
+                supplements=None,
+                timing_rules=None,
+                url=None,
+            )
+        )
+
+        assert entity.goal is None
+        assert entity.carb_strategy is None
+        assert entity.timing_rules is None
+        assert entity.notion_url is None
 
 
 # ===========================================================================

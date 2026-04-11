@@ -8,6 +8,10 @@ from typing import Any
 import pytest
 
 from ldk_athlete_ai_coach.core.integrations.notion.extractors import NotionExtractionError
+from ldk_athlete_ai_coach.core.integrations.notion.extractors.event_extractor import extract_event
+from ldk_athlete_ai_coach.core.integrations.notion.extractors.nutrition_guideline_extractor import (
+    extract_nutrition_guideline,
+)
 from ldk_athlete_ai_coach.core.integrations.notion.extractors.phase_extractor import extract_phase
 from ldk_athlete_ai_coach.core.integrations.notion.extractors.session_extractor import (
     extract_session,
@@ -56,6 +60,26 @@ def _relation_prop(*page_ids: str) -> dict[str, Any]:
     return {"type": "relation", "relation": [{"id": pid} for pid in page_ids]}
 
 
+def _place_prop(
+    *,
+    name: str,
+    address: str,
+    latitude: float,
+    longitude: float,
+    google_place_id: str,
+) -> dict[str, Any]:
+    return {
+        "type": "place",
+        "place": {
+            "name": name,
+            "address": address,
+            "latitude": latitude,
+            "longitude": longitude,
+            "google_place_id": google_place_id,
+        },
+    }
+
+
 def _empty_prop(type_: str) -> dict[str, Any]:
     """Return a property whose value is null / empty for its type."""
     mapping: dict[str, Any] = {
@@ -67,6 +91,7 @@ def _empty_prop(type_: str) -> dict[str, Any]:
         "checkbox": {"type": "checkbox", "checkbox": False},
         "date": {"type": "date", "date": None},
         "relation": {"type": "relation", "relation": []},
+        "place": {"type": "place", "place": None},
     }
     return mapping[type_]
 
@@ -123,6 +148,34 @@ _WORKOUT_PAGE: dict[str, Any] = {
     },
 }
 
+_EVENT_PAGE: dict[str, Any] = {
+    "id": "event-page-id",
+    "object": "page",
+    "created_time": "2024-01-10T08:00:00.000Z",
+    "last_edited_time": "2024-01-15T12:00:00.000Z",
+    "archived": False,
+    "url": "https://www.notion.so/event-page-id",
+    "properties": {
+        "Name": _title_prop("Goal Race"),
+        "Type": _select_prop("Race"),
+        "Target": _rich_text_prop("Sub-3 marathon"),
+        "Format": _rich_text_prop("Road marathon"),
+        "Notes": _rich_text_prop("Primary A race"),
+        "Priority": _select_prop("A"),
+        "Start date": _date_prop("2024-10-20"),
+        "End date": _date_prop("2024-10-20"),
+        "Place": _place_prop(
+            name="Amsterdam",
+            address="Museumplein, Amsterdam",
+            latitude=52.3584,
+            longitude=4.8811,
+            google_place_id="place-123",
+        ),
+        "Plan": _relation_prop("plan-page-id"),
+        "Race Workout": _relation_prop("workout-page-id"),
+    },
+}
+
 _SESSION_PAGE: dict[str, Any] = {
     "id": "session-page-id",
     "object": "page",
@@ -150,6 +203,26 @@ _SESSION_PAGE: dict[str, Any] = {
         "Step Cadence (count/min)": _number_prop(172.0),
         "Steps": _number_prop(18900.0),
         "Workout": _relation_prop("workout-page-id"),
+    },
+}
+
+_NUTRITION_PAGE: dict[str, Any] = {
+    "id": "nutrition-page-id",
+    "object": "page",
+    "created_time": "2024-01-10T08:00:00.000Z",
+    "last_edited_time": "2024-01-15T12:00:00.000Z",
+    "archived": False,
+    "url": "https://www.notion.so/nutrition-page-id",
+    "properties": {
+        "Name": _title_prop("Performance Fueling"),
+        "Goal": _select_prop("Performance"),
+        "Applies to": _multi_select_prop("Endurance", "Hybrid"),
+        "Carb strategy": _rich_text_prop("Fuel hard sessions aggressively"),
+        "Protein target (g/kg)": _rich_text_prop("1.8"),
+        "Fat target (g/kg)": _rich_text_prop("0.8"),
+        "Hydration / electrolytes": _rich_text_prop("500-750ml/hr with sodium"),
+        "Supplements": _rich_text_prop("Creatine, caffeine"),
+        "Timing rules": _rich_text_prop("Carbs before and during key sessions"),
     },
 }
 
@@ -386,6 +459,68 @@ class TestExtractWorkout:
 
 
 # ===========================================================================
+# extract_event
+# ===========================================================================
+
+
+class TestExtractEvent:
+    def test_full_payload_extracts_correctly(self) -> None:
+        event = extract_event(_EVENT_PAGE)
+
+        assert event.notion_id == "event-page-id"
+        assert event.name == "Goal Race"
+        assert event.event_type == "Race"
+        assert event.target == "Sub-3 marathon"
+        assert event.event_format == "Road marathon"
+        assert event.notes == "Primary A race"
+        assert event.priority == "A"
+        assert event.start_date_start == datetime(2024, 10, 20, 0, 0)
+        assert event.end_date_start == datetime(2024, 10, 20, 0, 0)
+        assert event.place_name == "Amsterdam"
+        assert event.place_address == "Museumplein, Amsterdam"
+        assert event.place_latitude == pytest.approx(52.3584)
+        assert event.place_longitude == pytest.approx(4.8811)
+        assert event.place_google_place_id == "place-123"
+        assert event.plan_notion_id == "plan-page-id"
+        assert event.race_workout_notion_id == "workout-page-id"
+        assert event.created_time == datetime(2024, 1, 10, 8, 0, tzinfo=UTC)
+
+    def test_optional_fields_absent(self) -> None:
+        page: dict[str, Any] = {
+            **_EVENT_PAGE,
+            "properties": {
+                "Name": _title_prop("Minimal Event"),
+                "Type": _empty_prop("select"),
+                "Target": _empty_prop("rich_text"),
+                "Format": _empty_prop("rich_text"),
+                "Notes": _empty_prop("rich_text"),
+                "Priority": _empty_prop("select"),
+                "Start date": _empty_prop("date"),
+                "End date": _empty_prop("date"),
+                "Place": _empty_prop("place"),
+                "Plan": _empty_prop("relation"),
+                "Race Workout": _empty_prop("relation"),
+            },
+        }
+
+        event = extract_event(page)
+
+        assert event.event_type is None
+        assert event.target is None
+        assert event.event_format is None
+        assert event.notes is None
+        assert event.priority is None
+        assert event.place_name is None
+        assert event.plan_notion_id is None
+        assert event.race_workout_notion_id is None
+
+    def test_missing_name_raises_extraction_error(self) -> None:
+        page: dict[str, Any] = {**_EVENT_PAGE, "properties": {"Name": _empty_prop("title")}}
+        with pytest.raises(NotionExtractionError, match="missing required 'Name'"):
+            extract_event(page)
+
+
+# ===========================================================================
 # extract_session
 # ===========================================================================
 
@@ -524,3 +659,53 @@ class TestExtractWeeklyFeedback:
     def test_last_edited_time_parsed(self) -> None:
         feedback = extract_weekly_feedback(_FEEDBACK_PAGE)
         assert feedback.last_edited_time == datetime(2024, 2, 12, 20, 5, tzinfo=UTC)
+
+
+# ===========================================================================
+# extract_nutrition_guideline
+# ===========================================================================
+
+
+class TestExtractNutritionGuideline:
+    def test_full_payload_extracts_correctly(self) -> None:
+        guideline = extract_nutrition_guideline(_NUTRITION_PAGE)
+
+        assert guideline.notion_id == "nutrition-page-id"
+        assert guideline.name == "Performance Fueling"
+        assert guideline.goal == "Performance"
+        assert guideline.applies_to == ["Endurance", "Hybrid"]
+        assert guideline.carb_strategy == "Fuel hard sessions aggressively"
+        assert guideline.protein_target_g_per_kg == "1.8"
+        assert guideline.fat_target_g_per_kg == "0.8"
+        assert guideline.hydration_electrolytes == "500-750ml/hr with sodium"
+        assert guideline.supplements == "Creatine, caffeine"
+        assert guideline.timing_rules == "Carbs before and during key sessions"
+        assert guideline.created_time == datetime(2024, 1, 10, 8, 0, tzinfo=UTC)
+
+    def test_optional_fields_absent(self) -> None:
+        page: dict[str, Any] = {
+            **_NUTRITION_PAGE,
+            "properties": {
+                "Name": _title_prop("Minimal Guideline"),
+                "Goal": _empty_prop("select"),
+                "Applies to": _empty_prop("multi_select"),
+                "Carb strategy": _empty_prop("rich_text"),
+                "Protein target (g/kg)": _empty_prop("rich_text"),
+                "Fat target (g/kg)": _empty_prop("rich_text"),
+                "Hydration / electrolytes": _empty_prop("rich_text"),
+                "Supplements": _empty_prop("rich_text"),
+                "Timing rules": _empty_prop("rich_text"),
+            },
+        }
+
+        guideline = extract_nutrition_guideline(page)
+
+        assert guideline.goal is None
+        assert guideline.applies_to == []
+        assert guideline.carb_strategy is None
+        assert guideline.hydration_electrolytes is None
+
+    def test_missing_name_raises_extraction_error(self) -> None:
+        page: dict[str, Any] = {**_NUTRITION_PAGE, "properties": {"Name": _empty_prop("title")}}
+        with pytest.raises(NotionExtractionError, match="missing required 'Name'"):
+            extract_nutrition_guideline(page)
