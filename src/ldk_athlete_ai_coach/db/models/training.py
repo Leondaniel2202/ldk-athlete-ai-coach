@@ -1,4 +1,4 @@
-"""Sport Manager data models derived from the approved Notion databases."""
+"""Training domain data models derived from the approved Notion databases."""
 
 from __future__ import annotations
 
@@ -11,8 +11,8 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from ldk_athlete_ai_coach.db.base import Base
 
 
-class NotionSyncMixin:
-    """Common columns used to map local rows back to Notion pages."""
+class TrainingEntityMixin:
+    """Common columns used to map local rows back to their source system."""
 
     id: Mapped[int] = mapped_column(primary_key=True)
     notion_page_id: Mapped[str] = mapped_column(String(64), unique=True, nullable=False, index=True)
@@ -56,7 +56,7 @@ class NotionSyncMixin:
 #     )
 
 
-class Plan(NotionSyncMixin, Base):
+class Plan(TrainingEntityMixin, Base):
     """Editable fields from the Notion Plans database."""
 
     __tablename__ = "plans"
@@ -75,7 +75,7 @@ class Plan(NotionSyncMixin, Base):
     phases: Mapped[list[Phase]] = relationship("Phase", back_populates="plan")
 
 
-class NutritionGuideline(NotionSyncMixin, Base):
+class NutritionGuideline(TrainingEntityMixin, Base):
     """Editable fields from the Notion Nutrition Guidelines database."""
 
     __tablename__ = "nutrition_guidelines"
@@ -95,7 +95,7 @@ class NutritionGuideline(NotionSyncMixin, Base):
     phases: Mapped[list[Phase]] = relationship("Phase", back_populates="nutrition_guideline")
 
 
-class Phase(NotionSyncMixin, Base):
+class Phase(TrainingEntityMixin, Base):
     """Editable fields from the Notion Phases database."""
 
     __tablename__ = "phases"
@@ -127,7 +127,7 @@ class Phase(NotionSyncMixin, Base):
     )
 
 
-class Workout(NotionSyncMixin, Base):
+class Workout(TrainingEntityMixin, Base):
     """Editable fields from the Notion Workouts database."""
 
     __tablename__ = "workouts"
@@ -177,7 +177,7 @@ class Workout(NotionSyncMixin, Base):
     )
 
 
-class TrackedSession(NotionSyncMixin, Base):
+class TrackedSession(TrainingEntityMixin, Base):
     """Editable fields from the Notion Tracked Sessions database."""
 
     __tablename__ = "tracked_sessions"
@@ -222,7 +222,7 @@ class TrackedSession(NotionSyncMixin, Base):
 #     meaning: Mapped[str | None] = mapped_column(Text)
 
 
-class WeeklyFeedback(NotionSyncMixin, Base):
+class WeeklyFeedback(TrainingEntityMixin, Base):
     """Editable fields from the Notion Feedback database."""
 
     __tablename__ = "feedback"
@@ -239,3 +239,4 @@ class WeeklyFeedback(NotionSyncMixin, Base):
 
 
 Feedback = WeeklyFeedback
+

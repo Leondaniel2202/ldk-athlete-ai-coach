@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from ldk_athlete_ai_coach.core.integrations.notion.schemas.notion_phase import NotionPhase
-from ldk_athlete_ai_coach.db.models.sport_manager import Phase
+from ldk_athlete_ai_coach.db.models.training import Phase
 
 
 def map_phase(

@@ -14,7 +14,7 @@ class NotionWorkout(NotionBaseSchema):
 
     Inherits common Notion identity fields from :class:`NotionBaseSchema`.
     The remaining fields map to the columns defined in
-    :class:`~ldk_athlete_ai_coach.db.models.sport_manager.Workout`.
+    :class:`~ldk_athlete_ai_coach.db.models.training.Workout`.
     """
 
     date_start: datetime | None = None
