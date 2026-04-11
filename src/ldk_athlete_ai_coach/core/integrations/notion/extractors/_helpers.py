@@ -52,6 +52,24 @@ def get_rich_text(prop: dict[str, Any]) -> str | None:
     return text or None
 
 
+def get_property_by_alias(props: dict[str, Any], *names: str) -> dict[str, Any]:
+    """Return the first matching property payload for the provided names.
+
+    Args:
+        props: Raw ``properties`` mapping from a Notion page.
+        *names: Candidate property names in preferred lookup order.
+
+    Returns:
+        The first matching property dictionary, or an empty dictionary when
+        none of the names are present.
+    """
+    for name in names:
+        prop = props.get(name)
+        if prop is not None:
+            return prop
+    return {}
+
+
 def get_select(prop: dict[str, Any]) -> str | None:
     """Extract the selected option name from a ``select`` property.
 
