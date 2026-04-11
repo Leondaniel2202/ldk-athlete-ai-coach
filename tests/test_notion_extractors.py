@@ -85,12 +85,12 @@ _PHASE_PAGE: dict[str, Any] = {
     "properties": {
         "Name": _title_prop("Base Phase"),
         "Notes": _rich_text_prop("Focus on aerobic base"),
-        "Phase Type": _select_prop("Base"),
-        "Focus Tags": _multi_select_prop("Endurance", "Aerobic"),
-        "Weekly Structure": _rich_text_prop("Mon: Run, Wed: Bike, Fri: Run"),
+        "Phase type": _select_prop("Base"),
+        "Focus tags": _multi_select_prop("Endurance", "Aerobic"),
+        "Weekly structure": _rich_text_prop("Mon: Run, Wed: Bike, Fri: Run"),
         "Timeframe": _date_prop("2024-02-01", "2024-03-15"),
         "Plan": _relation_prop("plan-page-id"),
-        "Nutrition Guideline": _relation_prop("nutrition-page-id"),
+        "Nutrition Guidelines": _relation_prop("nutrition-page-id"),
     },
 }
 
@@ -202,12 +202,12 @@ class TestExtractPhase:
             "properties": {
                 "Name": _title_prop("Minimal Phase"),
                 "Notes": _empty_prop("rich_text"),
-                "Phase Type": _empty_prop("select"),
-                "Focus Tags": _empty_prop("multi_select"),
-                "Weekly Structure": _empty_prop("rich_text"),
+                "Phase type": _empty_prop("select"),
+                "Focus tags": _empty_prop("multi_select"),
+                "Weekly structure": _empty_prop("rich_text"),
                 "Timeframe": _empty_prop("date"),
                 "Plan": _empty_prop("relation"),
-                "Nutrition Guideline": _empty_prop("relation"),
+                "Nutrition Guidelines": _empty_prop("relation"),
             },
         }
         phase = extract_phase(page)
@@ -221,6 +221,29 @@ class TestExtractPhase:
         assert phase.timeframe_end is None
         assert phase.plan_notion_id is None
         assert phase.nutrition_guideline_notion_id is None
+
+    def test_legacy_property_aliases_supported(self) -> None:
+        page: dict[str, Any] = {
+            **_PHASE_PAGE,
+            "properties": {
+                "Name": _title_prop("Legacy Phase"),
+                "Notes": _rich_text_prop("Legacy naming still syncs"),
+                "Phase Type": _select_prop("Base"),
+                "Focus Tags": _multi_select_prop("Endurance", "Aerobic"),
+                "Weekly Structure": _rich_text_prop("Mon: Run, Wed: Bike, Fri: Run"),
+                "Timeframe": _date_prop("2024-02-01", "2024-03-15"),
+                "Plan": _relation_prop("plan-page-id"),
+                "Nutrition Guideline": _relation_prop("nutrition-page-id"),
+            },
+        }
+
+        phase = extract_phase(page)
+
+        assert phase.name == "Legacy Phase"
+        assert phase.phase_type == "Base"
+        assert phase.focus_tags == ["Endurance", "Aerobic"]
+        assert phase.weekly_structure == "Mon: Run, Wed: Bike, Fri: Run"
+        assert phase.nutrition_guideline_notion_id == "nutrition-page-id"
 
     def test_missing_name_raises_extraction_error(self) -> None:
         page: dict[str, Any] = {**_PHASE_PAGE, "properties": {"Name": _empty_prop("title")}}
