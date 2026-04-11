@@ -10,13 +10,14 @@ from ldk_athlete_ai_coach.core.integrations.notion.persistence_service import (
     NotionPersistenceService,
 )
 from ldk_athlete_ai_coach.core.integrations.notion.schemas.notion_phase import NotionPhase
+from ldk_athlete_ai_coach.core.integrations.notion.schemas.notion_plan import NotionPlan
 from ldk_athlete_ai_coach.core.integrations.notion.schemas.notion_session import NotionSession
 from ldk_athlete_ai_coach.core.integrations.notion.schemas.notion_weekly_feedback import (
     NotionWeeklyFeedback,
 )
 from ldk_athlete_ai_coach.core.integrations.notion.schemas.notion_workout import NotionWorkout
 from ldk_athlete_ai_coach.db.base import Base
-from ldk_athlete_ai_coach.db.models.training import Feedback, Phase, TrackedSession, Workout
+from ldk_athlete_ai_coach.db.models.training import Feedback, Phase, Plan, TrackedSession, Workout
 from ldk_athlete_ai_coach.db.repositories.training_base_repository import TrainingBaseRepository
 
 
@@ -65,6 +66,16 @@ def _phase_schema(notion_id: str = "phase-1", name: str = "Base Phase", **kwargs
     }
     defaults.update(kwargs)
     return NotionPhase(**defaults)  # pyright: ignore[reportArgumentType]
+
+
+def _plan_schema(notion_id: str = "plan-1", name: str = "Base Plan", **kwargs) -> NotionPlan:
+    defaults = {
+        "notion_id": notion_id,
+        "name": name,
+        "url": f"https://notion.so/{notion_id}",
+    }
+    defaults.update(kwargs)
+    return NotionPlan(**defaults)  # pyright: ignore[reportArgumentType]
 
 
 def _workout_schema(
@@ -203,6 +214,34 @@ class TestBaseRepositoryWithFeedback:
 
 
 class TestNotionPersistenceService:
+    def test_persist_plans_inserts_new_rows(self, session: Session) -> None:
+        svc = NotionPersistenceService(session)
+
+        entities = svc.persist_plans([_plan_schema("pl-1"), _plan_schema("pl-2")])
+
+        assert len(entities) == 2
+        assert {entity.notion_page_id for entity in entities} == {"pl-1", "pl-2"}
+
+    def test_persist_plans_updates_existing_rows_in_place(self, session: Session) -> None:
+        svc = NotionPersistenceService(session)
+
+        [original] = svc.persist_plans([_plan_schema("pl-upd", name="Original")])
+        original_id = original.id
+        [updated] = svc.persist_plans([_plan_schema("pl-upd", name="Updated")])
+
+        assert updated.id == original_id
+        assert updated.name == "Updated"
+        rows = session.execute(select(Plan).where(Plan.notion_page_id == "pl-upd")).scalars().all()
+        assert len(rows) == 1
+
+    def test_persist_phases_resolves_plan_fk_by_notion_id(self, session: Session) -> None:
+        svc = NotionPersistenceService(session)
+
+        [plan] = svc.persist_plans([_plan_schema("plan-parent")])
+        [phase] = svc.persist_phases([_phase_schema("phase-child", plan_notion_id="plan-parent")])
+
+        assert phase.plan_id == plan.id
+
     def test_persist_phases_inserts_new_rows(self, session: Session) -> None:
         svc = NotionPersistenceService(session)
 
@@ -311,12 +350,14 @@ class TestNotionPersistenceService:
         svc = NotionPersistenceService(session)
 
         svc.persist_all(
-            phase_schemas=[_phase_schema("dep-phase")],
+            plan_schemas=[_plan_schema("dep-plan")],
+            phase_schemas=[_phase_schema("dep-phase", plan_notion_id="dep-plan")],
             workout_schemas=[_workout_schema("dep-workout", phase_notion_id="dep-phase")],
             session_schemas=[_session_schema("dep-session", workout_notion_id="dep-workout")],
             feedback_schemas=[_feedback_schema("dep-feedback", phase_notion_id="dep-phase")],
         )
 
+        plan = session.execute(select(Plan).where(Plan.notion_page_id == "dep-plan")).scalar_one()
         phase = session.execute(
             select(Phase).where(Phase.notion_page_id == "dep-phase")
         ).scalar_one()
@@ -330,6 +371,7 @@ class TestNotionPersistenceService:
             select(Feedback).where(Feedback.notion_page_id == "dep-feedback")
         ).scalar_one()
 
+        assert phase.plan_id == plan.id
         assert workout.phase_id == phase.id
         assert tracked.workout_id == workout.id
         assert feedback.phase_id == phase.id
@@ -338,16 +380,22 @@ class TestNotionPersistenceService:
         svc = NotionPersistenceService(session)
 
         svc.persist_all(
+            plan_schemas=[_plan_schema("idem-plan", name="Plan v1")],
             phase_schemas=[_phase_schema("idem-phase", name="Phase v1")],
             workout_schemas=[_workout_schema("idem-workout", name="Workout v1")],
             session_schemas=[_session_schema("idem-session", name="Session v1")],
             feedback_schemas=[_feedback_schema("idem-feedback", week="2024-W01")],
         )
         svc.persist_all(
+            plan_schemas=[_plan_schema("idem-plan", name="Plan v2")],
             phase_schemas=[_phase_schema("idem-phase", name="Phase v2")],
             workout_schemas=[_workout_schema("idem-workout", name="Workout v2")],
             session_schemas=[_session_schema("idem-session", name="Session v2")],
             feedback_schemas=[_feedback_schema("idem-feedback", week="2024-W02")],
+        )
+
+        plan_rows = (
+            session.execute(select(Plan).where(Plan.notion_page_id == "idem-plan")).scalars().all()
         )
 
         phase_rows = (
@@ -373,10 +421,12 @@ class TestNotionPersistenceService:
             .all()
         )
 
+        assert len(plan_rows) == 1
         assert len(phase_rows) == 1
         assert len(workout_rows) == 1
         assert len(session_rows) == 1
         assert len(feedback_rows) == 1
+        assert plan_rows[0].name == "Plan v2"
         assert phase_rows[0].name == "Phase v2"
         assert workout_rows[0].name == "Workout v2"
         assert session_rows[0].name == "Session v2"
@@ -386,6 +436,7 @@ class TestNotionPersistenceService:
         svc = NotionPersistenceService(session)
 
         svc.persist_all(
+            plan_schemas=[],
             phase_schemas=[],
             workout_schemas=[],
             session_schemas=[],
