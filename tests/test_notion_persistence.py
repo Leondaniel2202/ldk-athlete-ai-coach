@@ -9,6 +9,10 @@ from sqlalchemy.orm import Session
 from ldk_athlete_ai_coach.core.integrations.notion.persistence_service import (
     NotionPersistenceService,
 )
+from ldk_athlete_ai_coach.core.integrations.notion.schemas.notion_event import NotionEvent
+from ldk_athlete_ai_coach.core.integrations.notion.schemas.notion_nutrition_guideline import (
+    NotionNutritionGuideline,
+)
 from ldk_athlete_ai_coach.core.integrations.notion.schemas.notion_phase import NotionPhase
 from ldk_athlete_ai_coach.core.integrations.notion.schemas.notion_plan import NotionPlan
 from ldk_athlete_ai_coach.core.integrations.notion.schemas.notion_session import NotionSession
@@ -17,7 +21,15 @@ from ldk_athlete_ai_coach.core.integrations.notion.schemas.notion_weekly_feedbac
 )
 from ldk_athlete_ai_coach.core.integrations.notion.schemas.notion_workout import NotionWorkout
 from ldk_athlete_ai_coach.db.base import Base
-from ldk_athlete_ai_coach.db.models.training import Feedback, Phase, Plan, TrackedSession, Workout
+from ldk_athlete_ai_coach.db.models.training import (
+    Event,
+    Feedback,
+    NutritionGuideline,
+    Phase,
+    Plan,
+    TrackedSession,
+    Workout,
+)
 from ldk_athlete_ai_coach.db.repositories.training_base_repository import TrainingBaseRepository
 
 
@@ -58,6 +70,20 @@ def session(engine):
     connection.close()
 
 
+def _nutrition_schema(
+    notion_id: str = "nutrition-1",
+    name: str = "Performance Fueling",
+    **kwargs,
+) -> NotionNutritionGuideline:
+    defaults = {
+        "notion_id": notion_id,
+        "name": name,
+        "url": f"https://notion.so/{notion_id}",
+    }
+    defaults.update(kwargs)
+    return NotionNutritionGuideline(**defaults)  # pyright: ignore[reportArgumentType]
+
+
 def _phase_schema(notion_id: str = "phase-1", name: str = "Base Phase", **kwargs) -> NotionPhase:
     defaults = {
         "notion_id": notion_id,
@@ -90,6 +116,16 @@ def _workout_schema(
     }
     defaults.update(kwargs)
     return NotionWorkout(**defaults)  # pyright: ignore[reportArgumentType]
+
+
+def _event_schema(notion_id: str = "event-1", name: str = "Goal Race", **kwargs) -> NotionEvent:
+    defaults = {
+        "notion_id": notion_id,
+        "name": name,
+        "url": f"https://notion.so/{notion_id}",
+    }
+    defaults.update(kwargs)
+    return NotionEvent(**defaults)  # pyright: ignore[reportArgumentType]
 
 
 def _session_schema(
@@ -234,6 +270,45 @@ class TestNotionPersistenceService:
         rows = session.execute(select(Plan).where(Plan.notion_page_id == "pl-upd")).scalars().all()
         assert len(rows) == 1
 
+    def test_persist_nutrition_guidelines_updates_existing_rows_in_place(
+        self, session: Session
+    ) -> None:
+        svc = NotionPersistenceService(session)
+
+        [original] = svc.persist_nutrition_guidelines(
+            [_nutrition_schema("nutrition-upd", goal="Performance")]
+        )
+        original_id = original.id
+        [updated] = svc.persist_nutrition_guidelines(
+            [_nutrition_schema("nutrition-upd", goal="Gain")]
+        )
+
+        assert updated.id == original_id
+        assert updated.goal == "Gain"
+        rows = (
+            session.execute(
+                select(NutritionGuideline).where(
+                    NutritionGuideline.notion_page_id == "nutrition-upd"
+                )
+            )
+            .scalars()
+            .all()
+        )
+        assert len(rows) == 1
+
+    def test_persist_phases_resolves_nutrition_guideline_fk_by_notion_id(
+        self, session: Session
+    ) -> None:
+        svc = NotionPersistenceService(session)
+
+        [guideline] = svc.persist_nutrition_guidelines([_nutrition_schema("nutrition-parent")])
+        [phase] = svc.persist_phases(
+            [_phase_schema("phase-child", nutrition_guideline_notion_id="nutrition-parent")]
+        )
+
+        assert phase.nutrition_guideline_id == guideline.id
+
+
     def test_persist_phases_resolves_plan_fk_by_notion_id(self, session: Session) -> None:
         svc = NotionPersistenceService(session)
 
@@ -289,6 +364,44 @@ class TestNotionPersistenceService:
             .all()
         )
         assert len(rows) == 1
+
+    def test_persist_events_resolves_plan_and_workout_fks(self, session: Session) -> None:
+        svc = NotionPersistenceService(session)
+
+        [plan] = svc.persist_plans([_plan_schema("plan-parent")])
+        svc.persist_phases([_phase_schema("phase-parent")])
+        [workout] = svc.persist_workouts(
+            [_workout_schema("workout-parent", phase_notion_id="phase-parent")]
+        )
+        [event_entity] = svc.persist_events(
+            [
+                _event_schema(
+                    "event-child",
+                    plan_notion_id="plan-parent",
+                    race_workout_notion_id="workout-parent",
+                )
+            ]
+        )
+
+        assert event_entity.plan_id == plan.id
+        assert event_entity.race_workout_id == workout.id
+
+    def test_persist_events_updates_existing_rows_in_place(self, session: Session) -> None:
+        svc = NotionPersistenceService(session)
+
+        [original] = svc.persist_events([_event_schema("event-upd", priority="C")])
+        original_id = original.id
+        [updated] = svc.persist_events([_event_schema("event-upd", priority="A")])
+
+        assert updated.id == original_id
+        assert updated.priority == "A"
+        rows = (
+            session.execute(select(Event).where(Event.notion_page_id == "event-upd"))
+            .scalars()
+            .all()
+        )
+        assert len(rows) == 1
+
 
     def test_persist_sessions_resolves_workout_fk_by_notion_id(self, session: Session) -> None:
         svc = NotionPersistenceService(session)
@@ -351,8 +464,10 @@ class TestNotionPersistenceService:
 
         svc.persist_all(
             plan_schemas=[_plan_schema("dep-plan")],
+            nutrition_guideline_schemas=[],
             phase_schemas=[_phase_schema("dep-phase", plan_notion_id="dep-plan")],
             workout_schemas=[_workout_schema("dep-workout", phase_notion_id="dep-phase")],
+            event_schemas=[],
             session_schemas=[_session_schema("dep-session", workout_notion_id="dep-workout")],
             feedback_schemas=[_feedback_schema("dep-feedback", phase_notion_id="dep-phase")],
         )
@@ -381,15 +496,19 @@ class TestNotionPersistenceService:
 
         svc.persist_all(
             plan_schemas=[_plan_schema("idem-plan", name="Plan v1")],
+            nutrition_guideline_schemas=[],
             phase_schemas=[_phase_schema("idem-phase", name="Phase v1")],
             workout_schemas=[_workout_schema("idem-workout", name="Workout v1")],
+            event_schemas=[],
             session_schemas=[_session_schema("idem-session", name="Session v1")],
             feedback_schemas=[_feedback_schema("idem-feedback", week="2024-W01")],
         )
         svc.persist_all(
             plan_schemas=[_plan_schema("idem-plan", name="Plan v2")],
+            nutrition_guideline_schemas=[],
             phase_schemas=[_phase_schema("idem-phase", name="Phase v2")],
             workout_schemas=[_workout_schema("idem-workout", name="Workout v2")],
+            event_schemas=[],
             session_schemas=[_session_schema("idem-session", name="Session v2")],
             feedback_schemas=[_feedback_schema("idem-feedback", week="2024-W02")],
         )
@@ -437,8 +556,10 @@ class TestNotionPersistenceService:
 
         svc.persist_all(
             plan_schemas=[],
+            nutrition_guideline_schemas=[],
             phase_schemas=[],
             workout_schemas=[],
+            event_schemas=[],
             session_schemas=[],
             feedback_schemas=[],
         )

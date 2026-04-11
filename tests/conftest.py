@@ -20,7 +20,9 @@ _TEST_ENV_DEFAULTS: dict[str, str] = {
     "NOTION_API_KEY": "secret_test_key",
     "NOTION_PLAN_DATA_SOURCE_ID": "test-plan-data-source-id",
     "NOTION_PHASE_DATA_SOURCE_ID": "test-phase-data-source-id",
+    "NOTION_NUTRITION_GUIDELINE_DATA_SOURCE_ID": "test-nutrition-data-source-id",
     "NOTION_WORKOUT_DATA_SOURCE_ID": "test-workout-data-source-id",
+    "NOTION_EVENT_DATA_SOURCE_ID": "test-event-data-source-id",
     "NOTION_SESSION_DATA_SOURCE_ID": "test-session-data-source-id",
     "NOTION_FEEDBACK_DATA_SOURCE_ID": "test-feedback-data-source-id",
     # Database (required by db/session.py at import time)

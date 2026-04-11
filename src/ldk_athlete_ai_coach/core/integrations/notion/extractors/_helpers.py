@@ -70,6 +70,33 @@ def get_property_by_alias(props: dict[str, Any], *names: str) -> dict[str, Any]:
     return {}
 
 
+def get_place(
+    prop: dict[str, Any],
+) -> tuple[str | None, str | None, float | None, float | None, str | None]:
+    """Extract a Notion ``place`` property into flat scalar values.
+
+    The public Notion API may return ``null`` for unsupported place values, so
+    this helper treats missing or unsupported payloads as all-empty.
+
+    Args:
+        prop: Raw Notion property dictionary.
+
+    Returns:
+        Tuple of ``(name, address, latitude, longitude, google_place_id)``.
+    """
+    place: dict[str, Any] | None = prop.get("place")
+    if not place:
+        return None, None, None, None, None
+
+    return (
+        place.get("name") or None,
+        place.get("address") or None,
+        place.get("latitude"),
+        place.get("longitude"),
+        place.get("google_place_id") or place.get("googlePlaceId") or None,
+    )
+
+
 def get_select(prop: dict[str, Any]) -> str | None:
     """Extract the selected option name from a ``select`` property.
 

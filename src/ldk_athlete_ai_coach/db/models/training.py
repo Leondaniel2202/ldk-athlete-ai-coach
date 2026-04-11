@@ -72,6 +72,12 @@ class Plan(TrainingEntityMixin, Base):
     end_date_end: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     end_date_is_datetime: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
 
+    primary_event: Mapped[Event | None] = relationship(
+        "Event",
+        back_populates="plan",
+        foreign_keys="Event.plan_id",
+        uselist=False,
+    )
     phases: Mapped[list[Phase]] = relationship("Phase", back_populates="plan")
 
 
@@ -166,11 +172,11 @@ class Workout(TrainingEntityMixin, Base):
     phase_id: Mapped[int | None] = mapped_column(ForeignKey("phases.id"))
 
     phase: Mapped[Phase | None] = relationship("Phase", back_populates="workouts")
-    # race_events: Mapped[list[Event]] = relationship(
-    #     "Event",
-    #     back_populates="race_workout",
-    #     foreign_keys="Event.race_workout_id",
-    # )
+    race_events: Mapped[list[Event]] = relationship(
+        "Event",
+        back_populates="race_workout",
+        foreign_keys="Event.race_workout_id",
+    )
     tracked_sessions: Mapped[list[TrackedSession]] = relationship(
         "TrackedSession",
         back_populates="workout",
