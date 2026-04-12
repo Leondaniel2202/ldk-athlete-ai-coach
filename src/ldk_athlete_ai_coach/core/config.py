@@ -62,6 +62,9 @@ class Settings(BaseSettings):
     notion_page_size: int = 100
     notion_timeout_seconds: int = 30
     notion_max_retries: int = 3
+    openai_api_key: str | None = None
+    openai_model: str = "gpt-4.1-mini"
+    openai_timeout_seconds: int = 30
 
     @computed_field  # type: ignore[prop-decorator]
     @property
