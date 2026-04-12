@@ -19,7 +19,6 @@ from ldk_athlete_ai_coach.core.integrations.notion.schemas.notion_nutrition_guid
 
 def extract_nutrition_guideline(raw_page: dict[str, Any]) -> NotionNutritionGuideline:
     """Convert a raw Notion Nutrition Guideline page into a typed schema."""
-
     try:
         notion_id: str = raw_page["id"]
         props: dict[str, Any] = raw_page["properties"]

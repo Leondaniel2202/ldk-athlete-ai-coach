@@ -14,7 +14,6 @@ def map_event(
     race_workout_id: int | None = None,
 ) -> Event:
     """Map a validated :class:`NotionEvent` onto an :class:`Event` SQLAlchemy entity."""
-
     if entity is None:
         entity = Event()
 

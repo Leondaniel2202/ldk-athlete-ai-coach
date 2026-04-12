@@ -23,6 +23,7 @@ def map_session(
 
     Returns:
         The populated (new or updated) :class:`TrackedSession` entity.
+
     """
     if entity is None:
         entity = TrackedSession()

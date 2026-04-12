@@ -103,9 +103,16 @@ class NotionClient:
 
     Args:
         settings: Application settings instance providing Notion credentials and options.
+
     """
 
     def __init__(self, settings: Settings) -> None:
+        """Initialize the client wrapper around the Notion SDK.
+
+        Args:
+            settings: Runtime settings containing Notion credentials and options.
+
+        """
         self._settings = settings
         self._client = Client(
             auth=settings.notion_api_key,
@@ -130,6 +137,7 @@ class NotionClient:
 
         Returns:
             Raw Notion database object as returned by the API.
+
         """
         logger.debug("Fetching database metadata for database_id=%s", database_id)
         return self._call(self._client.databases.retrieve, database_id=database_id)
@@ -142,6 +150,7 @@ class NotionClient:
 
         Returns:
             Raw Notion data source object as returned by the API.
+
         """
         logger.debug("Fetching data source metadata for data_source_id=%s", data_source_id)
         return self._call(
@@ -163,6 +172,7 @@ class NotionClient:
 
         Returns:
             Raw Notion query response (``results``, ``has_more``, ``next_cursor``, ...).
+
         """
         logger.debug(
             "Querying data_source_id=%s start_cursor=%s page_size=%d",
@@ -194,6 +204,7 @@ class NotionClient:
 
         Yields:
             Individual raw Notion page objects from the data source query results.
+
         """
         cursor: str | None = None
         total = 0
@@ -338,6 +349,7 @@ class NotionClient:
 
         Returns:
             The raw response dictionary from the Notion API.
+
         """
         max_attempts = self._settings.notion_max_retries + 1
         for attempt in range(1, max_attempts + 1):

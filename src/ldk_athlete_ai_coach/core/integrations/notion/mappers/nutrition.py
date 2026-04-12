@@ -13,7 +13,6 @@ def map_nutrition(
     entity: NutritionGuideline | None = None,
 ) -> NutritionGuideline:
     """Map a validated :class:`NotionNutritionGuideline` onto a DB entity."""
-
     if entity is None:
         entity = NutritionGuideline()
 

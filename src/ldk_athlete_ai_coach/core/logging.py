@@ -8,6 +8,7 @@ def configure_logging(*, debug: bool = False) -> None:
 
     Args:
         debug: Whether to enable debug-level logging.
+
     """
     logging.basicConfig(
         level=logging.DEBUG if debug else logging.INFO,

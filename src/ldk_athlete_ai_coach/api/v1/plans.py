@@ -32,6 +32,7 @@ def get_plan(
 
     Raises:
         HTTPException: 404 if the plan does not exist.
+
     """
     repo = PlanRepository(db)
     plan = repo.get_by_id(plan_id)
@@ -56,6 +57,7 @@ def get_plan_phases(
 
     Raises:
         HTTPException: 404 if the plan does not exist.
+
     """
     repo = PlanRepository(db)
     if repo.get_by_id(plan_id) is None:
