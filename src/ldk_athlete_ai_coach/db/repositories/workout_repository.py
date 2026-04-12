@@ -69,14 +69,15 @@ class WorkoutRepository(TrainingBaseRepository[Workout]):
         return list(self._session.execute(stmt).scalars().all())
 
     def get_scheduled_within_window(self, since: datetime, now: datetime) -> list[Workout]:
-        """Return workouts scheduled between *since* and *now* inclusive."""
+        """Return workouts in the window using done date first, planned date as fallback."""
+        effective_date = func.coalesce(Workout.done_date_start, Workout.date_start)
         stmt = (
             select(Workout)
             .where(
-                Workout.date_start.is_not(None),
-                Workout.date_start >= since,
-                Workout.date_start <= now,
+                effective_date.is_not(None),
+                effective_date >= since,
+                effective_date <= now,
             )
-            .order_by(Workout.date_start.desc(), Workout.id.desc())
+            .order_by(effective_date.desc(), Workout.id.desc())
         )
         return list(self._session.execute(stmt).scalars().all())

@@ -664,3 +664,42 @@ def test_get_current_training_context_reports_recent_unlinked_sessions(
         in response.json()["data_gaps"]
     )
 
+
+def test_get_current_training_context_adherence_uses_done_date_fallback(
+    client: TestClient,
+    db_session: Session,
+) -> None:
+    """GET /training-context/current counts done-only workouts in adherence window."""
+    now = datetime.now(tz=UTC)
+    plan = _make_plan(
+        db_session,
+        name="Done Date Fallback Plan",
+        start_date_start=now - timedelta(days=30),
+        end_date_start=now + timedelta(days=30),
+    )
+    phase = _make_phase(
+        db_session,
+        name="Done Date Fallback Phase",
+        plan=plan,
+        timeframe_start=now - timedelta(days=14),
+        timeframe_end=now + timedelta(days=14),
+    )
+    workout = _make_workout(
+        db_session,
+        phase,
+        name="Done Only Recent",
+        date_start=None,
+        done_date_start=now - timedelta(days=1),
+        status="Done",
+    )
+    _make_session(db_session, workout, start=now - timedelta(hours=6), name="Done Only Session")
+
+    response = client.get("/api/v1/training-context/current")
+
+    assert response.status_code == 200
+    adherence = response.json()["adherence"]
+    assert adherence["planned_workouts"] == 1
+    assert adherence["completed_workouts"] == 1
+    assert adherence["skipped_workouts"] == 0
+    assert adherence["completion_ratio"] == pytest.approx(1.0)
+
