@@ -42,4 +42,3 @@ class TrainingBaseRepository[TEntity: TrainingEntityMixin]:
         """Add an entity to the current session and return it."""
         self._session.add(entity)
         return entity
-
