@@ -29,6 +29,7 @@ def get_recent_sessions(
 
     Returns:
         list[SessionResponse]: Recent sessions, newest first.
+
     """
     repo = SessionRepository(db)
     sessions = repo.get_recent(days)
@@ -51,6 +52,7 @@ def get_session(
 
     Raises:
         HTTPException: 404 if the session does not exist.
+
     """
     repo = SessionRepository(db)
     session = repo.get_by_id(session_id)

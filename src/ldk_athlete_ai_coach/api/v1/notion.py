@@ -47,7 +47,6 @@ class NotionSyncSummary(BaseModel):
 
 def _build_sync_summary(results: list[SyncResult]) -> NotionSyncSummary:
     """Convert service sync results into an API-safe summary payload."""
-
     return NotionSyncSummary(
         total_fetched=sum(result.fetched for result in results),
         total_success=sum(result.success for result in results),
@@ -72,7 +71,6 @@ async def sync_notion(
     ),
 ) -> NotionSyncSummary | JSONResponse:
     """Run a full blocking Notion sync and return the sync summary."""
-
     settings = get_settings()
     client = NotionClient(settings)
     service = NotionSyncService(client, settings, hard_fail=hard_fail)

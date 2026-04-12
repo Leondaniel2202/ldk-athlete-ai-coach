@@ -26,6 +26,7 @@ class SessionRepository(TrainingBaseRepository[TrackedSession]):
 
         Returns:
             List of :class:`TrackedSession` rows ordered by start date descending.
+
         """
         cutoff = datetime.now(tz=UTC) - timedelta(days=days)
         stmt = (

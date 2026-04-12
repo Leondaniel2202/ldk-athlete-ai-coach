@@ -12,6 +12,7 @@ def create_application() -> FastAPI:
 
     Returns:
         FastAPI: Configured application object.
+
     """
     settings = get_settings()
     configure_logging(debug=settings.debug)
@@ -28,6 +29,7 @@ def create_application() -> FastAPI:
 
         Returns:
             dict[str, str]: Root endpoint payload.
+
         """
         return {"message": f"{settings.app_name} backend"}
 

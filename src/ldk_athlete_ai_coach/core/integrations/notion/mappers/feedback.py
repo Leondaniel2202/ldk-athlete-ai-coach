@@ -25,6 +25,7 @@ def map_feedback(
 
     Returns:
         The populated (new or updated) :class:`Feedback` entity.
+
     """
     if entity is None:
         entity = WeeklyFeedback()

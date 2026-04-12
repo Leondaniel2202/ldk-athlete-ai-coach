@@ -27,6 +27,7 @@ def map_phase(
 
     Returns:
         The populated (new or updated) :class:`Phase` entity.
+
     """
     if entity is None:
         entity = Phase()

@@ -16,7 +16,6 @@ from ldk_athlete_ai_coach.core.integrations.notion.schemas.notion_plan import No
 
 def extract_plan(raw_page: dict[str, Any]) -> NotionPlan:
     """Convert a raw Notion Plan page object into a :class:`NotionPlan` model."""
-
     try:
         notion_id: str = raw_page["id"]
         props: dict[str, Any] = raw_page["properties"]

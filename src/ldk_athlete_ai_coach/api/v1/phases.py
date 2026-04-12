@@ -32,6 +32,7 @@ def get_phase(
 
     Raises:
         HTTPException: 404 if the phase does not exist.
+
     """
     repo = PhaseRepository(db)
     phase = repo.get_by_id(phase_id)
@@ -56,6 +57,7 @@ def get_phase_workouts(
 
     Raises:
         HTTPException: 404 if the phase does not exist.
+
     """
     repo = PhaseRepository(db)
     if repo.get_by_id(phase_id) is None:

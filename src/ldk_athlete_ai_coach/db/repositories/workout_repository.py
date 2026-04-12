@@ -26,6 +26,7 @@ class WorkoutRepository(TrainingBaseRepository[Workout]):
 
         Returns:
             List of :class:`TrackedSession` rows.
+
         """
         workout = self._session.get(Workout, workout_id)
         if workout is None:
