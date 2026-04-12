@@ -43,6 +43,7 @@ class NotionPersistenceService:
 
         Args:
             session: Active SQLAlchemy session used for all repository operations.
+
         """
         self._session = session
         self._plan_repository = TrainingBaseRepository[Plan](session, Plan)
@@ -63,6 +64,7 @@ class NotionPersistenceService:
 
         Returns:
             Persisted or updated Plan entities.
+
         """
         entities: list[Plan] = []
         for schema in plan_schemas:
@@ -93,6 +95,7 @@ class NotionPersistenceService:
 
         Returns:
             Persisted or updated Phase entities.
+
         """
         entities: list[Phase] = []
         for schema in phase_schemas:
@@ -119,6 +122,7 @@ class NotionPersistenceService:
 
         Returns:
             Persisted or updated Workout entities.
+
         """
         entities: list[Workout] = []
         for schema in workout_schemas:
@@ -154,6 +158,7 @@ class NotionPersistenceService:
 
         Returns:
             Persisted or updated TrackedSession entities.
+
         """
         entities: list[TrackedSession] = []
         for schema in session_schemas:
@@ -172,6 +177,7 @@ class NotionPersistenceService:
 
         Returns:
             Persisted or updated Feedback entities.
+
         """
         entities: list[Feedback] = []
         for schema in feedback_schemas:
@@ -203,6 +209,7 @@ class NotionPersistenceService:
             event_schemas: Extracted Event schemas.
             session_schemas: Extracted TrackedSession schemas.
             feedback_schemas: Extracted Feedback schemas.
+
         """
         self.persist_plans(plan_schemas)
         self.persist_nutrition_guidelines(nutrition_guideline_schemas)
@@ -220,6 +227,7 @@ class NotionPersistenceService:
 
         Returns:
             Local Plan primary key, or ``None`` when unresolved.
+
         """
         if notion_id is None:
             return None
@@ -241,6 +249,7 @@ class NotionPersistenceService:
 
         Returns:
             Local Phase primary key, or ``None`` when unresolved.
+
         """
         if notion_id is None:
             return None
@@ -255,6 +264,7 @@ class NotionPersistenceService:
 
         Returns:
             Local Workout primary key, or ``None`` when unresolved.
+
         """
         if notion_id is None:
             return None
@@ -276,6 +286,7 @@ class NotionPersistenceService:
 
         Returns:
             The entity passed in, whether newly added or pre-existing.
+
         """
         if existing is None:
             repository.add(entity)

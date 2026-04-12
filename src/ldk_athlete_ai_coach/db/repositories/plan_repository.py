@@ -17,6 +17,7 @@ class PlanRepository(TrainingBaseRepository[Plan]):
     """Persist and retrieve Notion-backed Plan entities."""
 
     def __init__(self, session: Session) -> None:
+        """Initialize the repository with an active SQLAlchemy session."""
         super().__init__(session, Plan)
 
     def get_phases(self, plan_id: int) -> list[Phase]:
@@ -27,6 +28,7 @@ class PlanRepository(TrainingBaseRepository[Plan]):
 
         Returns:
             Ordered list of :class:`Phase` rows.
+
         """
         plan = self._session.get(Plan, plan_id)
         if plan is None:

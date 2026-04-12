@@ -32,6 +32,7 @@ class TrainingContextService:
         workout_repository: WorkoutRepository,
         session_repository: SessionRepository,
     ) -> None:
+        """Initialize the service with repositories used to build context snapshots."""
         self._plan_repository = plan_repository
         self._phase_repository = phase_repository
         self._workout_repository = workout_repository

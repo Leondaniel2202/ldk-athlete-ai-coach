@@ -8,7 +8,6 @@ from ldk_athlete_ai_coach.db.models.training import Plan
 
 def map_plan(source: NotionPlan, entity: Plan | None = None) -> Plan:
     """Map a validated :class:`NotionPlan` onto a :class:`Plan` SQLAlchemy entity."""
-
     if entity is None:
         entity = Plan()
 

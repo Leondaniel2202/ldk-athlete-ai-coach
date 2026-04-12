@@ -26,6 +26,7 @@ class PhaseRepository(TrainingBaseRepository[Phase]):
 
         Returns:
             Ordered list of :class:`Workout` rows.
+
         """
         phase = self._session.get(Phase, phase_id)
         if phase is None:

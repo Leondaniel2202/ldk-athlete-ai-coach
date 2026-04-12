@@ -37,6 +37,7 @@ def extract_workout(raw_page: dict[str, Any]) -> NotionWorkout:
 
     Raises:
         NotionExtractionError: If required fields are missing or the payload is malformed.
+
     """
     try:
         notion_id: str = raw_page["id"]

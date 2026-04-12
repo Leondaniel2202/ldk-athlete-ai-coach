@@ -23,6 +23,7 @@ def map_workout(
 
     Returns:
         The populated (new or updated) :class:`Workout` entity.
+
     """
     if entity is None:
         entity = Workout()

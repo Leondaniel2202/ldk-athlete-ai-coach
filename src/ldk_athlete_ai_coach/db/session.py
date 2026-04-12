@@ -25,6 +25,7 @@ def get_db_session() -> Generator[Session, Any, None]:
 
     Yields:
         Session: Active SQLAlchemy session.
+
     """
     session = SessionLocal()
     try:
