@@ -536,7 +536,9 @@ class TestExtractWorkout:
             **_WORKOUT_PAGE,
             "properties": {
                 **_WORKOUT_PAGE["properties"],
-                "Planned Date": _date_prop("2024-02-05T07:00:00+00:00", "2024-02-05T09:00:00+00:00"),
+                "Planned Date": _date_prop(
+                    "2024-02-05T07:00:00+00:00", "2024-02-05T09:00:00+00:00"
+                ),
             },
         }
         workout = extract_workout(page)
@@ -682,6 +684,25 @@ class TestExtractSession:
         assert session.source is None
         assert session.avg_hr is None
         assert session.workout_notion_id is None
+
+    def test_relation_and_type_aliases_supported(self) -> None:
+        page: dict[str, Any] = {
+            **_SESSION_PAGE,
+            "properties": {
+                **_SESSION_PAGE["properties"],
+                "Type": _select_prop("Running"),
+                "Workouts": _relation_prop("workout-page-id"),
+            },
+        }
+
+        # Remove canonical keys so alias resolution is actually exercised.
+        page["properties"].pop("Session Type", None)
+        page["properties"].pop("Workout", None)
+
+        session = extract_session(page)
+
+        assert session.session_type == "Running"
+        assert session.workout_notion_id == "workout-page-id"
 
     def test_missing_name_raises_extraction_error(self) -> None:
         page: dict[str, Any] = {**_SESSION_PAGE, "properties": {"Name": _empty_prop("title")}}
