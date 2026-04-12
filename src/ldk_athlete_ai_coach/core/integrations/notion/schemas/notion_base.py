@@ -11,6 +11,7 @@ class NotionBaseSchema(BaseModel):
     Attributes:
         notion_id: Stable Notion page ID for the source record.
         name: Human-readable title for the record.
+
     """
 
     notion_id: str

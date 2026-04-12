@@ -30,6 +30,7 @@ def extract_phase(raw_page: dict[str, Any]) -> NotionPhase:
 
     Raises:
         NotionExtractionError: If required fields are missing or the payload is malformed.
+
     """
     try:
         notion_id: str = raw_page["id"]

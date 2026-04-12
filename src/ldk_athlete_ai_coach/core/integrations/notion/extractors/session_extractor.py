@@ -29,6 +29,7 @@ def extract_session(raw_page: dict[str, Any]) -> NotionSession:
 
     Raises:
         NotionExtractionError: If required fields are missing or the payload is malformed.
+
     """
     try:
         notion_id: str = raw_page["id"]

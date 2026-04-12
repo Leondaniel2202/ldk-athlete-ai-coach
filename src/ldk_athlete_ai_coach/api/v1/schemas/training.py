@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import date, datetime
 
 from pydantic import BaseModel, ConfigDict
 
@@ -126,3 +126,45 @@ class SessionResponse(BaseModel):
     step_cadence_count_per_min: float | None
     steps: float | None
     workout_id: int | None
+
+
+class TrainingContextMetadataResponse(BaseModel):
+    """Response metadata for the training-context endpoint."""
+
+    as_of_date: date
+    timezone: str
+
+
+class CurrentTrainingContextResponse(BaseModel):
+    """Current plan/phase selection for the training-context endpoint."""
+
+    plan: PlanResponse | None
+    phase: PhaseResponse | None
+    current_phase_week: int | None
+
+
+class RecentWorkoutContextResponse(BaseModel):
+    """Recent workout context with linked tracked sessions."""
+
+    workout: WorkoutDetailResponse
+    tracked_sessions: list[SessionResponse]
+
+
+class AdherenceSummaryResponse(BaseModel):
+    """Summary of recent adherence against scheduled workouts."""
+
+    planned_workouts: int
+    completed_workouts: int
+    skipped_workouts: int
+    completion_ratio: float | None
+
+
+class TrainingContextResponse(BaseModel):
+    """Aggregated response for the current training context endpoint."""
+
+    metadata: TrainingContextMetadataResponse
+    current: CurrentTrainingContextResponse
+    planned_workouts: list[WorkoutDetailResponse]
+    recent_workouts: list[RecentWorkoutContextResponse]
+    adherence: AdherenceSummaryResponse
+    data_gaps: list[str]

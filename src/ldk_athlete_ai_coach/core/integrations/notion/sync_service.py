@@ -84,6 +84,7 @@ class SyncResult:
         success: Number of pages successfully extracted and committed.
         failed: Number of pages that raised an error during extraction or persistence.
         entities: Persisted SQLAlchemy entity instances committed for this sync.
+
     """
 
     entity: str
@@ -98,6 +99,7 @@ class SyncResult:
         return self.entity
 
     def __repr__(self) -> str:  # pragma: no cover
+        """Return a concise debug representation of the sync result."""
         return (
             f"SyncResult(entity={self.entity!r}, fetched={self.fetched}, "
             f"success={self.success}, failed={self.failed})"
@@ -115,6 +117,7 @@ class NotionSyncError(Exception):
     data_source_id: str | None = None
 
     def to_detail(self) -> dict[str, str]:
+        """Convert this error into an API-safe detail payload."""
         detail: dict[str, str] = {
             "type": "notion_sync_error",
             "entity": self.entity,
@@ -151,6 +154,11 @@ class NotionSyncService:
     Args:
         client: Authenticated :class:`NotionClient` instance.
         settings: Application settings providing the Notion data source IDs.
+        hard_fail: When true, the service raises a :class:`NotionSyncError` immediately on the first
+            extraction or persistence failure, aborting the entire sync. When false, the service logs
+            errors and continues processing remaining pages/batches, returning aggregate success or
+            failure counts in the :class:`SyncResult`.
+
     """
 
     def __init__(
@@ -160,6 +168,15 @@ class NotionSyncService:
         session_factory: Callable[[], Session] = SessionLocal,
         hard_fail: bool = False,
     ) -> None:
+        """Initialize sync orchestration dependencies and runtime mode.
+
+        Args:
+            client: Notion API client used to fetch pages and page content.
+            settings: Application settings with Notion data source identifiers.
+            session_factory: Factory that provides SQLAlchemy sessions per entity sync.
+            hard_fail: When true, raise :class:`NotionSyncError` on the first failure.
+
+        """
         self._client = client
         self._settings = settings
         self._session_factory = session_factory
@@ -171,6 +188,7 @@ class NotionSyncService:
 
         Returns:
             Dictionary mapping sync keys to their configured definitions.
+
         """
         return {
             "plan": SyncDefinition(
@@ -230,6 +248,7 @@ class NotionSyncService:
 
         Returns:
             The result of the sync operation.
+
         """
         result = SyncResult(entity=definition.entity_name)
         schemas: list[TSchema] = []
@@ -326,6 +345,7 @@ class NotionSyncService:
         Returns:
             :class:`SyncResult` for the Phase entity containing all persisted
             :class:`~ldk_athlete_ai_coach.db.models.training.Phase` instances.
+
         """
         definition = self._definitions["phase"]
         result = self._sync_entity(definition)
@@ -334,7 +354,6 @@ class NotionSyncService:
 
     def sync_nutrition_guidelines(self) -> SyncResult:
         """Fetch, extract, and persist all Nutrition Guideline entries from Notion."""
-
         definition = self._definitions["nutrition_guideline"]
         result = self._sync_entity(definition)
 
@@ -346,6 +365,7 @@ class NotionSyncService:
         Returns:
             :class:`SyncResult` for the Plan entity containing all persisted
             :class:`~ldk_athlete_ai_coach.db.models.training.Plan` instances.
+
         """
         definition = self._definitions["plan"]
         result = self._sync_entity(definition)
@@ -358,6 +378,7 @@ class NotionSyncService:
         Returns:
             :class:`SyncResult` for the Workout entity containing all persisted
             :class:`~ldk_athlete_ai_coach.db.models.training.Workout` instances.
+
         """
         definition = self._definitions["workout"]
         result = self._sync_entity(definition)
@@ -366,7 +387,6 @@ class NotionSyncService:
 
     def sync_events(self) -> SyncResult:
         """Fetch, extract, and persist all Event entries from Notion."""
-
         definition = self._definitions["event"]
         result = self._sync_entity(definition)
 
@@ -379,6 +399,7 @@ class NotionSyncService:
             :class:`SyncResult` for the TrackedSession entity containing all
             persisted :class:`~ldk_athlete_ai_coach.db.models.training.TrackedSession`
             instances.
+
         """
         definition = self._definitions["session"]
         result = self._sync_entity(definition)
@@ -391,6 +412,7 @@ class NotionSyncService:
         Returns:
             :class:`SyncResult` for the Feedback entity containing all persisted
             :class:`~ldk_athlete_ai_coach.db.models.training.Feedback` instances.
+
         """
         definition = self._definitions["feedback"]
         result = self._sync_entity(definition)
@@ -415,6 +437,7 @@ class NotionSyncService:
 
         Returns:
             A list of :class:`SyncResult` instances, one per entity, in sync order.
+
         """
         logger.info("Starting full Notion sync")
         results = [

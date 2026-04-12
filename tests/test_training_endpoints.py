@@ -62,11 +62,19 @@ def client(db_session: Session) -> TestClient:
 # ---------------------------------------------------------------------------
 
 
-def _make_plan(db: Session, name: str = "Base Plan") -> Plan:
+def _make_plan(
+    db: Session,
+    name: str = "Base Plan",
+    *,
+    start_date_start: datetime | None = None,
+    end_date_start: datetime | None = None,
+) -> Plan:
     plan = Plan(
         notion_page_id=f"plan-{name}",
         notion_url=f"https://notion.so/plan-{name}",
         name=name,
+        start_date_start=start_date_start,
+        end_date_start=end_date_start,
         start_date_is_datetime=False,
         end_date_is_datetime=False,
     )
@@ -74,13 +82,21 @@ def _make_plan(db: Session, name: str = "Base Plan") -> Plan:
     db.flush()
     return plan
 
-
-def _make_phase(db: Session, name: str = "Base Phase", plan: Plan | None = None) -> Phase:
+def _make_phase(
+    db: Session,
+    name: str = "Base Phase",
+    plan: Plan | None = None,
+    *,
+    timeframe_start: datetime | None = None,
+    timeframe_end: datetime | None = None,
+) -> Phase:
     phase = Phase(
         notion_page_id=f"phase-{name}",
         notion_url=f"https://notion.so/phase-{name}",
         name=name,
         focus_tags=[],
+        timeframe_start=timeframe_start,
+        timeframe_end=timeframe_end,
         timeframe_is_datetime=False,
         plan_id=plan.id if plan is not None else None,
     )
@@ -88,13 +104,23 @@ def _make_phase(db: Session, name: str = "Base Phase", plan: Plan | None = None)
     db.flush()
     return phase
 
-
-def _make_workout(db: Session, phase: Phase, name: str = "Long Run") -> Workout:
+def _make_workout(
+    db: Session,
+    phase: Phase,
+    name: str = "Long Run",
+    *,
+    date_start: datetime | None = None,
+    done_date_start: datetime | None = None,
+    notion_page_content: str = "Warm-up\nMain set\nCool-down",
+    status: str | None = "Done",
+    skipped: bool = False,
+    planned_week_number: float | None = None,
+) -> Workout:
     workout = Workout(
         notion_page_id=f"workout-{name}",
         notion_url=f"https://notion.so/workout-{name}",
         name=name,
-        notion_page_content="Warm-up\nMain set\nCool-down",
+        notion_page_content=notion_page_content,
         equipment=[],
         metrics_to_record=[],
         purpose=[],
@@ -106,17 +132,20 @@ def _make_workout(db: Session, phase: Phase, name: str = "Long Run") -> Workout:
         actual_calories_burned_kcal=720.0,
         weighted_hrr_intensity_sum=145.5,
         actual_hrr_intensity=2.51,
-        status="Done",
+        date_start=date_start,
+        done_date_start=done_date_start,
+        status=status,
         training_load_method="Weighted HRR",
-        date_is_datetime=False,
+        planned_week_number=planned_week_number,
+        date_is_datetime=date_start is not None,
         cancelled=False,
-        skipped=False,
+        skipped=skipped,
+        done_date_is_datetime=done_date_start is not None,
         phase_id=phase.id,
     )
     db.add(workout)
     db.flush()
     return workout
-
 
 def _make_session(
     db: Session,
@@ -371,3 +400,267 @@ def test_get_recent_sessions_rejects_invalid_days(client: TestClient) -> None:
     response = client.get("/api/v1/sessions/recent?days=0")
 
     assert response.status_code == 422
+
+# ---------------------------------------------------------------------------
+# Training-context endpoint
+# ---------------------------------------------------------------------------
+
+
+def test_get_current_training_context_returns_workout_centric_snapshot(
+    client: TestClient,
+    db_session: Session,
+) -> None:
+    """GET /training-context/current returns the workout-centric training snapshot."""
+    now = datetime.now(tz=UTC)
+    plan = _make_plan(
+        db_session,
+        name="Active Plan",
+        start_date_start=now - timedelta(days=30),
+        end_date_start=now + timedelta(days=30),
+    )
+    phase = _make_phase(
+        db_session,
+        name="Build Phase",
+        plan=plan,
+        timeframe_start=now - timedelta(days=8),
+        timeframe_end=now + timedelta(days=14),
+    )
+    recent_workout = _make_workout(
+        db_session,
+        phase,
+        name="Recent Workout",
+        date_start=now - timedelta(days=2),
+        done_date_start=now - timedelta(days=1),
+        notion_page_content="Bike set",
+    )
+    upcoming_a = _make_workout(
+        db_session,
+        phase,
+        name="Upcoming A",
+        date_start=now + timedelta(days=1),
+        notion_page_content="Run drills",
+    )
+    upcoming_b = _make_workout(
+        db_session,
+        phase,
+        name="Upcoming B",
+        date_start=now + timedelta(days=3),
+        notion_page_content="Swim set",
+    )
+    tracked_session = _make_session(
+        db_session,
+        recent_workout,
+        start=now - timedelta(days=1, hours=1),
+        name="Recent Session",
+    )
+
+    response = client.get("/api/v1/training-context/current")
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data["metadata"]["timezone"] == "UTC"
+    assert data["current"]["plan"]["id"] == plan.id
+    assert data["current"]["phase"]["id"] == phase.id
+    assert data["current"]["current_phase_week"] == 2
+    assert [workout["id"] for workout in data["planned_workouts"]] == [upcoming_a.id, upcoming_b.id]
+    assert data["planned_workouts"][0]["notion_page_content"] == "Run drills"
+    assert [item["workout"]["id"] for item in data["recent_workouts"]] == [recent_workout.id]
+    assert data["recent_workouts"][0]["workout"]["notion_page_content"] == "Bike set"
+    assert data["recent_workouts"][0]["tracked_sessions"][0]["id"] == tracked_session.id
+    assert data["adherence"] == {
+        "planned_workouts": 1,
+        "completed_workouts": 1,
+        "skipped_workouts": 0,
+        "completion_ratio": 1.0,
+    }
+    assert data["data_gaps"] == []
+
+
+def test_get_current_training_context_falls_back_to_latest_plan_and_phase(
+    client: TestClient,
+    db_session: Session,
+) -> None:
+    """GET /training-context/current falls back to the latest plan and phase."""
+    now = datetime.now(tz=UTC)
+    _make_plan(
+        db_session,
+        name="Older Plan",
+        start_date_start=now - timedelta(days=90),
+        end_date_start=now - timedelta(days=60),
+    )
+    latest_plan = _make_plan(
+        db_session,
+        name="Latest Plan",
+        start_date_start=now - timedelta(days=40),
+        end_date_start=now - timedelta(days=10),
+    )
+    _make_phase(
+        db_session,
+        name="Older Phase",
+        plan=latest_plan,
+        timeframe_start=now - timedelta(days=35),
+        timeframe_end=now - timedelta(days=21),
+    )
+    latest_phase = _make_phase(
+        db_session,
+        name="Latest Phase",
+        plan=latest_plan,
+        timeframe_start=now - timedelta(days=14),
+        timeframe_end=now - timedelta(days=2),
+    )
+
+    response = client.get("/api/v1/training-context/current")
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data["current"]["plan"]["id"] == latest_plan.id
+    assert data["current"]["phase"]["id"] == latest_phase.id
+    assert "No active plan matched the current date; using the latest available plan instead." in data["data_gaps"]
+    assert "No active phase matched the current date; using the latest phase for the selected plan instead." in data["data_gaps"]
+
+
+def test_get_current_training_context_returns_sparse_response_when_no_data(
+    client: TestClient,
+) -> None:
+    """GET /training-context/current returns 200 with gaps when no data exists."""
+    response = client.get("/api/v1/training-context/current")
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data["current"] == {
+        "plan": None,
+        "phase": None,
+        "current_phase_week": None,
+    }
+    assert data["planned_workouts"] == []
+    assert data["recent_workouts"] == []
+    assert data["adherence"] == {
+        "planned_workouts": 0,
+        "completed_workouts": 0,
+        "skipped_workouts": 0,
+        "completion_ratio": None,
+    }
+    assert data["data_gaps"] == ["No plan data is available."]
+
+
+def test_get_current_training_context_excludes_workouts_without_scheduled_date(
+    client: TestClient,
+    db_session: Session,
+) -> None:
+    """GET /training-context/current excludes undated phase workouts from planned context."""
+    now = datetime.now(tz=UTC)
+    plan = _make_plan(
+        db_session,
+        name="Plan With Gap",
+        start_date_start=now - timedelta(days=3),
+        end_date_start=now + timedelta(days=30),
+    )
+    phase = _make_phase(
+        db_session,
+        name="Phase With Gap",
+        plan=plan,
+        timeframe_start=now - timedelta(days=3),
+        timeframe_end=now + timedelta(days=30),
+    )
+    scheduled_workout = _make_workout(
+        db_session,
+        phase,
+        name="Scheduled Workout",
+        date_start=now + timedelta(days=2),
+    )
+    _make_workout(db_session, phase, name="Missing Scheduled Date")
+
+    response = client.get("/api/v1/training-context/current")
+
+    assert response.status_code == 200
+    data = response.json()
+    assert [workout["id"] for workout in data["planned_workouts"]] == [scheduled_workout.id]
+    assert (
+        "1 workout in the current phase is missing date_start and was excluded from planned context."
+        in data["data_gaps"]
+    )
+
+
+def test_get_current_training_context_reports_adherence_summary(
+    client: TestClient,
+    db_session: Session,
+) -> None:
+    """GET /training-context/current summarizes adherence for the last seven days."""
+    now = datetime.now(tz=UTC)
+    plan = _make_plan(
+        db_session,
+        name="Adherence Plan",
+        start_date_start=now - timedelta(days=30),
+        end_date_start=now + timedelta(days=30),
+    )
+    phase = _make_phase(
+        db_session,
+        name="Adherence Phase",
+        plan=plan,
+        timeframe_start=now - timedelta(days=14),
+        timeframe_end=now + timedelta(days=14),
+    )
+    completed = _make_workout(
+        db_session,
+        phase,
+        name="Completed Workout",
+        date_start=now - timedelta(days=1),
+        done_date_start=now - timedelta(hours=12),
+        status="Done",
+    )
+    _make_workout(
+        db_session,
+        phase,
+        name="Skipped Workout",
+        date_start=now - timedelta(days=2),
+        status="Skipped",
+        skipped=True,
+    )
+    _make_workout(
+        db_session,
+        phase,
+        name="Open Workout",
+        date_start=now - timedelta(days=3),
+        status="Planned",
+    )
+    _make_session(db_session, completed, start=now - timedelta(hours=10), name="Completed Session")
+
+    response = client.get("/api/v1/training-context/current")
+
+    assert response.status_code == 200
+    adherence = response.json()["adherence"]
+    assert adherence["planned_workouts"] == 3
+    assert adherence["completed_workouts"] == 1
+    assert adherence["skipped_workouts"] == 1
+    assert adherence["completion_ratio"] == pytest.approx(1 / 3)
+
+
+def test_get_current_training_context_reports_recent_unlinked_sessions(
+    client: TestClient,
+    db_session: Session,
+) -> None:
+    """GET /training-context/current reports recent sessions with no linked workout."""
+    now = datetime.now(tz=UTC)
+    plan = _make_plan(
+        db_session,
+        name="Session Gap Plan",
+        start_date_start=now - timedelta(days=30),
+        end_date_start=now + timedelta(days=30),
+    )
+    _make_phase(
+        db_session,
+        name="Session Gap Phase",
+        plan=plan,
+        timeframe_start=now - timedelta(days=7),
+        timeframe_end=now + timedelta(days=14),
+    )
+    _make_session(db_session, None, start=now - timedelta(days=1), name="Unlinked Recent Session")
+
+    response = client.get("/api/v1/training-context/current")
+
+    assert response.status_code == 200
+    assert (
+        "1 recent tracked session is not linked to a workout."
+        in response.json()["data_gaps"]
+    )
+

@@ -20,6 +20,7 @@ def _plain_text_from_array(items: list[Any]) -> str:
 
     Returns:
         Concatenated plain-text value.
+
     """
     return "".join(item.get("plain_text", "") for item in items)
 
@@ -32,6 +33,7 @@ def get_title(prop: dict[str, Any]) -> str | None:
 
     Returns:
         Extracted title text, or ``None`` when empty.
+
     """
     items: list[Any] = prop.get("title", [])
     text = _plain_text_from_array(items)
@@ -46,6 +48,7 @@ def get_rich_text(prop: dict[str, Any]) -> str | None:
 
     Returns:
         Extracted rich-text content, or ``None`` when empty.
+
     """
     items: list[Any] = prop.get("rich_text", [])
     text = _plain_text_from_array(items)
@@ -68,6 +71,7 @@ def get_property_by_alias(props: dict[str, Any], *names: str) -> dict[str, Any]:
     Returns:
         The first matching property dictionary, or an empty dictionary when
         none of the names are present.
+
     """
     for name in names:
         prop = props.get(name)
@@ -89,6 +93,7 @@ def get_place(
 
     Returns:
         Tuple of ``(name, address, latitude, longitude, google_place_id)``.
+
     """
     place: dict[str, Any] | None = prop.get("place")
     if not place:
@@ -111,6 +116,7 @@ def get_select(prop: dict[str, Any]) -> str | None:
 
     Returns:
         Selected option name, or ``None`` when unset.
+
     """
     sel: dict[str, Any] | None = prop.get("select")
     if not sel:
@@ -126,6 +132,7 @@ def get_multi_select(prop: dict[str, Any]) -> list[str]:
 
     Returns:
         List of selected option names.
+
     """
     items: list[Any] = prop.get("multi_select", [])
     return [item["name"] for item in items if "name" in item]
@@ -139,6 +146,7 @@ def get_number(prop: dict[str, Any]) -> float | None:
 
     Returns:
         Numeric value, or ``None`` when unset.
+
     """
     return prop.get("number")
 
@@ -176,6 +184,7 @@ def get_checkbox(prop: dict[str, Any]) -> bool:
 
     Returns:
         Parsed checkbox value.
+
     """
     return bool(prop.get("checkbox", False))
 
@@ -208,6 +217,7 @@ def get_date(prop: dict[str, Any]) -> tuple[datetime | None, datetime | None, bo
     Returns:
         A tuple of ``(start, end, is_datetime)`` where ``start`` and ``end``
         are parsed datetimes when present.
+
     """
     return _parse_date_object(prop.get("date"))
 
@@ -228,6 +238,7 @@ def get_first_relation(prop: dict[str, Any]) -> str | None:
 
     Returns:
         First relation page ID, or ``None`` when no relations exist.
+
     """
     relations: list[Any] = prop.get("relation", [])
     if not relations:
@@ -244,6 +255,7 @@ def get_page_datetime(raw_page: dict[str, Any], key: str) -> datetime | None:
 
     Returns:
         Parsed datetime value, or ``None`` when missing.
+
     """
     value: str | None = raw_page.get(key)
     if not value:

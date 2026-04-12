@@ -19,7 +19,6 @@ from ldk_athlete_ai_coach.core.integrations.notion.schemas.notion_event import N
 
 def extract_event(raw_page: dict[str, Any]) -> NotionEvent:
     """Convert a raw Notion Event page object into a :class:`NotionEvent` model."""
-
     try:
         notion_id: str = raw_page["id"]
         props: dict[str, Any] = raw_page["properties"]

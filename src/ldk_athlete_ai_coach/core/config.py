@@ -8,6 +8,8 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
+    """Application settings loaded from environment variables and defaults."""
+
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",
@@ -68,6 +70,7 @@ class Settings(BaseSettings):
 
         Returns:
             Fully qualified SQLAlchemy URL for the configured Postgres connection.
+
         """
         return (
             "postgresql+psycopg://"
@@ -82,5 +85,6 @@ def get_settings() -> Settings:
 
     Returns:
         Settings: Parsed application settings instance.
+
     """
     return Settings()  # type: ignore[call-arg]  # pyright: ignore[reportCallIssue]
