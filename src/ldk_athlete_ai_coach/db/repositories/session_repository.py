@@ -34,3 +34,32 @@ class SessionRepository(TrainingBaseRepository[TrackedSession]):
             .order_by(TrackedSession.start_start.desc())
         )
         return list(self._session.execute(stmt).scalars().all())
+
+    def get_for_workout_ids(self, workout_ids: list[int]) -> list[TrackedSession]:
+        """Return sessions linked to the given workout IDs."""
+        if not workout_ids:
+            return []
+        stmt = (
+            select(TrackedSession)
+            .where(TrackedSession.workout_id.in_(workout_ids))
+            .order_by(
+                TrackedSession.workout_id.asc(),
+                TrackedSession.start_start.desc(),
+                TrackedSession.id.desc(),
+            )
+        )
+        return list(self._session.execute(stmt).scalars().all())
+
+    def get_recent_unlinked(self, since: datetime, now: datetime) -> list[TrackedSession]:
+        """Return recent sessions that are not linked to any workout."""
+        stmt = (
+            select(TrackedSession)
+            .where(
+                TrackedSession.workout_id.is_(None),
+                TrackedSession.start_start.is_not(None),
+                TrackedSession.start_start >= since,
+                TrackedSession.start_start <= now,
+            )
+            .order_by(TrackedSession.start_start.desc(), TrackedSession.id.desc())
+        )
+        return list(self._session.execute(stmt).scalars().all())
