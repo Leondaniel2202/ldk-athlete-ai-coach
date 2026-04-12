@@ -78,7 +78,9 @@ class TrainingContextService:
                 for workout in self._workout_repository.get_upcoming_for_phase(phase.id, as_of)
             ]
 
-        recent_workout_entities = self._workout_repository.get_recent_by_effective_date(cutoff, as_of)
+        recent_workout_entities = self._workout_repository.get_recent_by_effective_date(
+            cutoff, as_of
+        )
         recent_sessions = self._session_repository.get_for_workout_ids(
             [workout.id for workout in recent_workout_entities]
         )
@@ -107,7 +109,9 @@ class TrainingContextService:
             if workout.skipped or (workout.status or "").casefold() == "skipped"
         )
         planned_count = len(adherence_workouts)
-        completed_count = sum(1 for workout in adherence_workouts if workout.id in completed_workout_ids)
+        completed_count = sum(
+            1 for workout in adherence_workouts if workout.id in completed_workout_ids
+        )
 
         unlinked_recent_sessions = self._session_repository.get_recent_unlinked(cutoff, as_of)
         if unlinked_recent_sessions:
