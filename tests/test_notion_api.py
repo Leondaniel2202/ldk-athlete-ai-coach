@@ -12,7 +12,10 @@ from ldk_athlete_ai_coach.core.integrations.notion.client import (
     NotionDatabaseNotFoundError,
     NotionRateLimitError,
 )
-from ldk_athlete_ai_coach.core.integrations.notion.sync_service import SyncResult
+from ldk_athlete_ai_coach.core.integrations.notion.sync_service import (
+    NotionSyncError,
+    SyncResult,
+)
 from ldk_athlete_ai_coach.main import app
 
 client = TestClient(app)
@@ -69,6 +72,48 @@ def test_notion_sync_endpoint_returns_summary_on_success() -> None:
     }
     mock_client_cls.assert_called_once()
     mock_service_cls.assert_called_once()
+
+
+def test_notion_sync_endpoint_defaults_hard_fail_to_false() -> None:
+    """Endpoint constructs the sync service with hard_fail=False by default."""
+
+    with (
+        patch("ldk_athlete_ai_coach.api.v1.notion.NotionClient") as mock_client_cls,
+        patch("ldk_athlete_ai_coach.api.v1.notion.NotionSyncService") as mock_service_cls,
+    ):
+        mock_client = MagicMock()
+        mock_client_cls.return_value = mock_client
+        mock_service = MagicMock()
+        mock_service.sync_all.return_value = []
+        mock_service_cls.return_value = mock_service
+
+        response = client.post("/api/v1/notion/sync")
+
+    assert response.status_code == 200
+    mock_service_cls.assert_called_once()
+    assert mock_service_cls.call_args.args[0] is mock_client
+    assert mock_service_cls.call_args.kwargs["hard_fail"] is False
+
+
+def test_notion_sync_endpoint_accepts_hard_fail_query_param() -> None:
+    """Endpoint forwards hard_fail=true to the sync service constructor."""
+
+    with (
+        patch("ldk_athlete_ai_coach.api.v1.notion.NotionClient") as mock_client_cls,
+        patch("ldk_athlete_ai_coach.api.v1.notion.NotionSyncService") as mock_service_cls,
+    ):
+        mock_client = MagicMock()
+        mock_client_cls.return_value = mock_client
+        mock_service = MagicMock()
+        mock_service.sync_all.return_value = []
+        mock_service_cls.return_value = mock_service
+
+        response = client.post("/api/v1/notion/sync?hard_fail=true")
+
+    assert response.status_code == 200
+    mock_service_cls.assert_called_once()
+    assert mock_service_cls.call_args.args[0] is mock_client
+    assert mock_service_cls.call_args.kwargs["hard_fail"] is True
 
 
 def test_notion_sync_endpoint_returns_500_summary_on_partial_failure() -> None:
@@ -164,3 +209,32 @@ def test_notion_sync_endpoint_translates_unexpected_errors() -> None:
 
     assert response.status_code == 500
     assert response.json() == {"detail": "Unexpected error during full Notion sync"}
+
+
+def test_notion_sync_endpoint_translates_hard_fail_sync_error() -> None:
+    """Endpoint returns structured details when hard-fail sync raises NotionSyncError."""
+
+    with patch("ldk_athlete_ai_coach.api.v1.notion.NotionSyncService") as mock_service_cls:
+        mock_service = MagicMock()
+        mock_service.sync_all.side_effect = NotionSyncError(
+            entity="Phase",
+            stage="extract",
+            message="missing required Name",
+            notion_id="page-123",
+            data_source_id="phase-data-source-id",
+        )
+        mock_service_cls.return_value = mock_service
+
+        response = client.post("/api/v1/notion/sync?hard_fail=true")
+
+    assert response.status_code == 500
+    assert response.json() == {
+        "detail": {
+            "type": "notion_sync_error",
+            "entity": "Phase",
+            "stage": "extract",
+            "message": "missing required Name",
+            "notion_id": "page-123",
+            "data_source_id": "phase-data-source-id",
+        }
+    }

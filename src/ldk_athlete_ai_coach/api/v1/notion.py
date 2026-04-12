@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import logging
 
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, HTTPException, Query, status
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 
@@ -17,6 +17,7 @@ from ldk_athlete_ai_coach.core.integrations.notion.client import (
     NotionRateLimitError,
 )
 from ldk_athlete_ai_coach.core.integrations.notion.sync_service import (
+    NotionSyncError,
     NotionSyncService,
     SyncResult,
 )
@@ -64,15 +65,25 @@ def _build_sync_summary(results: list[SyncResult]) -> NotionSyncSummary:
 
 
 @router.post("/notion/sync", response_model=NotionSyncSummary)
-async def sync_notion() -> NotionSyncSummary | JSONResponse:
+async def sync_notion(
+    hard_fail: bool = Query(
+        default=False,
+        description="When true, abort sync immediately on first entity failure.",
+    ),
+) -> NotionSyncSummary | JSONResponse:
     """Run a full blocking Notion sync and return the sync summary."""
 
     settings = get_settings()
     client = NotionClient(settings)
-    service = NotionSyncService(client, settings)
+    service = NotionSyncService(client, settings, hard_fail=hard_fail)
 
     try:
         results = service.sync_all()
+    except NotionSyncError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=exc.to_detail(),
+        ) from exc
     except NotionRateLimitError as exc:
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,

@@ -104,6 +104,30 @@ class SyncResult:
         )
 
 
+@dataclass
+class NotionSyncError(Exception):
+    """Hard-fail sync error with structured context for API responses."""
+
+    entity: str
+    stage: str
+    message: str
+    notion_id: str | None = None
+    data_source_id: str | None = None
+
+    def to_detail(self) -> dict[str, str]:
+        detail: dict[str, str] = {
+            "type": "notion_sync_error",
+            "entity": self.entity,
+            "stage": self.stage,
+            "message": self.message,
+        }
+        if self.notion_id is not None:
+            detail["notion_id"] = self.notion_id
+        if self.data_source_id is not None:
+            detail["data_source_id"] = self.data_source_id
+        return detail
+
+
 # ---------------------------------------------------------------------------
 # Sync service
 # ---------------------------------------------------------------------------
@@ -134,10 +158,12 @@ class NotionSyncService:
         client: NotionClient,
         settings: Settings,
         session_factory: Callable[[], Session] = SessionLocal,
+        hard_fail: bool = False,
     ) -> None:
         self._client = client
         self._settings = settings
         self._session_factory = session_factory
+        self._hard_fail = hard_fail
         self._definitions = self._build_definitions()
 
     def _build_definitions(self) -> dict[str, SyncDefinition]:
@@ -219,6 +245,21 @@ class NotionSyncService:
                 schema.notion_page_content = self._client.get_page_plain_text(schema.notion_id)
                 schemas.append(schema)
             except (NotionExtractionError, Exception) as exc:
+                if self._hard_fail:
+                    logger.error(
+                        "Hard fail enabled - aborting sync due to error extracting "
+                        "%s page notion_id=%s: %s",
+                        definition.entity_name,
+                        raw_page.get("id", "<unknown>"),
+                        exc,
+                    )
+                    raise NotionSyncError(
+                        entity=definition.entity_name,
+                        stage="extract",
+                        message=str(exc),
+                        notion_id=raw_page.get("id"),
+                        data_source_id=definition.data_source_id,
+                    ) from exc
                 result.failed += 1
                 logger.error(
                     "Failed to extract %s page notion_id=%s: %s",
@@ -246,6 +287,20 @@ class NotionSyncService:
             result.success += len(entities)
         except Exception as exc:
             session.rollback()
+            if self._hard_fail:
+                logger.error(
+                    "Hard fail enabled - aborting sync due to error persisting "
+                    "%s batch size=%d: %s",
+                    definition.entity_name,
+                    len(schemas),
+                    exc,
+                )
+                raise NotionSyncError(
+                    entity=definition.entity_name,
+                    stage="persist",
+                    message=str(exc),
+                    data_source_id=definition.data_source_id,
+                ) from exc
             result.failed += len(schemas)
             logger.error(
                 "Failed to persist %s batch size=%d: %s",
