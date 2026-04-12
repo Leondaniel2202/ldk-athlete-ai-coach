@@ -355,3 +355,42 @@ def test_service_aggregates_last_seven_days_adherence(db_session: Session) -> No
     assert context.adherence.completed_workouts == 1
     assert context.adherence.skipped_workouts == 1
     assert context.adherence.completion_ratio == pytest.approx(1 / 3)
+
+
+def test_service_adherence_includes_done_date_when_planned_date_missing(db_session: Session) -> None:
+    """Adherence window includes workouts by done date when planned date is missing."""
+    now = datetime(2026, 4, 12, 10, 0, tzinfo=UTC)
+    plan = _make_plan(
+        db_session,
+        name="Done Date Plan",
+        start_date_start=now - timedelta(days=30),
+        end_date_start=now + timedelta(days=30),
+    )
+    phase = _make_phase(
+        db_session,
+        plan,
+        name="Done Date Phase",
+        timeframe_start=now - timedelta(days=10),
+        timeframe_end=now + timedelta(days=10),
+    )
+    done_only_workout = _make_workout(
+        db_session,
+        phase,
+        name="Done Only",
+        date_start=None,
+        done_date_start=now - timedelta(days=1),
+        status="Done",
+    )
+    _make_session(
+        db_session,
+        done_only_workout,
+        name="Done Only Session",
+        start_start=now - timedelta(hours=8),
+    )
+
+    context = _make_service(db_session).get_current_context(now)
+
+    assert context.adherence.planned_workouts == 1
+    assert context.adherence.completed_workouts == 1
+    assert context.adherence.skipped_workouts == 0
+    assert context.adherence.completion_ratio == pytest.approx(1.0)
