@@ -151,6 +151,10 @@ class NotionSyncService:
     Args:
         client: Authenticated :class:`NotionClient` instance.
         settings: Application settings providing the Notion data source IDs.
+        hard_fail: When true, the service raises a :class:`NotionSyncError` immediately on the first
+            extraction or persistence failure, aborting the entire sync. When false, the service logs
+            errors and continues processing remaining pages/batches, returning aggregate success or
+            failure counts in the :class:`SyncResult`.
     """
 
     def __init__(
