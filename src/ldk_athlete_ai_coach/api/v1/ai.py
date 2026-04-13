@@ -4,12 +4,14 @@ from __future__ import annotations
 
 from typing import Annotated
 
-from fastapi import APIRouter, Body, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from ldk_athlete_ai_coach.ai.errors import AIConfigurationError, AIProviderError
-from ldk_athlete_ai_coach.ai.provider import OpenAIAnalyzeCurrentContextProvider
-from ldk_athlete_ai_coach.ai.service import AnalyzeCurrentContextService
+from ldk_athlete_ai_coach.ai.llm.openai_client import OpenAIClient
+from ldk_athlete_ai_coach.ai.services.current_context_analysis import (
+    AnalyzeCurrentContextService,
+)
 from ldk_athlete_ai_coach.api.v1.schemas.ai import (
     AnalyzeCurrentContextRequest,
     AnalyzeCurrentContextResponse,
@@ -36,18 +38,18 @@ def build_analyze_current_context_service(db: Session) -> AnalyzeCurrentContextS
         workout_repository=WorkoutRepository(db),
         session_repository=SessionRepository(db),
     )
-    provider = OpenAIAnalyzeCurrentContextProvider(
+    llm_client = OpenAIClient(
         api_key=settings.openai_api_key,
         model=settings.openai_model,
         timeout_seconds=settings.openai_timeout_seconds,
     )
-    return AnalyzeCurrentContextService(training_context_service, provider)
+    return AnalyzeCurrentContextService(training_context_service, llm_client)
 
 
 @router.post("/analyze-current-context", response_model=AnalyzeCurrentContextResponse)
 def analyze_current_context(
     db: DbSession,
-    payload: AnalyzeCurrentContextRequest | None = Body(default=None),
+    payload: AnalyzeCurrentContextRequest | None = None,
 ) -> AnalyzeCurrentContextResponse:
     """Analyze the current training context through the AI layer."""
     request = payload or AnalyzeCurrentContextRequest()

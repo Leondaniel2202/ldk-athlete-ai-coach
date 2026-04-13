@@ -4,7 +4,9 @@ from __future__ import annotations
 
 from datetime import date
 
-from ldk_athlete_ai_coach.ai.prompt_builder import build_analyze_current_context_prompt
+from ldk_athlete_ai_coach.ai.prompts.current_context import (
+    build_analyze_current_context_prompt,
+)
 from ldk_athlete_ai_coach.api.v1.schemas.training import (
     AdherenceSummaryResponse,
     CurrentTrainingContextResponse,
