@@ -51,7 +51,8 @@ class TrainingContextService:
                 data_gaps.append("No plan data is available.")
             else:
                 data_gaps.append(
-                    "No active plan matched the current date; using the latest available plan instead."
+                    "No active plan matched the current date; using the latest available "
+                    "plan instead."
                 )
 
         phase = self._select_phase(
@@ -62,15 +63,21 @@ class TrainingContextService:
 
         planned_workouts: list[WorkoutDetailResponse] = []
         if phase is not None:
-            missing_planned_dates = self._workout_repository.count_missing_scheduled_date_for_phase(
-                phase.id
+            missing_planned_dates = (
+                self._workout_repository.count_missing_scheduled_date_for_phase(phase.id)
             )
             if missing_planned_dates:
                 data_gaps.append(
                     self._count_message(
                         missing_planned_dates,
-                        singular="workout in the current phase is missing date_start and was excluded from planned context.",
-                        plural="workouts in the current phase are missing date_start and were excluded from planned context.",
+                        singular=(
+                            "workout in the current phase is missing date_start and "
+                            "was excluded from planned context."
+                        ),
+                        plural=(
+                            "workouts in the current phase are missing date_start and "
+                            "were excluded from planned context."
+                        ),
                     )
                 )
             planned_workouts = [
@@ -161,7 +168,8 @@ class TrainingContextService:
             return None
 
         data_gaps.append(
-            "No active phase matched the current date; using the latest phase for the selected plan instead."
+            "No active phase matched the current date; using the latest phase for the "
+            "selected plan instead."
         )
         return phase
 

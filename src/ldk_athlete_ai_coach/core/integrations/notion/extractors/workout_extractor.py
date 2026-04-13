@@ -49,9 +49,7 @@ def extract_workout(raw_page: dict[str, Any]) -> NotionWorkout:
                 f"Workout page {notion_id!r} is missing required 'Name' property"
             )
 
-        date_start, date_end, date_is_datetime = get_date(
-            get_property_by_alias(props, "Planned Date", "Date")
-        )
+        date_start, date_end, date_is_datetime = get_date(props.get("Planned Date", {}))
         done_date_start, done_date_end, done_date_is_datetime = get_rollup_date(
             props.get("Done Date", {})
         )
