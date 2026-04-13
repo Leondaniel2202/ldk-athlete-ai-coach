@@ -62,17 +62,17 @@ class TrainingContextService:
 
         planned_workouts: list[WorkoutDetailResponse] = []
         if phase is not None:
-            missing_planned_dates = self._workout_repository.count_missing_scheduled_date_for_phase(
-                phase.id
-            )
-            if missing_planned_dates:
-                data_gaps.append(
-                    self._count_message(
-                        missing_planned_dates,
-                        singular="workout in the current phase is missing date_start and was excluded from planned context.",
-                        plural="workouts in the current phase are missing date_start and were excluded from planned context.",
-                    )
-                )
+            # missing_planned_dates = self._workout_repository.count_missing_scheduled_date_for_phase(
+            #     phase.id
+            # )
+            # if missing_planned_dates:
+            #     data_gaps.append(
+            #         self._count_message(
+            #             missing_planned_dates,
+            #             singular="workout in the current phase is missing date_start and was excluded from planned context.",
+            #             plural="workouts in the current phase are missing date_start and were excluded from planned context.",
+            #         )
+            #     )
             planned_workouts = [
                 WorkoutDetailResponse.model_validate(workout)
                 for workout in self._workout_repository.get_upcoming_for_phase(phase.id, as_of)

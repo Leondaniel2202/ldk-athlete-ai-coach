@@ -7,8 +7,6 @@ from datetime import datetime
 from sqlalchemy import and_, or_, select
 from sqlalchemy.orm import Session
 
-from ldk_athlete_ai_coach.core.integrations.notion.mappers.plan import map_plan
-from ldk_athlete_ai_coach.core.integrations.notion.schemas.notion_plan import NotionPlan
 from ldk_athlete_ai_coach.db.models.training import Phase, Plan
 from ldk_athlete_ai_coach.db.repositories.training_base_repository import TrainingBaseRepository
 
