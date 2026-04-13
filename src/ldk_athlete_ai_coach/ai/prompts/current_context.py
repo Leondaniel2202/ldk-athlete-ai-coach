@@ -1,4 +1,8 @@
-"""Prompt construction helpers for AI analysis endpoints."""
+"""Prompt builder for current-context analysis.
+
+This module is intentionally deterministic: it only transforms the already
+aggregated training context into LLM messages.
+"""
 
 from __future__ import annotations
 
@@ -24,7 +28,8 @@ def build_analyze_current_context_prompt(
     payload = json.dumps(context.model_dump(mode="json"), indent=2)
     instruction_text = instruction.strip() if instruction else ""
     user_sections = [
-        "Analyze the athlete's current training context and return a compact structured assessment.",
+        "Analyze the athlete's current training context and return a compact "
+        "structured assessment.",
     ]
     if instruction_text:
         user_sections.append(f"Additional instruction: {instruction_text}")
@@ -38,3 +43,4 @@ def build_analyze_current_context_prompt(
         {"role": "system", "content": _SYSTEM_PROMPT},
         {"role": "user", "content": "\n\n".join(user_sections)},
     ]
+

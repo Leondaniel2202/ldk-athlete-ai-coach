@@ -1,8 +1,8 @@
-"""Pydantic request/response schemas for AI endpoints."""
-
 from __future__ import annotations
 
 from pydantic import BaseModel
+
+from ldk_athlete_ai_coach.ai.schemas import CurrentContextAnalysisResult
 
 
 class AnalyzeCurrentContextRequest(BaseModel):
@@ -11,11 +11,5 @@ class AnalyzeCurrentContextRequest(BaseModel):
     instruction: str | None = None
 
 
-class AnalyzeCurrentContextResponse(BaseModel):
-    """Compact structured AI analysis of the current training context."""
-
-    summary: str
-    phase_focus: str
-    positives: list[str]
-    concerns: list[str]
-    recommendation: str
+class AnalyzeCurrentContextResponse(CurrentContextAnalysisResult):
+    """API response schema for current-context analysis."""

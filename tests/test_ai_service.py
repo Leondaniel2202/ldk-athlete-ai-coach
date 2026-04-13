@@ -7,7 +7,9 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 from ldk_athlete_ai_coach.ai.errors import AIProviderError
-from ldk_athlete_ai_coach.ai.service import AnalyzeCurrentContextService
+from ldk_athlete_ai_coach.ai.services.current_context_analysis import (
+    AnalyzeCurrentContextService,
+)
 from ldk_athlete_ai_coach.api.v1.schemas.ai import AnalyzeCurrentContextResponse
 from ldk_athlete_ai_coach.api.v1.schemas.training import (
     AdherenceSummaryResponse,
@@ -47,12 +49,13 @@ def test_service_reuses_training_context_service_and_prompt_builder() -> None:
     """The service fetches context, builds the prompt, and calls the provider."""
     training_context_service = MagicMock()
     training_context_service.get_current_context.return_value = _context()
-    provider = MagicMock()
-    provider.analyze.return_value = _analysis()
-    service = AnalyzeCurrentContextService(training_context_service, provider)
+    llm_client = MagicMock()
+    llm_client.parse_structured.return_value = _analysis()
+    llm_client.validate_or_raise.side_effect = lambda parsed, schema: parsed
+    service = AnalyzeCurrentContextService(training_context_service, llm_client)
 
     with patch(
-        "ldk_athlete_ai_coach.ai.service.build_analyze_current_context_prompt",
+        "ldk_athlete_ai_coach.ai.services.current_context_analysis.build_analyze_current_context_prompt",
         return_value=[{"role": "system", "content": "prompt"}],
     ) as mock_prompt_builder:
         response = service.analyze_current_context("Prioritize recovery")
@@ -60,19 +63,25 @@ def test_service_reuses_training_context_service_and_prompt_builder() -> None:
     assert response == _analysis()
     training_context_service.get_current_context.assert_called_once_with()
     mock_prompt_builder.assert_called_once_with(_context(), "Prioritize recovery")
-    provider.analyze.assert_called_once_with([{"role": "system", "content": "prompt"}])
+    llm_client.parse_structured.assert_called_once_with(
+        messages=[{"role": "system", "content": "prompt"}],
+        schema=AnalyzeCurrentContextResponse,
+    )
 
 
 def test_service_validates_provider_output() -> None:
     """The service validates dict output from the provider through Pydantic."""
     training_context_service = MagicMock()
     training_context_service.get_current_context.return_value = _context()
-    provider = MagicMock()
-    provider.analyze.return_value = _analysis().model_dump(mode="json")
-    service = AnalyzeCurrentContextService(training_context_service, provider)
+    llm_client = MagicMock()
+    llm_client.parse_structured.return_value = _analysis().model_dump(mode="json")
+    llm_client.validate_or_raise.side_effect = (
+        lambda parsed, schema: schema.model_validate(parsed)
+    )
+    service = AnalyzeCurrentContextService(training_context_service, llm_client)
 
     with patch(
-        "ldk_athlete_ai_coach.ai.service.build_analyze_current_context_prompt",
+        "ldk_athlete_ai_coach.ai.services.current_context_analysis.build_analyze_current_context_prompt",
         return_value=[{"role": "user", "content": "prompt"}],
     ):
         response = service.analyze_current_context()
@@ -85,31 +94,38 @@ def test_service_handles_sparse_context_without_failing_early() -> None:
     sparse_context = _context()
     training_context_service = MagicMock()
     training_context_service.get_current_context.return_value = sparse_context
-    provider = MagicMock()
-    provider.analyze.return_value = _analysis()
-    service = AnalyzeCurrentContextService(training_context_service, provider)
+    llm_client = MagicMock()
+    llm_client.parse_structured.return_value = _analysis()
+    llm_client.validate_or_raise.side_effect = lambda parsed, schema: parsed
+    service = AnalyzeCurrentContextService(training_context_service, llm_client)
 
     with patch(
-        "ldk_athlete_ai_coach.ai.service.build_analyze_current_context_prompt",
+        "ldk_athlete_ai_coach.ai.services.current_context_analysis.build_analyze_current_context_prompt",
         return_value=[{"role": "user", "content": "sparse prompt"}],
     ) as mock_prompt_builder:
         response = service.analyze_current_context()
 
     assert response.summary == "Context is sparse but analyzable."
     mock_prompt_builder.assert_called_once_with(sparse_context, None)
-    provider.analyze.assert_called_once_with([{"role": "user", "content": "sparse prompt"}])
+    llm_client.parse_structured.assert_called_once_with(
+        messages=[{"role": "user", "content": "sparse prompt"}],
+        schema=AnalyzeCurrentContextResponse,
+    )
 
 
 def test_service_translates_invalid_provider_output() -> None:
     """Malformed provider output is normalized to an AI provider error."""
     training_context_service = MagicMock()
     training_context_service.get_current_context.return_value = _context()
-    provider = MagicMock()
-    provider.analyze.return_value = {"summary": "missing required fields"}
-    service = AnalyzeCurrentContextService(training_context_service, provider)
+    llm_client = MagicMock()
+    llm_client.parse_structured.return_value = {"summary": "missing required fields"}
+    llm_client.validate_or_raise.side_effect = AIProviderError(
+        "AI provider returned invalid structured output."
+    )
+    service = AnalyzeCurrentContextService(training_context_service, llm_client)
 
     with patch(
-        "ldk_athlete_ai_coach.ai.service.build_analyze_current_context_prompt",
+        "ldk_athlete_ai_coach.ai.services.current_context_analysis.build_analyze_current_context_prompt",
         return_value=[{"role": "user", "content": "prompt"}],
     ):
         with pytest.raises(AIProviderError, match="AI provider returned invalid structured output."):

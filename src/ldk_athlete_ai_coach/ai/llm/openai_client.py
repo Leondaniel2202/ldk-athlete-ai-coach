@@ -1,28 +1,18 @@
-"""Provider abstraction and OpenAI implementation for AI analysis."""
+"""Generic OpenAI client wrapper for structured output."""
 
 from __future__ import annotations
 
-from typing import Protocol
+from typing import Any, TypeVar
 
 from pydantic import ValidationError
 
 from ldk_athlete_ai_coach.ai.errors import AIConfigurationError, AIProviderError
-from ldk_athlete_ai_coach.ai.prompt_builder import PromptMessages
-from ldk_athlete_ai_coach.api.v1.schemas.ai import AnalyzeCurrentContextResponse
+
+TModel = TypeVar("TModel")
 
 
-class AnalyzeCurrentContextProvider(Protocol):
-    """Provider interface for current-context analysis."""
-
-    def analyze(
-        self,
-        prompt_messages: PromptMessages,
-    ) -> AnalyzeCurrentContextResponse | dict[str, object]:
-        """Return a compact structured analysis for the supplied prompt."""
-
-
-class OpenAIAnalyzeCurrentContextProvider:
-    """OpenAI-backed provider for current-context analysis."""
+class OpenAIClient:
+    """Thin OpenAI wrapper that can parse structured output into a schema."""
 
     def __init__(
         self,
@@ -41,16 +31,13 @@ class OpenAIAnalyzeCurrentContextProvider:
         self._client = OpenAI(api_key=api_key, timeout=timeout_seconds)
         self._model = model
 
-    def analyze(
-        self,
-        prompt_messages: PromptMessages,
-    ) -> AnalyzeCurrentContextResponse:
-        """Call the OpenAI Responses API and validate the structured output."""
+    def parse_structured(self, *, messages: list[dict[str, str]], schema: Any) -> Any:
+        """Call OpenAI Responses API and return parsed structured output."""
         try:
             response = self._client.responses.parse(
                 model=self._model,
-                input=prompt_messages,
-                text_format=AnalyzeCurrentContextResponse,
+                input=messages,
+                text_format=schema,
             )
         except Exception as exc:  # pragma: no cover - SDK error surface varies
             raise AIProviderError("AI provider request failed.") from exc
@@ -58,9 +45,15 @@ class OpenAIAnalyzeCurrentContextProvider:
         parsed = response.output_parsed
         if parsed is None:
             raise AIProviderError("AI provider returned no structured output.")
-        if isinstance(parsed, AnalyzeCurrentContextResponse):
+        return parsed
+
+    @staticmethod
+    def validate_or_raise(parsed: Any, *, schema: Any) -> Any:
+        """Normalize parsed output into the requested schema."""
+        if isinstance(parsed, schema):
             return parsed
         try:
-            return AnalyzeCurrentContextResponse.model_validate(parsed)
+            return schema.model_validate(parsed)
         except ValidationError as exc:
             raise AIProviderError("AI provider returned invalid structured output.") from exc
+
