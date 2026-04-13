@@ -10,6 +10,7 @@ from ldk_athlete_ai_coach.core.integrations.notion.extractors._helpers import (
     get_first_relation,
     get_number,
     get_page_datetime,
+    get_property_by_alias,
     get_rich_text,
     get_select,
     get_title,
@@ -43,12 +44,14 @@ def extract_session(raw_page: dict[str, Any]) -> NotionSession:
 
         start_start, start_end, start_is_datetime = get_date(props.get("Start", {}))
         end_start, end_end, end_is_datetime = get_date(props.get("End", {}))
+        session_type_prop = get_property_by_alias(props, "Session Type", "Type")
+        workout_prop = get_property_by_alias(props, "Workout", "Workouts")
 
         return NotionSession(
             notion_id=notion_id,
             name=name,
             source=get_select(props.get("Source", {})),
-            session_type=get_select(props.get("Session Type", {})),
+            session_type=get_select(session_type_prop),
             external_id=get_rich_text(props.get("External ID", {})),
             start_start=start_start,
             start_end=start_end,
@@ -68,7 +71,7 @@ def extract_session(raw_page: dict[str, Any]) -> NotionSession:
             intensity_kcal_per_hr_kg=get_number(props.get("Intensity (kcal/hr/kg)", {})),
             step_cadence_count_per_min=get_number(props.get("Step Cadence (count/min)", {})),
             steps=get_number(props.get("Steps", {})),
-            workout_notion_id=get_first_relation(props.get("Workout", {})),
+            workout_notion_id=get_first_relation(workout_prop),
             created_time=get_page_datetime(raw_page, "created_time"),
             last_edited_time=get_page_datetime(raw_page, "last_edited_time"),
             archived=bool(raw_page.get("archived", False)),
