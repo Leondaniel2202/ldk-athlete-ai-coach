@@ -492,12 +492,12 @@ class TestExtractWorkout:
         assert workout.cancelled is False
         assert workout.phase_notion_id is None
 
-    def test_legacy_property_aliases_supported(self) -> None:
+    def test_property_aliases_supported(self) -> None:
         page: dict[str, Any] = {
             **_WORKOUT_PAGE,
             "properties": {
                 "Name": _title_prop("Legacy Workout"),
-                "Date": _date_prop("2024-02-05"),
+                "Planned Date": _date_prop("2024-02-05"),
                 "Category": _select_prop("Run"),
                 "Difficulty": _select_prop("Moderate"),
                 "Equipment": _multi_select_prop("Shoes"),
