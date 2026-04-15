@@ -7,8 +7,9 @@ from datetime import datetime
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
-from ldk_athlete_ai_coach.db.models.training import TrackedSession, Workout
+from ldk_athlete_ai_coach.db.models.training import Workout
 from ldk_athlete_ai_coach.db.repositories.training_base_repository import TrainingBaseRepository
+from ldk_athlete_ai_coach.domain.enums.status import WorkoutStatus
 
 
 class WorkoutRepository(TrainingBaseRepository[Workout]):
@@ -18,22 +19,20 @@ class WorkoutRepository(TrainingBaseRepository[Workout]):
         """Initialise with an active database session."""
         super().__init__(session, Workout)
 
-    def get_sessions(self, workout_id: int) -> list[TrackedSession]:
-        """Return all tracked sessions linked to the given workout.
+    def list_by_phase_id(
+        self,
+        phase_id: int,
+        *,
+        status: WorkoutStatus | None = None,
+    ) -> list[Workout]:
+        """Return all workouts for the given phase."""
+        conditions = [Workout.phase_id == phase_id]
+        if status is not None:
+            conditions.append(Workout.status == status)
+        stmt = select(Workout).where(*conditions)
+        return list(self._session.execute(stmt).scalars().all())
 
-        Args:
-            workout_id: Primary key of the parent workout.
-
-        Returns:
-            List of :class:`TrackedSession` rows.
-
-        """
-        workout = self._session.get(Workout, workout_id)
-        if workout is None:
-            return []
-        return list(workout.tracked_sessions)
-
-    def get_upcoming_for_phase(self, phase_id: int, now: datetime) -> list[Workout]:
+    def list_upcoming_by_phase_id(self, phase_id: int, now: datetime) -> list[Workout]:
         """Return upcoming workouts for the phase from *now* onward."""
         stmt = (
             select(Workout)
@@ -46,38 +45,39 @@ class WorkoutRepository(TrainingBaseRepository[Workout]):
         )
         return list(self._session.execute(stmt).scalars().all())
 
-    def count_missing_scheduled_date_for_phase(self, phase_id: int) -> int:
-        """Return how many workouts in the phase do not have a planned date."""
-        stmt = select(func.count()).select_from(Workout).where(
-            Workout.phase_id == phase_id,
-            Workout.date_start.is_(None),
-        )
-        return int(self._session.execute(stmt).scalar_one())
-
-    def get_recent_by_effective_date(self, since: datetime, now: datetime) -> list[Workout]:
+    def list_within_effective_date_window(self, start: datetime, end: datetime) -> list[Workout]:
         """Return recent workouts ordered by effective date descending."""
         effective_date = func.coalesce(Workout.done_date_start, Workout.date_start)
         stmt = (
             select(Workout)
             .where(
                 effective_date.is_not(None),
-                effective_date >= since,
-                effective_date <= now,
+                effective_date >= start,
+                effective_date <= end,
             )
             .order_by(effective_date.desc(), Workout.id.desc())
         )
         return list(self._session.execute(stmt).scalars().all())
 
-    def get_scheduled_within_window(self, since: datetime, now: datetime) -> list[Workout]:
-        """Return workouts in the window using done date first, planned date as fallback."""
-        effective_date = func.coalesce(Workout.done_date_start, Workout.date_start)
+    def list_within_planned_week(self, phase_id: int, week_number: int) -> list[Workout]:
         stmt = (
             select(Workout)
             .where(
-                effective_date.is_not(None),
-                effective_date >= since,
-                effective_date <= now,
+                Workout.phase_id == phase_id,
+                Workout.planned_week_number == week_number,
             )
-            .order_by(effective_date.desc(), Workout.id.desc())
+            .order_by(Workout.id.desc())
         )
         return list(self._session.execute(stmt).scalars().all())
+
+    def count_unscheduled_by_phase_id(self, phase_id: int) -> int:
+        """Return how many workouts in the phase do not have a planned date."""
+        stmt = (
+            select(func.count())
+            .select_from(Workout)
+            .where(
+                Workout.phase_id == phase_id,
+                Workout.date_start.is_(None),
+            )
+        )
+        return int(self._session.execute(stmt).scalar_one())
