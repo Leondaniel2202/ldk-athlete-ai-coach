@@ -7,6 +7,7 @@ from datetime import datetime
 from pydantic import Field
 
 from ldk_athlete_ai_coach.core.integrations.notion.schemas.notion_base import NotionBaseSchema
+from ldk_athlete_ai_coach.domain.enums.status import WorkoutStatus
 
 
 class NotionWorkout(NotionBaseSchema):
@@ -42,7 +43,7 @@ class NotionWorkout(NotionBaseSchema):
     done_date_start: datetime | None = None
     done_date_end: datetime | None = None
     done_date_is_datetime: bool = False
-    status: str | None = None
+    status: WorkoutStatus | None = None
     training_load_method: str | None = None
     additional_info: str | None = None
     cancelled: bool = False

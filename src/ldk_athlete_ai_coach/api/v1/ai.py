@@ -22,7 +22,7 @@ from ldk_athlete_ai_coach.db.repositories.plan_repository import PlanRepository
 from ldk_athlete_ai_coach.db.repositories.session_repository import SessionRepository
 from ldk_athlete_ai_coach.db.repositories.workout_repository import WorkoutRepository
 from ldk_athlete_ai_coach.db.session import get_db_session
-from ldk_athlete_ai_coach.domain.training_context_service import TrainingContextService
+from ldk_athlete_ai_coach.domain.services.training_context_service import TrainingContextService
 
 router = APIRouter(prefix="/ai", tags=["ai"])
 

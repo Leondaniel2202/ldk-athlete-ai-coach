@@ -9,7 +9,7 @@ from __future__ import annotations
 from ldk_athlete_ai_coach.ai.llm.openai_client import OpenAIClient
 from ldk_athlete_ai_coach.ai.prompts.current_context import build_analyze_current_context_prompt
 from ldk_athlete_ai_coach.api.v1.schemas.ai import AnalyzeCurrentContextResponse
-from ldk_athlete_ai_coach.domain.training_context_service import TrainingContextService
+from ldk_athlete_ai_coach.domain.services.training_context_service import TrainingContextService
 
 
 class AnalyzeCurrentContextService:

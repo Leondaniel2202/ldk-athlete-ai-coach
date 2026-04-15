@@ -9,6 +9,7 @@ from sqlalchemy.ext.mutable import MutableList
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from ldk_athlete_ai_coach.db.base import Base
+from ldk_athlete_ai_coach.domain.enums.status import WorkoutStatus
 
 
 class TrainingEntityMixin:
@@ -177,7 +178,7 @@ class Workout(TrainingEntityMixin, Base):
     done_date_start: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     done_date_end: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     done_date_is_datetime: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
-    status: Mapped[str | None] = mapped_column(String(64))
+    status: Mapped[WorkoutStatus | None] = mapped_column(String(64))
     training_load_method: Mapped[str | None] = mapped_column(String(64))
     additional_info: Mapped[str | None] = mapped_column(String(512))
     cancelled: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)

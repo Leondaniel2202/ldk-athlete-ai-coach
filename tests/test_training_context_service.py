@@ -15,7 +15,7 @@ from ldk_athlete_ai_coach.db.repositories.phase_repository import PhaseRepositor
 from ldk_athlete_ai_coach.db.repositories.plan_repository import PlanRepository
 from ldk_athlete_ai_coach.db.repositories.session_repository import SessionRepository
 from ldk_athlete_ai_coach.db.repositories.workout_repository import WorkoutRepository
-from ldk_athlete_ai_coach.domain.training_context_service import TrainingContextService
+from ldk_athlete_ai_coach.domain.services.training_context_service import TrainingContextService
 
 _SQLITE_URL = "sqlite:///:memory:"
 
