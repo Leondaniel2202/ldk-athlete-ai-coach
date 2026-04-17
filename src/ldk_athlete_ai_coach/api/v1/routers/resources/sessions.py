@@ -7,7 +7,7 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
-from ldk_athlete_ai_coach.api.v1.schemas.training import SessionResponse
+from ldk_athlete_ai_coach.api.v1.schemas.sessions import SessionResponse
 from ldk_athlete_ai_coach.db.repositories.session_repository import SessionRepository
 from ldk_athlete_ai_coach.db.session import get_db_session
 
@@ -32,7 +32,7 @@ def get_recent_sessions(
 
     """
     repo = SessionRepository(db)
-    sessions = repo.get_recent(days)
+    sessions = repo.list_recent(days)
     return [SessionResponse.model_validate(s) for s in sessions]
 
 

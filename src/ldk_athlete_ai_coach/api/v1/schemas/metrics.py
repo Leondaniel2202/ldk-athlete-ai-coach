@@ -22,3 +22,12 @@ class TrainingMetricsResponse(BaseModel):
     planned_training_load: float
     actual_training_load: float
     metric_adherence: MetricAdherenceResponse
+
+
+class WeeklyMetricsResponse(BaseModel):
+    """Response schema for a week's worth of training metrics."""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    week_number: int
+    metrics: TrainingMetricsResponse

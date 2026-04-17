@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from datetime import datetime
+from typing import Literal
 
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
@@ -45,21 +46,28 @@ class WorkoutRepository(TrainingBaseRepository[Workout]):
         )
         return list(self._session.execute(stmt).scalars().all())
 
-    def list_within_effective_date_window(self, start: datetime, end: datetime) -> list[Workout]:
-        """Return recent workouts ordered by effective date descending."""
+    def list_within_effective_date_window(
+        self,
+        start: datetime,
+        end: datetime,
+        phase_filter: Literal["with_phase", "without_phase", "all"] = "all",
+    ) -> list[Workout]:
+        """Return workouts whose effective date falls within the given window."""
         effective_date = func.coalesce(Workout.done_date_start, Workout.date_start)
-        stmt = (
-            select(Workout)
-            .where(
-                effective_date.is_not(None),
-                effective_date >= start,
-                effective_date <= end,
-            )
-            .order_by(effective_date.desc(), Workout.id.desc())
-        )
+        conditions = [
+            effective_date.is_not(None),
+            effective_date >= start,
+            effective_date <= end,
+        ]
+        if phase_filter == "with_phase":
+            conditions.append(Workout.phase_id.is_not(None))
+        elif phase_filter == "without_phase":
+            conditions.append(Workout.phase_id.is_(None))
+        stmt = select(Workout).where(*conditions).order_by(effective_date.desc(), Workout.id.desc())
         return list(self._session.execute(stmt).scalars().all())
 
     def list_within_planned_week(self, phase_id: int, week_number: int) -> list[Workout]:
+        """Return workouts in the given phase with the given planned_week_number."""
         stmt = (
             select(Workout)
             .where(

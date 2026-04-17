@@ -63,3 +63,14 @@ class WorkoutDetailResponse(WorkoutContentResponse):
     Includes all fields from :class:`WorkoutContentResponse`."""
 
     tracked_sessions: list[SessionResponse]
+
+
+class WorkoutSummaryResponse(BaseModel):
+    """Compact representation of a workout."""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    name: str
+    date_start: datetime | None
+    date_end: datetime | None
