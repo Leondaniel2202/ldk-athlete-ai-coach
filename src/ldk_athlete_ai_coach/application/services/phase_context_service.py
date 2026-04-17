@@ -271,7 +271,7 @@ class PhaseContextService:
             all_workouts=all_workouts
         )
 
-        weekly_metrics = [
+        weekly_metrics: list[WeeklyMetricsResponse] = [
             self._calculate_weekly_training_metrics(
                 workouts=workouts,
                 phase_start_date=phase.timeframe_start,
@@ -343,7 +343,7 @@ class PhaseContextService:
 
         return PhaseContextResponse(
             metadata=metadata,
-            plan_summary=plan_summary,
+            plan_summary=plan_summary if plan_summary is not None else None,
             phase_status=phase_status,
             phase=phase_response,
             open_workouts=open_workouts,

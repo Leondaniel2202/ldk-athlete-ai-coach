@@ -11,6 +11,7 @@ from sqlalchemy.orm import Session
 from ldk_athlete_ai_coach.db.models.training import Workout
 from ldk_athlete_ai_coach.db.repositories.training_base_repository import TrainingBaseRepository
 from ldk_athlete_ai_coach.domain.enums.status import WorkoutStatus
+from ldk_athlete_ai_coach.utils.date_utils import get_week_timeframe_by_week_number
 
 
 class WorkoutRepository(TrainingBaseRepository[Workout]):
@@ -35,12 +36,14 @@ class WorkoutRepository(TrainingBaseRepository[Workout]):
 
     def list_upcoming_by_phase_id(self, phase_id: int, now: datetime) -> list[Workout]:
         """Return upcoming workouts for the phase from *now* onward."""
+        effective_date = func.coalesce(Workout.done_date_start, Workout.date_start)
+        week_start = get_week_timeframe_by_week_number(wee)[0]
         stmt = (
             select(Workout)
             .where(
                 Workout.phase_id == phase_id,
-                Workout.date_start.is_not(None),
-                Workout.date_start >= now,
+                week_start >= now,
+                effective_date >= now,
             )
             .order_by(Workout.date_start.asc(), Workout.id.asc())
         )
