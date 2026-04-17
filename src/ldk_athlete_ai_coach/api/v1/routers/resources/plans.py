@@ -7,7 +7,9 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
-from ldk_athlete_ai_coach.api.v1.schemas.training import PhaseResponse, PlanResponse
+from ldk_athlete_ai_coach.api.v1.schemas.phases import PhaseResponse
+from ldk_athlete_ai_coach.api.v1.schemas.plans import PlanResponse
+from ldk_athlete_ai_coach.db.repositories.phase_repository import PhaseRepository
 from ldk_athlete_ai_coach.db.repositories.plan_repository import PlanRepository
 from ldk_athlete_ai_coach.db.session import get_db_session
 
@@ -59,8 +61,9 @@ def get_plan_phases(
         HTTPException: 404 if the plan does not exist.
 
     """
-    repo = PlanRepository(db)
-    if repo.get_by_id(plan_id) is None:
+    plan_repo = PlanRepository(db)
+    phase_repo = PhaseRepository(db)
+    if plan_repo.get_by_id(plan_id) is None:
         raise HTTPException(status_code=404, detail="Plan not found")
-    phases = repo.get_phases(plan_id)
+    phases = phase_repo.list_by_plan_id(plan_id)
     return [PhaseResponse.model_validate(p) for p in phases]

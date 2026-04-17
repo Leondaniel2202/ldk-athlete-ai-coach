@@ -6,6 +6,10 @@ from datetime import datetime
 
 from pydantic import BaseModel, ConfigDict
 
+from ldk_athlete_ai_coach.api.v1.schemas.workouts import (
+    WorkoutDetailResponse,
+)
+
 
 class PhaseResponse(BaseModel):
     """Response schema for a single training phase."""
@@ -25,11 +29,17 @@ class PhaseResponse(BaseModel):
     timeframe_is_datetime: bool
     plan_id: int | None
     nutrition_guideline_id: int | None
-    
+
+
+class PhaseDetailResponse(PhaseResponse):
+    """Extended response schema for a training phase with additional linked data."""
+
+    workouts: list[WorkoutDetailResponse] = []
+
 
 class PhaseSummaryResponse(BaseModel):
     """Compact representation of a training phase."""
-    
+
     model_config = ConfigDict(from_attributes=True)
 
     id: int

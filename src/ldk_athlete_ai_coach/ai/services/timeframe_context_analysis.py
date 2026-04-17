@@ -7,12 +7,14 @@ domain context retrieval → prompt construction → LLM call → schema validat
 from __future__ import annotations
 
 from ldk_athlete_ai_coach.ai.llm.openai_client import OpenAIClient
-from ldk_athlete_ai_coach.ai.prompts.current_context import build_analyze_current_context_prompt
+from ldk_athlete_ai_coach.ai.prompts.timeframe_context import build_analyze_current_context_prompt
 from ldk_athlete_ai_coach.api.v1.schemas.ai import AnalyzeCurrentContextResponse
-from ldk_athlete_ai_coach.domain.services.training_context_service import TrainingContextService
+from ldk_athlete_ai_coach.application.services.timeframe_context_service import (
+    TrainingContextService,
+)
 
 
-class AnalyzeCurrentContextService:
+class AnalyzeTimeframeContextService:
     """Fetch training context, build prompt input, and call the LLM."""
 
     def __init__(
@@ -30,4 +32,3 @@ class AnalyzeCurrentContextService:
         messages = build_analyze_current_context_prompt(context, instruction)
         parsed = self._llm.parse_structured(messages=messages, schema=AnalyzeCurrentContextResponse)
         return self._llm.validate_or_raise(parsed, schema=AnalyzeCurrentContextResponse)
-

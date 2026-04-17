@@ -38,3 +38,16 @@ class SessionResponse(BaseModel):
     step_cadence_count_per_min: float | None
     steps: float | None
     workout_id: int | None
+
+
+class SessionSummaryResponse(BaseModel):
+    """Compact representation of a tracked workout session."""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    name: str
+    source: str | None
+    session_type: str | None
+    start_start: datetime | None
+    end_end: datetime | None

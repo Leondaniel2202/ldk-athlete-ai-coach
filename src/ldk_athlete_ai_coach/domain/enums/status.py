@@ -29,3 +29,12 @@ class WorkoutStatus(str, Enum):  # noqa: UP042
     SKIPPED = "Skipped"
     CANCELLED = "Cancelled"
     UNKNOWN = "Unknown"
+
+
+class TimeframeStatus(str, Enum):  # noqa: UP042
+    """The timeframe status of a training plan or phase,
+    derived from the current date relative to its start/end dates."""
+
+    CURRENT = "Current"
+    PAST = "Past"
+    FUTURE = "Future"
