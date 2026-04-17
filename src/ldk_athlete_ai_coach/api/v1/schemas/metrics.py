@@ -1,6 +1,8 @@
-from datetime import date
+from datetime import date, datetime, timedelta
 
 from pydantic import BaseModel, ConfigDict
+
+from ldk_athlete_ai_coach.domain.models.training_metrics import TrainingMetrics
 
 
 class MetricAdherenceResponse(BaseModel):
@@ -19,15 +21,4 @@ class TrainingMetricsResponse(BaseModel):
 
     timeframe_start: date | None
     timeframe_end: date | None
-    planned_training_load: float
-    actual_training_load: float
-    metric_adherence: MetricAdherenceResponse
-
-
-class WeeklyMetricsResponse(BaseModel):
-    """Response schema for a week's worth of training metrics."""
-
-    model_config = ConfigDict(from_attributes=True)
-
-    week_number: int
-    metrics: TrainingMetricsResponse
+    training_metrics: TrainingMetrics

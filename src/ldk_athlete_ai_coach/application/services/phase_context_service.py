@@ -8,12 +8,13 @@ from typing import cast
 
 from ldk_athlete_ai_coach.api.v1.schemas.adherence import WorkoutAdherenceSummaryResponse
 from ldk_athlete_ai_coach.api.v1.schemas.common import ContextMetadataResponse
-from ldk_athlete_ai_coach.api.v1.schemas.metrics import (
-    TrainingMetricsResponse,
-    WeeklyMetricsResponse,
+from ldk_athlete_ai_coach.api.v1.schemas.metrics import TrainingMetricsResponse
+from ldk_athlete_ai_coach.api.v1.schemas.phase_context import (
+    PhaseContextResponse,
+    PhaseWeekContextMetadataResponse,
+    PhaseWeekContextResponse,
 )
-from ldk_athlete_ai_coach.api.v1.schemas.phase_context import PhaseContextResponse
-from ldk_athlete_ai_coach.api.v1.schemas.phases import PhaseResponse
+from ldk_athlete_ai_coach.api.v1.schemas.phases import PhaseResponse, PhaseSummaryResponse
 from ldk_athlete_ai_coach.api.v1.schemas.plans import PlanSummaryResponse
 from ldk_athlete_ai_coach.api.v1.schemas.sessions import SessionResponse
 from ldk_athlete_ai_coach.api.v1.schemas.workouts import (
@@ -29,8 +30,10 @@ from ldk_athlete_ai_coach.domain.calculators.training_metrics_calculator import 
     TrainingMetricsCalculator,
 )
 from ldk_athlete_ai_coach.domain.enums.status import PhaseStatus, WorkoutStatus
-from ldk_athlete_ai_coach.domain.models.training_metrics import TrainingMetrics
-from ldk_athlete_ai_coach.domain.resolvers.timeframe_resolver import TimeframeResolver
+from ldk_athlete_ai_coach.utils.date_utils import (
+    get_phase_week_number_for_date,
+    get_week_end_for_date,
+)
 
 
 class PhaseContextService:
@@ -59,7 +62,6 @@ class PhaseContextService:
         self._session_repository: SessionRepository = session_repository
         self._status_calculator = StatusCalculator()
         self._metrics_calculator = TrainingMetricsCalculator()
-        self._timeframe_resolver = TimeframeResolver()
 
     @staticmethod
     def _count_message(count: int, *, singular: str, plural: str) -> str:
@@ -116,25 +118,6 @@ class PhaseContextService:
             and phase.timeframe_start is not None
             and phase.timeframe_end is not None
         )
-
-    @staticmethod
-    def _group_workouts_by_week(workouts: list[Workout]) -> dict[int, list[Workout]]:
-        """Group workouts by their planned week number.
-
-        Args:
-            workouts: Workout ORM instances to group.
-
-        Returns:
-            A dictionary mapping each week number to a list of workouts for that week.
-        """
-        grouped_workouts: dict[int, list[Workout]] = defaultdict(list)
-        for workout in workouts:
-            week_number = (
-                int(workout.planned_week_number) if workout.planned_week_number is not None else 0
-            )
-            grouped_workouts[week_number].append(workout)
-
-        return dict(grouped_workouts)
 
     def _build_open_workout_content_responses(
         self,
@@ -202,38 +185,29 @@ class PhaseContextService:
 
         return responses
 
-    def _calculate_weekly_training_metrics(
-        self, workouts: list[Workout], phase_start_date: datetime | None, week_number: int
-    ) -> WeeklyMetricsResponse:
+    def _build_training_metrics_response(
+        self,
+        workouts: list[Workout],
+        timeframe_start: datetime | None,
+        timeframe_end: datetime | None,
+    ) -> TrainingMetricsResponse:
         """Calculate training metrics for a list of workouts.
 
         Args:
             workouts: List of workout ORM instances for one week.
-            phase_start_date: Start date of the training phase used to resolve
-                the requested week timeframe. Can be ``None`` if the phase start date is not defined.
-            week_number: The week number within the phase for which metrics are being calculated.
+            timeframe_start: Start date of the timeframe for which metrics are being calculated.
+                Can be ``None`` if not defined.
+            timeframe_end: End date of the timeframe for which metrics are being calculated.
+                Can be ``None`` if not defined.
 
         Returns:
-            A ``WeeklyMetricsResponse`` containing calculated metrics.
+            A ``TrainingMetricsResponse`` containing calculated metrics.
 
         """
-        if phase_start_date is None:
-            timeframe_start = timeframe_end = None
-        else:
-            timeframe_start, timeframe_end = self._timeframe_resolver.get_week_timeframe(
-                phase_start_date=phase_start_date, week_number=week_number
-            )
-        metrics: TrainingMetrics = self._metrics_calculator.calculate(workouts=workouts)
-        base_response = TrainingMetricsResponse.model_validate(metrics)
-
-        return WeeklyMetricsResponse(
-            week_number=week_number,
-            metrics=base_response.model_copy(
-                update={
-                    "timeframe_start": timeframe_start.date() if timeframe_start else None,
-                    "timeframe_end": timeframe_end.date() if timeframe_end else None,
-                }
-            ),
+        return TrainingMetricsResponse(
+            timeframe_start=timeframe_start.date() if timeframe_start else None,
+            timeframe_end=timeframe_end.date() if timeframe_end else None,
+            training_metrics=self._metrics_calculator.calculate(workouts=workouts),
         )
 
     def get_specific_phase_context(self, phase_id: int) -> PhaseContextResponse:
@@ -271,19 +245,23 @@ class PhaseContextService:
             all_workouts=all_workouts
         )
 
-        weekly_metrics: list[WeeklyMetricsResponse] = [
-            self._calculate_weekly_training_metrics(
+        weekly_workouts = defaultdict(list)
+
+        [
+            weekly_workouts[w.planned_week_start_date].append(w)
+            for w in all_workouts
+            if w.planned_week_start_date
+        ]
+        weekly_metrics: list[TrainingMetricsResponse] = [
+            self._build_training_metrics_response(
                 workouts=workouts,
-                phase_start_date=phase.timeframe_start,
-                week_number=week_number,
+                timeframe_start=week_start,
+                timeframe_end=get_week_end_for_date(week_start),
             )
-            for week_number, workouts in self._group_workouts_by_week(workouts=all_workouts).items()
+            for week_start, workouts in sorted(weekly_workouts.items())
         ]
 
         data_gaps: list[str] = []
-
-        if phase.plan is None:
-            data_gaps.append("The phase is not linked to any plan.")
 
         if phase_status == PhaseStatus.UNKNOWN:
             data_gaps.append(
@@ -327,9 +305,7 @@ class PhaseContextService:
         metadata = ContextMetadataResponse(
             as_of_date=as_of.date(), timezone=as_of.tzname() or "UTC"
         )
-        plan_summary: PlanSummaryResponse | None = (
-            PlanSummaryResponse.model_validate(phase.plan) if phase.plan is not None else None
-        )
+        plan_summary: PlanSummaryResponse | None = PlanSummaryResponse.model_validate(phase.plan)
         phase_response: PhaseResponse = PhaseResponse.model_validate(phase)
         adherence = WorkoutAdherenceSummaryResponse(
             planned_workouts=len(all_workouts),
@@ -343,12 +319,133 @@ class PhaseContextService:
 
         return PhaseContextResponse(
             metadata=metadata,
-            plan_summary=plan_summary if plan_summary is not None else None,
+            plan_summary=plan_summary,
             phase_status=phase_status,
             phase=phase_response,
             open_workouts=open_workouts,
             done_workouts=done_workouts,
             weekly_metrics=weekly_metrics,
+            adherence=adherence,
+            data_gaps=data_gaps,
+        )
+
+    def get_specific_phase_week_context(
+        self, phase_id: int, week_start_date: datetime
+    ) -> PhaseWeekContextResponse:
+        """Build and return the context snapshot for a specific training phase week.
+
+        Args:
+            phase_id: Primary key of the phase to build context for.
+            week_start_date: The start date of the week within the phase to build context for.
+
+        Returns:
+            A ``PhaseContextResponse`` focused on the specified week.
+
+        Raises:
+            ValueError: If no phase with the given ``phase_id`` exists,
+                or if the week number is invalid.
+        """
+        as_of = datetime.now(tz=UTC)
+
+        phase: Phase | None = self._phase_repository.get_by_id(phase_id)
+        if phase is None:
+            raise ValueError("Phase not found")
+
+        phase_status: PhaseStatus = self._status_calculator.calculate_phase_status(
+            timeframe_start=phase.timeframe_start,
+            timeframe_end=phase.timeframe_end,
+            as_of_date=as_of.date(),
+        )
+
+        all_workouts: list[Workout] = self._workout_repository.list_within_planned_week(
+            phase_id=phase_id, week_start_date=week_start_date
+        )
+
+        counts: dict[WorkoutStatus, int] = self._count_workouts_by_status(all_workouts)
+
+        metrics: TrainingMetricsResponse = self._build_training_metrics_response(
+            workouts=all_workouts,
+            timeframe_start=week_start_date,
+            timeframe_end=get_week_end_for_date(week_start_date),
+        )
+
+        data_gaps: list[str] = []
+
+        if phase_status == PhaseStatus.UNKNOWN:
+            data_gaps.append(
+                "Phase timeframe is not fully defined; unable to determine phase status."
+            )
+
+        if self._can_check_unlinked_sessions(phase=phase, phase_status=phase_status):
+            unlinked_sessions: list[SessionResponse] = [
+                SessionResponse.model_validate(session)
+                for session in self._session_repository.list_unlinked_within_window(
+                    start=cast(datetime, phase.timeframe_start),
+                    end=cast(datetime, phase.timeframe_end),
+                )
+            ]
+            if unlinked_sessions:
+                data_gaps.append(
+                    self._count_message(
+                        len(unlinked_sessions),
+                        singular=(
+                            "session within the phase timeframe is not linked to any workout."
+                        ),
+                        plural=(
+                            "sessions within the phase timeframe are not linked to any workouts."
+                        ),
+                    )
+                )
+
+        if counts[WorkoutStatus.UNKNOWN] > 0:
+            data_gaps.append(
+                self._count_message(
+                    count=counts[WorkoutStatus.UNKNOWN],
+                    singular="workout in this phase week has an unknown status.",
+                    plural="workouts in this phase week have unknown statuses.",
+                )
+            )
+        if counts[WorkoutStatus.MISSED] > 0:
+            data_gaps.append(
+                self._count_message(
+                    count=counts[WorkoutStatus.MISSED],
+                    singular="workout in this phase week was missed.",
+                    plural="workouts in this phase week were missed.",
+                )
+            )
+
+        metadata = PhaseWeekContextMetadataResponse(
+            as_of_date=as_of.date(),
+            timezone=as_of.tzname() or "UTC",
+            phase_week_number=get_phase_week_number_for_date(
+                phase_start_date=phase.timeframe_start, date=week_start_date
+            )
+            if phase.timeframe_start
+            else 0,
+            phase_week_start_date=week_start_date,
+            phase_week_end_date=get_week_end_for_date(week_start_date),
+        )
+        plan_summary: PlanSummaryResponse | None = PlanSummaryResponse.model_validate(phase.plan)
+        phase_summary: PhaseSummaryResponse = PhaseSummaryResponse.model_validate(phase)
+        phase_response: PhaseResponse = PhaseResponse.model_validate(phase)
+        adherence = WorkoutAdherenceSummaryResponse(
+            planned_workouts=len(all_workouts),
+            completed_workouts=counts[WorkoutStatus.DONE],
+            skipped_workouts=counts[WorkoutStatus.SKIPPED],
+            unknown_workouts=counts[WorkoutStatus.UNKNOWN],
+            completion_ratio=(counts[WorkoutStatus.DONE] / len(all_workouts))
+            if all_workouts
+            else None,
+        )
+
+        return PhaseWeekContextResponse(
+            metadata=metadata,
+            plan_summary=plan_summary,
+            phase_status=phase_status,
+            phase_summary=phase_summary,
+            phase=phase_response,
+            workouts=[WorkoutDetailResponse.model_validate(workout) for workout in all_workouts],
+            metrics=metrics,
             adherence=adherence,
             data_gaps=data_gaps,
         )
