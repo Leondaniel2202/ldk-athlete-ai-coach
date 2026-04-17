@@ -167,7 +167,7 @@ class Workout(TrainingEntityMixin, Base):
     planned_duration_min: Mapped[float | None] = mapped_column(Float)
     planned_rpe: Mapped[float | None] = mapped_column(Float)
     planned_training_load: Mapped[float | None] = mapped_column(Float)
-    planned_week_number: Mapped[float | None] = mapped_column(Float)
+    planned_week_start_date: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     actual_duration_min: Mapped[float | None] = mapped_column(Float)
     actual_distance_km: Mapped[float | None] = mapped_column(Float)
     actual_training_load: Mapped[float | None] = mapped_column(Float)

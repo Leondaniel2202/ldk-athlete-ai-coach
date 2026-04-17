@@ -83,7 +83,7 @@ def extract_workout(raw_page: dict[str, Any]) -> NotionWorkout:
             ),
             planned_rpe=get_number(props.get("Planned RPE", {})),
             planned_training_load=get_formula_number(props.get("Planned Training Load", {})),
-            planned_calendar_week=get_formula_number(props.get("Planned Calendar Week", {})) or 0,
+            planned_week_start_date=get_date(props.get("Planned Week Startdate", {}))[0],
             actual_duration_min=get_rollup_number(props.get("Actual Duration (min)", {})),
             actual_distance_km=get_rollup_number(props.get("Actual Distance", {})),
             actual_training_load=get_rollup_number(props.get("Actual Training Load", {})),

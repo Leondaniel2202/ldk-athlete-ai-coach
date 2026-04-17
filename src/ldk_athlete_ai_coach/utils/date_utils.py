@@ -1,37 +1,6 @@
 from datetime import datetime, timedelta
 
 
-def get_week_timeframe_by_week_number(
-    year: int = datetime.now().year, week_number: int = datetime.now().isocalendar()[1]
-) -> tuple[datetime, datetime]:
-    """Calculate the start and end datetimes for a given ISO week of a year.
-
-    Args:
-        year: The calendar year for the desired week.
-        week_number: The ISO week number (1-53).
-
-    Returns:
-        A tuple containing the start and end datetimes of the specified week.
-    """
-    first_day_of_year = datetime(year=year, month=1, day=4)
-    start_of_week = first_day_of_year + timedelta(
-        weeks=week_number - 1, days=-first_day_of_year.weekday()
-    )
-    end_of_week = start_of_week + timedelta(days=6)
-    return start_of_week, end_of_week
-
-
-def get_week_number_for_date(date: datetime) -> int:
-    """Calculate the ISO week number for a given date.
-
-    Args:
-        date: The date for which to calculate the week number.
-    Returns:
-        The ISO week number (1-53) corresponding to the given date.
-    """
-    return date.isocalendar()[1]
-
-
 def get_weeks_between_dates(start_date: datetime, end_date: datetime) -> int:
     """Calculate the number of weeks between two dates.
 
@@ -72,3 +41,11 @@ def get_week_end_for_date(date: datetime) -> datetime:
         The end date of the week containing the given date.
     """
     return get_week_start_for_date(date) + timedelta(days=6)
+
+
+def get_phase_week_number_for_date(phase_start_date: datetime, date: datetime) -> int:
+    """
+    Returns the relative week number within a phase for a given date.
+    """
+    delta_days = (date - phase_start_date).days
+    return (delta_days // 7) + 1

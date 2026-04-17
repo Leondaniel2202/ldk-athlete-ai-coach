@@ -32,7 +32,7 @@ class NotionWorkout(NotionBaseSchema):
     planned_duration_min: float | None = None
     planned_rpe: float | None = None
     planned_training_load: float | None = None
-    planned_calendar_week: float | None = None
+    planned_week_start_date: datetime | None = None
     actual_duration_min: float | None = None
     actual_distance_km: float | None = None
     actual_training_load: float | None = None
