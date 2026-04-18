@@ -1,7 +1,8 @@
-"""Tests for the training-context domain service."""
+"""Tests for the phase-context application service."""
 
 from __future__ import annotations
 
+from collections.abc import Generator
 from datetime import UTC, datetime, timedelta
 
 import pytest
@@ -9,13 +10,12 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import Session, sessionmaker
 from sqlalchemy.pool import StaticPool
 
+from ldk_athlete_ai_coach.application.services.phase_context_service import PhaseContextService
 from ldk_athlete_ai_coach.db.base import Base
 from ldk_athlete_ai_coach.db.models.training import Phase, Plan, TrackedSession, Workout
 from ldk_athlete_ai_coach.db.repositories.phase_repository import PhaseRepository
-from ldk_athlete_ai_coach.db.repositories.plan_repository import PlanRepository
 from ldk_athlete_ai_coach.db.repositories.session_repository import SessionRepository
 from ldk_athlete_ai_coach.db.repositories.workout_repository import WorkoutRepository
-from ldk_athlete_ai_coach.domain.services.training_context_service import TrainingContextService
 
 _SQLITE_URL = "sqlite:///:memory:"
 
@@ -28,7 +28,7 @@ _TestingSessionLocal = sessionmaker(bind=_engine, class_=Session)
 
 
 @pytest.fixture(autouse=True)
-def _create_tables() -> None:
+def _create_tables() -> Generator[None, None, None]:
     """Create all tables before each test and drop them after."""
     Base.metadata.create_all(bind=_engine)
     yield  # type: ignore[misc]
@@ -36,7 +36,7 @@ def _create_tables() -> None:
 
 
 @pytest.fixture()
-def db_session() -> Session:
+def db_session() -> Generator[Session, None, None]:
     """Return a fresh test database session."""
     session = _TestingSessionLocal()
     yield session  # type: ignore[misc]
@@ -141,256 +141,115 @@ def _make_session(
     return tracked_session
 
 
-def _make_service(db: Session) -> TrainingContextService:
-    return TrainingContextService(
-        plan_repository=PlanRepository(db),
+def _make_service(db: Session) -> PhaseContextService:
+    return PhaseContextService(
         phase_repository=PhaseRepository(db),
         workout_repository=WorkoutRepository(db),
         session_repository=SessionRepository(db),
     )
 
 
-def test_service_prefers_active_plan_and_phase_window(db_session: Session) -> None:
-    """The service selects active window matches over later historical rows."""
-    now = datetime(2026, 4, 12, 10, 0, tzinfo=UTC)
-    _make_plan(
+def test_service_returns_specific_phase_context_with_grouped_workouts(
+    db_session: Session,
+) -> None:
+    """The service returns the requested phase with open and done workouts grouped."""
+    now = datetime.now(tz=UTC)
+    plan = _make_plan(
         db_session,
-        name="Past Plan",
-        start_date_start=now - timedelta(days=90),
-        end_date_start=now - timedelta(days=60),
-    )
-    active_plan = _make_plan(
-        db_session,
-        name="Active Plan",
+        name="Build Plan",
         start_date_start=now - timedelta(days=14),
         end_date_start=now + timedelta(days=14),
     )
-    _make_phase(
+    phase = _make_phase(
         db_session,
-        active_plan,
-        name="Past Phase",
-        timeframe_start=now - timedelta(days=21),
-        timeframe_end=now - timedelta(days=8),
-    )
-    active_phase = _make_phase(
-        db_session,
-        active_plan,
-        name="Active Phase",
+        plan,
+        name="Specific Build",
         timeframe_start=now - timedelta(days=7),
         timeframe_end=now + timedelta(days=7),
     )
-
-    context = _make_service(db_session).get_current_context(now)
-
-    assert context.current.plan is not None
-    assert context.current.phase is not None
-    assert context.current.plan.id == active_plan.id
-    assert context.current.phase.id == active_phase.id
-    assert context.data_gaps == []
-
-
-def test_service_falls_back_to_latest_plan_and_phase_when_no_active_match(db_session: Session) -> None:
-    """The service uses the latest plan and phase when no active windows exist."""
-    now = datetime(2026, 4, 12, 10, 0, tzinfo=UTC)
-    _make_plan(
-        db_session,
-        name="Older Plan",
-        start_date_start=now - timedelta(days=120),
-        end_date_start=now - timedelta(days=90),
-    )
-    latest_plan = _make_plan(
-        db_session,
-        name="Latest Plan",
-        start_date_start=now - timedelta(days=40),
-        end_date_start=now - timedelta(days=10),
-    )
-    _make_phase(
-        db_session,
-        latest_plan,
-        name="Older Phase",
-        timeframe_start=now - timedelta(days=35),
-        timeframe_end=now - timedelta(days=21),
-    )
-    latest_phase = _make_phase(
-        db_session,
-        latest_plan,
-        name="Latest Phase",
-        timeframe_start=now - timedelta(days=14),
-        timeframe_end=now - timedelta(days=3),
-    )
-
-    context = _make_service(db_session).get_current_context(now)
-
-    assert context.current.plan is not None
-    assert context.current.phase is not None
-    assert context.current.plan.id == latest_plan.id
-    assert context.current.phase.id == latest_phase.id
-    assert "No active plan matched the current date; using the latest available plan instead." in context.data_gaps
-    assert "No active phase matched the current date; using the latest phase for the selected plan instead." in context.data_gaps
-
-
-def test_service_computes_current_phase_week_from_phase_start(db_session: Session) -> None:
-    """The service derives the current phase week from the phase start date."""
-    now = datetime(2026, 4, 12, 10, 0, tzinfo=UTC)
-    plan = _make_plan(
-        db_session,
-        name="Week Plan",
-        start_date_start=now - timedelta(days=30),
-        end_date_start=now + timedelta(days=30),
-    )
-    _make_phase(
-        db_session,
-        plan,
-        name="Week Phase",
-        timeframe_start=now - timedelta(days=15),
-        timeframe_end=now + timedelta(days=10),
-    )
-
-    context = _make_service(db_session).get_current_context(now)
-
-    assert context.current.current_phase_week == 3
-
-
-def test_service_recent_workouts_use_effective_date(db_session: Session) -> None:
-    """Recent workouts use done date first and planned date as fallback."""
-    now = datetime(2026, 4, 12, 10, 0, tzinfo=UTC)
-    plan = _make_plan(
-        db_session,
-        name="Recent Plan",
-        start_date_start=now - timedelta(days=30),
-        end_date_start=now + timedelta(days=30),
-    )
-    phase = _make_phase(
-        db_session,
-        plan,
-        name="Recent Phase",
-        timeframe_start=now - timedelta(days=10),
-        timeframe_end=now + timedelta(days=10),
-    )
-    included_by_done_date = _make_workout(
+    open_workout = _make_workout(
         db_session,
         phase,
-        name="Done Recently",
-        date_start=now - timedelta(days=30),
-        done_date_start=now - timedelta(days=2),
+        name="Open Workout",
+        date_start=now + timedelta(days=1),
+        status="Open",
     )
-    _make_workout(
+    done_workout = _make_workout(
         db_session,
         phase,
-        name="Done Too Early",
+        name="Done Workout",
         date_start=now - timedelta(days=2),
-        done_date_start=now - timedelta(days=10),
-    )
-    included_by_planned_date = _make_workout(
-        db_session,
-        phase,
-        name="Planned Recently",
-        date_start=now - timedelta(days=3),
-    )
-
-    context = _make_service(db_session).get_current_context(now)
-
-    assert [item.workout.id for item in context.recent_workouts] == [
-        included_by_done_date.id,
-        included_by_planned_date.id,
-    ]
-
-
-def test_service_aggregates_last_seven_days_adherence(db_session: Session) -> None:
-    """The service summarizes planned, completed, and skipped workouts."""
-    now = datetime(2026, 4, 12, 10, 0, tzinfo=UTC)
-    plan = _make_plan(
-        db_session,
-        name="Adherence Plan",
-        start_date_start=now - timedelta(days=30),
-        end_date_start=now + timedelta(days=30),
-    )
-    phase = _make_phase(
-        db_session,
-        plan,
-        name="Adherence Phase",
-        timeframe_start=now - timedelta(days=10),
-        timeframe_end=now + timedelta(days=10),
-    )
-    completed = _make_workout(
-        db_session,
-        phase,
-        name="Completed",
-        date_start=now - timedelta(days=1),
-        done_date_start=now - timedelta(hours=12),
-        status="Done",
-    )
-    _make_workout(
-        db_session,
-        phase,
-        name="Skipped",
-        date_start=now - timedelta(days=2),
-        status="Skipped",
-        skipped=True,
-    )
-    _make_workout(
-        db_session,
-        phase,
-        name="Open",
-        date_start=now - timedelta(days=3),
-        status="Planned",
-    )
-    _make_workout(
-        db_session,
-        phase,
-        name="Old",
-        date_start=now - timedelta(days=10),
-        status="Done",
-    )
-    _make_session(
-        db_session,
-        completed,
-        name="Completed Session",
-        start_start=now - timedelta(hours=10),
-    )
-
-    context = _make_service(db_session).get_current_context(now)
-
-    assert context.adherence.planned_workouts == 3
-    assert context.adherence.completed_workouts == 1
-    assert context.adherence.skipped_workouts == 1
-    assert context.adherence.completion_ratio == pytest.approx(1 / 3)
-
-
-def test_service_adherence_includes_done_date_when_planned_date_missing(db_session: Session) -> None:
-    """Adherence window includes workouts by done date when planned date is missing."""
-    now = datetime(2026, 4, 12, 10, 0, tzinfo=UTC)
-    plan = _make_plan(
-        db_session,
-        name="Done Date Plan",
-        start_date_start=now - timedelta(days=30),
-        end_date_start=now + timedelta(days=30),
-    )
-    phase = _make_phase(
-        db_session,
-        plan,
-        name="Done Date Phase",
-        timeframe_start=now - timedelta(days=10),
-        timeframe_end=now + timedelta(days=10),
-    )
-    done_only_workout = _make_workout(
-        db_session,
-        phase,
-        name="Done Only",
-        date_start=None,
         done_date_start=now - timedelta(days=1),
         status="Done",
     )
     _make_session(
         db_session,
-        done_only_workout,
-        name="Done Only Session",
-        start_start=now - timedelta(hours=8),
+        done_workout,
+        name="Completed Session",
+        start_start=now - timedelta(hours=12),
     )
 
-    context = _make_service(db_session).get_current_context(now)
+    context = _make_service(db_session).get_specific_phase_context(phase.id)
 
-    assert context.adherence.planned_workouts == 1
+    assert context.plan_summary.id == plan.id
+    assert context.phase.id == phase.id
+    assert [workout.id for workout in context.open_workouts] == [open_workout.id]
+    assert [workout.id for workout in context.done_workouts] == [done_workout.id]
+    assert context.done_workouts[0].tracked_sessions[0].name == "Completed Session"
+    assert context.adherence.planned_workouts == 2
     assert context.adherence.completed_workouts == 1
     assert context.adherence.skipped_workouts == 0
-    assert context.adherence.completion_ratio == pytest.approx(1.0)
+    assert context.adherence.unknown_workouts == 0
+    assert context.data_gaps == []
+
+
+def test_service_reports_unlinked_sessions_and_status_data_gaps(
+    db_session: Session,
+) -> None:
+    """The service surfaces unlinked sessions and problematic workout statuses."""
+    now = datetime.now(tz=UTC)
+    plan = _make_plan(
+        db_session,
+        name="Gap Plan",
+        start_date_start=now - timedelta(days=14),
+        end_date_start=now + timedelta(days=14),
+    )
+    phase = _make_phase(
+        db_session,
+        plan,
+        name="Gap Phase",
+        timeframe_start=now - timedelta(days=7),
+        timeframe_end=now + timedelta(days=7),
+    )
+    _make_workout(
+        db_session,
+        phase,
+        name="Unknown Workout",
+        date_start=now - timedelta(days=2),
+        status="Unknown",
+    )
+    _make_workout(
+        db_session,
+        phase,
+        name="Missed Workout",
+        date_start=now - timedelta(days=1),
+        status="Missed",
+    )
+    _make_session(
+        db_session,
+        None,
+        name="Unlinked Session",
+        start_start=now,
+    )
+
+    context = _make_service(db_session).get_specific_phase_context(phase.id)
+
+    assert "1 session within the phase timeframe is not linked to any workout." in context.data_gaps
+    assert "1 workout in this phase has an unknown status." in context.data_gaps
+    assert "1 workout in this phase was missed." in context.data_gaps
+
+
+def test_service_raises_for_missing_phase(db_session: Session) -> None:
+    """The service raises a clear error when the phase does not exist."""
+    with pytest.raises(ValueError, match="Phase not found"):
+        _make_service(db_session).get_specific_phase_context(phase_id=999)

@@ -211,3 +211,6 @@ __marimo__/
 
 # Visual Studio local settings, including virtual environments created by Visual Studio
 .vscode/
+.uv-cache/
+.uv-python/
+.pytest_tmp/

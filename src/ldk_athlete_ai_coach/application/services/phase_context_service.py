@@ -439,7 +439,6 @@ class PhaseContextService:
         )
         plan_summary: PlanSummaryResponse | None = PlanSummaryResponse.model_validate(phase.plan)
         phase_summary: PhaseSummaryResponse = PhaseSummaryResponse.model_validate(phase)
-        phase_response: PhaseResponse = PhaseResponse.model_validate(phase)
         adherence = WorkoutAdherenceSummaryResponse(
             planned_workouts=len(all_workouts),
             completed_workouts=counts[WorkoutStatus.DONE],
@@ -455,7 +454,6 @@ class PhaseContextService:
             plan_summary=plan_summary,
             phase_status=phase_status,
             phase_summary=phase_summary,
-            phase=phase_response,
             workouts=[WorkoutDetailResponse.model_validate(workout) for workout in all_workouts],
             metrics=metrics,
             adherence=adherence,
