@@ -7,7 +7,7 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
-from ldk_athlete_ai_coach.api.v1.schemas.phases import PhaseResponse
+from ldk_athlete_ai_coach.api.v1.schemas.phases import PhaseResponse, PhaseSummaryResponse
 from ldk_athlete_ai_coach.api.v1.schemas.workouts import WorkoutResponse
 from ldk_athlete_ai_coach.db.models.training import Workout
 from ldk_athlete_ai_coach.db.repositories.phase_repository import PhaseRepository
@@ -68,3 +68,16 @@ def get_phase_workouts(
         raise HTTPException(status_code=404, detail="Phase not found")
     workouts: list[Workout] = workout_repo.list_by_phase_id(phase_id)
     return [WorkoutResponse.model_validate(w) for w in workouts]
+
+
+@router.get("/{phase_id}/summary", response_model=PhaseSummaryResponse)
+def get_phase_summary(
+    phase_id: int,
+    db: DbSession,
+) -> PhaseSummaryResponse:
+    """Retrieve a summary of a phase, including key dates and metrics."""
+    repo = PhaseRepository(db)
+    phase = repo.get_by_id(phase_id)
+    if phase is None:
+        raise HTTPException(status_code=404, detail="Phase not found")
+    return PhaseSummaryResponse.model_validate(phase)
