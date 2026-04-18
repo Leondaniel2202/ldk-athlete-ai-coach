@@ -8,7 +8,10 @@ from pydantic import BaseModel
 
 from ldk_athlete_ai_coach.api.v1.schemas.adherence import AdherenceSummaryResponse
 from ldk_athlete_ai_coach.api.v1.schemas.phases import PhaseResponse
-from ldk_athlete_ai_coach.api.v1.schemas.workouts import WorkoutContentResponse, WorkoutDetailResponse
+from ldk_athlete_ai_coach.api.v1.schemas.workouts import (
+    WorkoutContentResponse,
+    WorkoutDetailResponse,
+)
 from ldk_athlete_ai_coach.domain.enums.status import PhaseStatus
 
 

@@ -7,10 +7,11 @@ domain services to derive statuses from temporal boundaries and workout context.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import date
+from datetime import date, datetime
 from enum import StrEnum
 
 from ldk_athlete_ai_coach.domain.enums.status import PhaseStatus, PlanStatus, WorkoutStatus
+from ldk_athlete_ai_coach.utils.date_utils import coerce_to_date
 
 
 class TemporalStatus(StrEnum):
@@ -48,8 +49,8 @@ class WorkoutStatusContext:
     session_count: int
     actual_rpe: float | None
     phase_status: PhaseStatus | None
-    timeframe_start: date | None
-    timeframe_end: date | None
+    timeframe_start: date | datetime | None
+    timeframe_end: date | datetime | None
 
 
 class StatusCalculator:
@@ -58,8 +59,8 @@ class StatusCalculator:
     def _calculate_temporal_status(
         self,
         *,
-        timeframe_start: date | None,
-        timeframe_end: date | None,
+        timeframe_start: date | datetime | None,
+        timeframe_end: date | datetime | None,
         as_of_date: date,
     ) -> TemporalStatus:
         """Calculate a generic temporal status from timeframe boundaries.
@@ -72,6 +73,9 @@ class StatusCalculator:
         Returns:
             TemporalStatus: Derived temporal state relative to ``as_of_date``.
         """
+
+        timeframe_start = coerce_to_date(timeframe_start)
+        timeframe_end = coerce_to_date(timeframe_end)
 
         if timeframe_start is not None and timeframe_start > as_of_date:
             return TemporalStatus.FUTURE
@@ -165,10 +169,11 @@ class StatusCalculator:
         has_sessions = context.session_count > 0
         has_actual_rpe = context.actual_rpe is not None and context.actual_rpe != 0
 
-        timeframe_in_future = (
-            context.timeframe_start is not None and context.timeframe_start > as_of_date
-        )
-        timeframe_in_past = context.timeframe_end is not None and context.timeframe_end < as_of_date
+        timeframe_start = coerce_to_date(context.timeframe_start)
+        timeframe_end = coerce_to_date(context.timeframe_end)
+
+        timeframe_in_future = timeframe_start is not None and timeframe_start > as_of_date
+        timeframe_in_past = timeframe_end is not None and timeframe_end < as_of_date
 
         if context.is_cancelled:
             return WorkoutStatus.CANCELLED

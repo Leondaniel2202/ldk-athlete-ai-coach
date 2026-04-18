@@ -1,6 +1,7 @@
 """Pydantic response models for the training domain."""
 
 from __future__ import annotations
+
 from datetime import datetime
 
 from pydantic import BaseModel

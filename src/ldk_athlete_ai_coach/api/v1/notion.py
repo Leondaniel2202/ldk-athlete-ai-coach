@@ -1,4 +1,4 @@
-"""Notion sync endpoints for API v1."""
+"""Public Notion sync endpoints for API v1."""
 
 from __future__ import annotations
 
@@ -63,7 +63,7 @@ def _build_sync_summary(results: list[SyncResult]) -> NotionSyncSummary:
     )
 
 
-@router.post("/notion", response_model=NotionSyncSummary)
+@router.post("/notion/sync", response_model=NotionSyncSummary)
 async def sync_notion(
     hard_fail: bool = Query(
         default=False,

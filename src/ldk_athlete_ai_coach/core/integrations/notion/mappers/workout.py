@@ -49,6 +49,7 @@ def map_workout(
     entity.planned_duration_min = source.planned_duration_min
     entity.planned_rpe = source.planned_rpe
     entity.planned_training_load = source.planned_training_load
+    entity.planned_week_number = source.planned_week_number
     entity.planned_week_start_date = source.planned_week_start_date
     entity.actual_duration_min = source.actual_duration_min
     entity.actual_distance_km = source.actual_distance_km

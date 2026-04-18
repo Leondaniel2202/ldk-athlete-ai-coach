@@ -9,6 +9,7 @@ from ldk_athlete_ai_coach.core.integrations.notion.extractors._helpers import (
     get_checkbox,
     get_date,
     get_first_relation,
+    get_formula_date,
     get_formula_number,
     get_formula_string,
     get_multi_select,
@@ -83,7 +84,8 @@ def extract_workout(raw_page: dict[str, Any]) -> NotionWorkout:
             ),
             planned_rpe=get_number(props.get("Planned RPE", {})),
             planned_training_load=get_formula_number(props.get("Planned Training Load", {})),
-            planned_week_start_date=get_date(props.get("Planned Week Startdate", {}))[0],
+            planned_week_number=get_number(props.get("Planned Week Number", {})),
+            planned_week_start_date=get_formula_date(props.get("Planned Week Startdate", {}))[0],
             actual_duration_min=get_rollup_number(props.get("Actual Duration (min)", {})),
             actual_distance_km=get_rollup_number(props.get("Actual Distance", {})),
             actual_training_load=get_rollup_number(props.get("Actual Training Load", {})),
@@ -98,7 +100,11 @@ def extract_workout(raw_page: dict[str, Any]) -> NotionWorkout:
             done_date_start=done_date_start,
             done_date_end=done_date_end,
             done_date_is_datetime=done_date_is_datetime,
-            status=WorkoutStatus(get_formula_string(props.get("Status", {})) or "Unknown"),
+            status=(
+                WorkoutStatus(status_value)
+                if (status_value := get_formula_string(props.get("Status", {})))
+                else None
+            ),
             training_load_method=get_formula_string(props.get("Training Load Method", {})),
             additional_info=get_url(additional_info_prop) or get_rich_text(additional_info_prop),
             cancelled=get_checkbox(props.get("Cancelled", {})),

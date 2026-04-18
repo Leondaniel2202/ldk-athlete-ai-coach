@@ -9,22 +9,14 @@ from sqlalchemy.orm import Session
 
 from ldk_athlete_ai_coach.ai.errors import AIConfigurationError, AIProviderError
 from ldk_athlete_ai_coach.ai.llm.openai_client import OpenAIClient
-from ldk_athlete_ai_coach.ai.services.current_context_analysis import AnalyzeTrainingContextService
-from ldk_athlete_ai_coach.ai.services.timeframe_context_analysis import (
-    AnalyzeTimeframeContextService,
-)
 from ldk_athlete_ai_coach.ai.services.phase_context_analysis import AnalyzePhaseContextService
 from ldk_athlete_ai_coach.api.v1.schemas.ai import (
-    AnalyzeCurrentContextRequest,
-    AnalyzeCurrentContextResponse,
+    AnalyzePhaseContextRequest,
+    AnalyzePhaseContextResponse,
 )
 from ldk_athlete_ai_coach.application.services.phase_context_service import PhaseContextService
-from ldk_athlete_ai_coach.application.services.training_context_service import (
-    TrainingContextService,
-)
 from ldk_athlete_ai_coach.core.config import get_settings
 from ldk_athlete_ai_coach.db.repositories.phase_repository import PhaseRepository
-from ldk_athlete_ai_coach.db.repositories.plan_repository import PlanRepository
 from ldk_athlete_ai_coach.db.repositories.session_repository import SessionRepository
 from ldk_athlete_ai_coach.db.repositories.workout_repository import WorkoutRepository
 from ldk_athlete_ai_coach.db.session import get_db_session
@@ -35,8 +27,8 @@ DbSession = Annotated[Session, Depends(get_db_session)]
 
 
 def build_analyze_context_service(
-    db: Session, context: Literal["training_context", "phase_context"]
-) -> AnalyzeTimeframeContextService:
+    db: Session, context: Literal["phase_context"]
+) -> AnalyzePhaseContextService:
     """Construct the current-context AI service from DB and app settings."""
     settings = get_settings()
     llm_client = OpenAIClient(
@@ -45,15 +37,6 @@ def build_analyze_context_service(
         timeout_seconds=settings.openai_timeout_seconds,
     )
     context_services = {
-        "training_context": AnalyzeTimeframeContextService(
-            TrainingContextService(
-                plan_repository=PlanRepository(db),
-                phase_repository=PhaseRepository(db),
-                workout_repository=WorkoutRepository(db),
-                session_repository=SessionRepository(db),
-            ),
-            llm_client=llm_client,
-        ),
         "phase_context": AnalyzePhaseContextService(
             PhaseContextService(
                 phase_repository=PhaseRepository(db),
@@ -66,29 +49,16 @@ def build_analyze_context_service(
     return context_services[context]
 
 
-@router.post("/current-training-context", response_model=AnalyzeCurrentContextResponse)
-def analyze_current_context(
-    db: DbSession,
-    payload: AnalyzeCurrentContextRequest | None = None,
-) -> AnalyzeCurrentContextResponse:
-    """Analyze the current training context through the AI layer."""
-    request = payload or AnalyzeCurrentContextRequest()
-    try:
-        service = build_analyze_context_service(db, context="training_context")
-        return service.analyze_current_context(request.instruction)
-    except (AIConfigurationError, AIProviderError) as exc:
-        raise HTTPException(status_code=503, detail=str(exc)) from exc
-
-
-@router.post("/specific-phase-context", response_model=AnalyzeCurrentContextResponse)
+@router.post("/specific-phase-context/{phase_id}", response_model=AnalyzePhaseContextResponse)
 def analyze_specific_phase_context(
     db: DbSession,
-    payload: AnalyzeCurrentContextRequest | None = None,
-) -> AnalyzeCurrentContextResponse:
+    phase_id: int,
+    payload: AnalyzePhaseContextRequest | None = None,
+) -> AnalyzePhaseContextResponse:
     """Analyze the current training context through the AI layer."""
-    request = payload or AnalyzeCurrentContextRequest()
+    request = payload or AnalyzePhaseContextRequest()
     try:
-        service = build_analyze_context_service(db, context="training_context")
-        return service.analyze_current_context(request.instruction)
+        service = build_analyze_context_service(db, context="phase_context")
+        return service.analyze_phase_context(phase_id=phase_id, instruction=request.instruction)
     except (AIConfigurationError, AIProviderError) as exc:
         raise HTTPException(status_code=503, detail=str(exc)) from exc

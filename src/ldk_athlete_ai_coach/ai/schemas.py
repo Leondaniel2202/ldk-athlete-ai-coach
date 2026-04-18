@@ -10,8 +10,8 @@ from __future__ import annotations
 from pydantic import BaseModel
 
 
-class CurrentContextAnalysisResult(BaseModel):
-    """Structured result of current-context AI analysis.
+class PhaseContextAnalysisResult(BaseModel):
+    """Structured result of phase-context AI analysis.
 
     This schema is used internally by the AI service layer. The API may expose a
     separate response DTO if versioning or transport concerns diverge.
