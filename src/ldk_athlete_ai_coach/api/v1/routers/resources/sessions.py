@@ -7,7 +7,7 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
-from ldk_athlete_ai_coach.api.v1.schemas.training import SessionResponse
+from ldk_athlete_ai_coach.api.v1.schemas.sessions import SessionResponse, SessionSummaryResponse
 from ldk_athlete_ai_coach.db.repositories.session_repository import SessionRepository
 from ldk_athlete_ai_coach.db.session import get_db_session
 
@@ -21,18 +21,9 @@ def get_recent_sessions(
     db: DbSession,
     days: Annotated[int, Query(ge=1, description="Look-back window in days")] = 14,
 ) -> list[SessionResponse]:
-    """Retrieve tracked sessions from the last *days* days.
-
-    Args:
-        db: Injected database session.
-        days: Number of days to look back (default: 14, minimum: 1).
-
-    Returns:
-        list[SessionResponse]: Recent sessions, newest first.
-
-    """
+    """Retrieve tracked sessions from the last *days* days."""
     repo = SessionRepository(db)
-    sessions = repo.get_recent(days)
+    sessions = repo.list_recent(days)
     return [SessionResponse.model_validate(s) for s in sessions]
 
 
@@ -59,3 +50,16 @@ def get_session(
     if session is None:
         raise HTTPException(status_code=404, detail="Session not found")
     return SessionResponse.model_validate(session)
+
+
+@router.get("{session_id}/summary", response_model=SessionSummaryResponse)
+def get_session_summary(
+    session_id: int,
+    db: DbSession,
+) -> SessionSummaryResponse:
+    """Retrieve a summary of a tracked session, including key metrics and workout context."""
+    repo = SessionRepository(db)
+    session = repo.get_by_id(session_id)
+    if session is None:
+        raise HTTPException(status_code=404, detail="Session not found")
+    return SessionSummaryResponse.model_validate(session)

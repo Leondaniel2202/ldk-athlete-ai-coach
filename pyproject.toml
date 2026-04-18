@@ -41,9 +41,16 @@ target-version = "py312"
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "B", "UP"]
+extend-select = ["C4", "SIM", "RET", "RUF", "ARG"]
+ignore = ["RET504"]
 
 [tool.ruff.lint.per-file-ignores]
 "alembic/versions/*.py" = ["E501"]
+"tests/**/*.py" = ["ARG001", "ARG002"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["ldk_athlete_ai_coach"]
+combine-as-imports = true
 
 [tool.ruff.format]
 indent-style = "space"

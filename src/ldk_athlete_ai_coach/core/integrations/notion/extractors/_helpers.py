@@ -168,6 +168,14 @@ def get_formula_string(prop: dict[str, Any]) -> str | None:
     return value or None
 
 
+def get_formula_date(prop: dict[str, Any]) -> tuple[datetime | None, datetime | None, bool]:
+    """Extract date output from a Notion ``formula`` property."""
+    formula: dict[str, Any] | None = prop.get("formula")
+    if not formula or formula.get("type") != "date":
+        return None, None, False
+    return _parse_date_object(formula.get("date"))
+
+
 def get_rollup_number(prop: dict[str, Any]) -> float | None:
     """Extract numeric output from a Notion ``rollup`` property."""
     rollup: dict[str, Any] | None = prop.get("rollup")

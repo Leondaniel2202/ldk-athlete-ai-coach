@@ -18,7 +18,7 @@ class SessionRepository(TrainingBaseRepository[TrackedSession]):
         """Initialise with an active database session."""
         super().__init__(session, TrackedSession)
 
-    def get_recent(self, days: int) -> list[TrackedSession]:
+    def list_recent(self, days: int) -> list[TrackedSession]:
         """Return sessions whose start date falls within the last *days* days.
 
         Args:
@@ -36,7 +36,34 @@ class SessionRepository(TrainingBaseRepository[TrackedSession]):
         )
         return list(self._session.execute(stmt).scalars().all())
 
-    def get_for_workout_ids(self, workout_ids: list[int]) -> list[TrackedSession]:
+    def list_unlinked_within_window(self, start: datetime, end: datetime) -> list[TrackedSession]:
+        """Return recent sessions that are not linked to any workout."""
+        stmt = (
+            select(TrackedSession)
+            .where(
+                TrackedSession.workout_id.is_(None),
+                TrackedSession.start_start.is_not(None),
+                TrackedSession.start_start >= start,
+                TrackedSession.start_start <= end,
+            )
+            .order_by(TrackedSession.start_start.desc(), TrackedSession.id.desc())
+        )
+        return list(self._session.execute(stmt).scalars().all())
+
+    def list_by_workout_id(self, workout_id: int) -> list[TrackedSession]:
+        """Return all tracked sessions linked to the given workout.
+
+        Args:
+            workout_id: Primary key of the parent workout.
+
+        Returns:
+            List of :class:`TrackedSession` rows.
+
+        """
+        stmt = select(TrackedSession).where(TrackedSession.workout_id == workout_id)
+        return list(self._session.execute(stmt).scalars().all())
+
+    def list_by_workout_ids(self, workout_ids: list[int]) -> list[TrackedSession]:
         """Return sessions linked to the given workout IDs."""
         if not workout_ids:
             return []
@@ -48,19 +75,5 @@ class SessionRepository(TrainingBaseRepository[TrackedSession]):
                 TrackedSession.start_start.desc(),
                 TrackedSession.id.desc(),
             )
-        )
-        return list(self._session.execute(stmt).scalars().all())
-
-    def get_recent_unlinked(self, since: datetime, now: datetime) -> list[TrackedSession]:
-        """Return recent sessions that are not linked to any workout."""
-        stmt = (
-            select(TrackedSession)
-            .where(
-                TrackedSession.workout_id.is_(None),
-                TrackedSession.start_start.is_not(None),
-                TrackedSession.start_start >= since,
-                TrackedSession.start_start <= now,
-            )
-            .order_by(TrackedSession.start_start.desc(), TrackedSession.id.desc())
         )
         return list(self._session.execute(stmt).scalars().all())

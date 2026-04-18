@@ -1,4 +1,4 @@
-"""Notion sync endpoints for API v1."""
+"""Public Notion sync endpoints for API v1."""
 
 from __future__ import annotations
 

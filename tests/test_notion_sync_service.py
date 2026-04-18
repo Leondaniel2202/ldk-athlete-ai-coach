@@ -10,6 +10,7 @@ import pytest
 from ldk_athlete_ai_coach.core.config import Settings
 from ldk_athlete_ai_coach.core.integrations.notion.client import NotionClient
 from ldk_athlete_ai_coach.core.integrations.notion.sync_service import (
+    NotionSyncError,
     NotionSyncService,
     SyncResult,
 )
@@ -61,11 +62,13 @@ def _make_service(
     *,
     session_factory: MagicMock | None = None,
     page_content_by_page_id: dict[str, str | None] | None = None,
+    hard_fail: bool = False,
 ) -> NotionSyncService:
     """Create a NotionSyncService with controlled raw-page inputs.
 
     Args:
-        raw_pages_by_data_source: Mapping of data source IDs to raw pages yielded by the mock client.
+        raw_pages_by_data_source: Mapping of data source IDs to raw pages
+            yielded by the mock client.
         session_factory: Optional mock session factory.
         page_content_by_page_id: Optional plain-text page bodies keyed by Notion page ID.
 
@@ -80,7 +83,12 @@ def _make_service(
 
     client.iter_data_source_entries.side_effect = _iter
     client.get_page_plain_text.side_effect = (page_content_by_page_id or {}).get
-    return NotionSyncService(client, settings, session_factory=session_factory or MagicMock())
+    return NotionSyncService(
+        client,
+        settings,
+        session_factory=session_factory or MagicMock(),
+        hard_fail=hard_fail,
+    )
 
 
 def _title_prop(text: str) -> dict[str, Any]:
@@ -278,6 +286,22 @@ class TestSyncPhases:
         session.commit.assert_not_called()
         session.rollback.assert_called_once_with()
         session.close.assert_called_once_with()
+
+    def test_hard_fail_raises_notion_sync_error_on_extraction_failure(self) -> None:
+        bad_page: dict[str, Any] = {"id": "bad-phase", "properties": {}}
+        service = _make_service(
+            {"phase-data-source-id": [bad_page]},
+            hard_fail=True,
+        )
+
+        with pytest.raises(NotionSyncError) as exc_info:
+            service.sync_phases()
+
+        exc = exc_info.value
+        assert exc.entity == "Phase"
+        assert exc.stage == "extract"
+        assert exc.notion_id == "bad-phase"
+        assert exc.data_source_id == "phase-data-source-id"
 
 
 class TestOtherEntitySyncs:

@@ -17,7 +17,7 @@ def test_root_endpoint_returns_backend_message() -> None:
 
 def test_health_endpoint_returns_ok_status() -> None:
     """Validate the health endpoint returns an ok status payload."""
-    response = client.get("/api/v1/health")
+    response = client.get("/api/v1/system/health")
 
     assert response.status_code == 200
     assert response.json() == {"status": "ok"}
