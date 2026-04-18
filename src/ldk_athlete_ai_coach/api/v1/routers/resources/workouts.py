@@ -12,6 +12,7 @@ from ldk_athlete_ai_coach.api.v1.schemas.workouts import (
     WorkoutContentResponse,
     WorkoutDetailResponse,
     WorkoutResponse,
+    WorkoutSummaryResponse,
 )
 from ldk_athlete_ai_coach.db.models.training import TrackedSession
 from ldk_athlete_ai_coach.db.repositories.session_repository import SessionRepository
@@ -46,7 +47,7 @@ def get_workout_content(
     workout = repo.get_by_id(workout_id)
     if workout is None:
         raise HTTPException(status_code=404, detail="Workout not found")
-    return WorkoutDetailResponse.model_validate(workout)
+    return WorkoutContentResponse.model_validate(workout)
 
 
 @router.get("/{workout_id}/details", response_model=WorkoutDetailResponse)
@@ -74,3 +75,16 @@ def get_workout_sessions(
         raise HTTPException(status_code=404, detail="Workout not found")
     sessions: list[TrackedSession] = session_repo.list_by_workout_id(workout_id)
     return [SessionResponse.model_validate(s) for s in sessions]
+
+
+@router.get("/{workout_id}/summary", response_model=WorkoutSummaryResponse)
+def get_workout_summary(
+    workout_id: int,
+    db: DbSession,
+) -> WorkoutSummaryResponse:
+    """Retrieve a summary of a workout, including key metrics and recent sessions."""
+    repo = WorkoutRepository(db)
+    workout = repo.get_by_id(workout_id)
+    if workout is None:
+        raise HTTPException(status_code=404, detail="Workout not found")
+    return WorkoutSummaryResponse.model_validate(workout)
