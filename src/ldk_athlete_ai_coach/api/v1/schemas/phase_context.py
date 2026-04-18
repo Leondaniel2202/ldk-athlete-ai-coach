@@ -49,7 +49,6 @@ class PhaseWeekContextResponse(BaseModel):
     plan_summary: PlanSummaryResponse
     phase_status: PhaseStatus
     phase_summary: PhaseSummaryResponse
-    phase: PhaseResponse
     workouts: list[WorkoutDetailResponse]
     metrics: TrainingMetricsResponse
     adherence: WorkoutAdherenceSummaryResponse
