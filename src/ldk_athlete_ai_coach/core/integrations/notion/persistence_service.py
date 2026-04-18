@@ -83,7 +83,9 @@ class NotionPersistenceService:
         for schema in nutrition_schemas:
             existing = self._nutrition_guideline_repository.get_by_source_page_id(schema.notion_id)
             entity = map_nutrition(schema, existing)
-            entities.append(self._add_if_new(self._nutrition_guideline_repository, existing, entity))
+            entities.append(
+                self._add_if_new(self._nutrition_guideline_repository, existing, entity)
+            )
         self._session.flush()
         return entities
 

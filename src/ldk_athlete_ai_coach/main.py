@@ -2,7 +2,7 @@
 
 from fastapi import FastAPI
 
-from ldk_athlete_ai_coach.api.router import api_router
+from ldk_athlete_ai_coach.api.v1.routers.router import api_router
 from ldk_athlete_ai_coach.core.config import get_settings
 from ldk_athlete_ai_coach.core.logging import configure_logging
 

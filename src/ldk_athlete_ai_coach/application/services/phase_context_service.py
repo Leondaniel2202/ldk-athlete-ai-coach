@@ -229,8 +229,8 @@ class PhaseContextService:
             raise ValueError("Phase not found")
 
         phase_status: PhaseStatus = self._status_calculator.calculate_phase_status(
-            timeframe_start=phase.timeframe_start,
-            timeframe_end=phase.timeframe_end,
+            timeframe_start=phase.timeframe_start.date() if phase.timeframe_start else None,
+            timeframe_end=phase.timeframe_end.date() if phase.timeframe_end else None,
             as_of_date=as_of.date(),
         )
 
@@ -245,21 +245,31 @@ class PhaseContextService:
             all_workouts=all_workouts
         )
 
-        weekly_workouts = defaultdict(list)
+        weekly_workouts: dict[datetime, list[Workout]] = defaultdict(list)
+        for workout in all_workouts:
+            if workout.planned_week_start_date is not None:
+                weekly_workouts[workout.planned_week_start_date].append(workout)
 
-        [
-            weekly_workouts[w.planned_week_start_date].append(w)
-            for w in all_workouts
-            if w.planned_week_start_date
-        ]
-        weekly_metrics: list[TrainingMetricsResponse] = [
-            self._build_training_metrics_response(
-                workouts=workouts,
-                timeframe_start=week_start,
-                timeframe_end=get_week_end_for_date(week_start),
-            )
-            for week_start, workouts in sorted(weekly_workouts.items())
-        ]
+        weekly_metrics: list[TrainingMetricsResponse]
+        if weekly_workouts:
+            weekly_metrics = [
+                self._build_training_metrics_response(
+                    workouts=workouts,
+                    timeframe_start=week_start,
+                    timeframe_end=get_week_end_for_date(week_start),
+                )
+                for week_start, workouts in sorted(weekly_workouts.items())
+            ]
+        elif all_workouts:
+            weekly_metrics = [
+                self._build_training_metrics_response(
+                    workouts=all_workouts,
+                    timeframe_start=phase.timeframe_start,
+                    timeframe_end=phase.timeframe_end,
+                )
+            ]
+        else:
+            weekly_metrics = []
 
         data_gaps: list[str] = []
 
@@ -281,7 +291,9 @@ class PhaseContextService:
                     self._count_message(
                         len(unlinked_sessions),
                         singular="session within the phase timeframe is not linked to any workout.",
-                        plural="sessions within the phase timeframe are not linked to any workouts.",
+                        plural=(
+                            "sessions within the phase timeframe are not linked to any workouts."
+                        ),
                     )
                 )
 

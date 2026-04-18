@@ -6,7 +6,7 @@ from datetime import datetime
 
 from pydantic import BaseModel, ConfigDict
 
-from ldk_athlete_ai_coach.api.v1.schemas.phases import PhaseDetailResponse, PhaseSummaryResponse
+from ldk_athlete_ai_coach.api.v1.schemas.phases import PhaseDetailResponse
 
 
 class PlanResponse(BaseModel):

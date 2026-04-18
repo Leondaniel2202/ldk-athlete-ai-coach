@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+from datetime import date, datetime, timedelta
 
 
 def get_weeks_between_dates(start_date: datetime, end_date: datetime) -> int:
@@ -49,3 +49,12 @@ def get_phase_week_number_for_date(phase_start_date: datetime, date: datetime) -
     """
     delta_days = (date - phase_start_date).days
     return (delta_days // 7) + 1
+
+
+def coerce_to_date(value: datetime | date | None) -> date | None:
+    """Coerce a datetime or date value to a date, or return None if the value is None."""
+    if value is None:
+        return None
+    if isinstance(value, datetime):
+        return value.date()
+    return value
