@@ -7,7 +7,7 @@ from datetime import datetime
 from sqlalchemy import and_, or_, select
 from sqlalchemy.orm import Session
 
-from ldk_athlete_ai_coach.db.models.training import Phase, Plan
+from ldk_athlete_ai_coach.db.models.training import Plan
 from ldk_athlete_ai_coach.db.repositories.training_base_repository import TrainingBaseRepository
 
 
@@ -17,21 +17,6 @@ class PlanRepository(TrainingBaseRepository[Plan]):
     def __init__(self, session: Session) -> None:
         """Initialize the repository with an active SQLAlchemy session."""
         super().__init__(session, Plan)
-
-    def get_phases(self, plan_id: int) -> list[Phase]:
-        """Return all phases that belong to the given plan.
-
-        Args:
-            plan_id: Primary key of the parent plan.
-
-        Returns:
-            Ordered list of :class:`Phase` rows.
-
-        """
-        plan = self._session.get(Plan, plan_id)
-        if plan is None:
-            return []
-        return list(plan.phases)
 
     def get_active_for_datetime(self, now: datetime) -> Plan | None:
         """Return the active plan for *now* when a date window is available."""

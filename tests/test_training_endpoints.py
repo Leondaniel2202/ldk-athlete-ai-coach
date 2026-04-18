@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from collections.abc import Generator
 from datetime import UTC, datetime, timedelta
 
 import pytest
@@ -30,7 +31,7 @@ _TestingSessionLocal = sessionmaker(bind=_engine, class_=Session)
 
 
 @pytest.fixture(autouse=True)
-def _create_tables() -> None:
+def _create_tables() -> Generator[None, None, None]:
     """Create all tables before each test and drop them after."""
     Base.metadata.create_all(bind=_engine)
     yield  # type: ignore[misc]
@@ -44,7 +45,7 @@ def db_session() -> Session:
 
 
 @pytest.fixture()
-def client(db_session: Session) -> TestClient:
+def client(db_session: Session) -> Generator[TestClient, None, None]:
     """Return a test client wired to the in-memory database."""
 
     def _override() -> Session:
@@ -82,6 +83,7 @@ def _make_plan(
     db.flush()
     return plan
 
+
 def _make_phase(
     db: Session,
     name: str = "Base Phase",
@@ -103,6 +105,7 @@ def _make_phase(
     db.add(phase)
     db.flush()
     return phase
+
 
 def _make_workout(
     db: Session,
@@ -147,6 +150,7 @@ def _make_workout(
     db.flush()
     return workout
 
+
 def _make_session(
     db: Session,
     workout: Workout | None = None,
@@ -177,7 +181,7 @@ def test_get_plan_returns_plan(client: TestClient, db_session: Session) -> None:
     """GET /plans/{id} returns the plan for a known ID."""
     plan = _make_plan(db_session)
 
-    response = client.get(f"/api/v1/plans/{plan.id}")
+    response = client.get(f"/api/v1/resources/plans/{plan.id}")
 
     assert response.status_code == 200
     data = response.json()
@@ -187,7 +191,7 @@ def test_get_plan_returns_plan(client: TestClient, db_session: Session) -> None:
 
 def test_get_plan_returns_404_for_missing_plan(client: TestClient) -> None:
     """GET /plans/{id} returns 404 when the plan does not exist."""
-    response = client.get("/api/v1/plans/999")
+    response = client.get("/api/v1/resources/plans/999")
 
     assert response.status_code == 404
     assert response.json()["detail"] == "Plan not found"
@@ -199,7 +203,7 @@ def test_get_plan_phases_returns_list(client: TestClient, db_session: Session) -
     p1 = _make_phase(db_session, name="Phase A", plan=plan)
     p2 = _make_phase(db_session, name="Phase B", plan=plan)
 
-    response = client.get(f"/api/v1/plans/{plan.id}/phases")
+    response = client.get(f"/api/v1/resources/plans/{plan.id}/phases")
 
     assert response.status_code == 200
     ids = {phase["id"] for phase in response.json()}
@@ -212,7 +216,7 @@ def test_get_plan_phases_returns_empty_list_when_no_phases(
     """GET /plans/{id}/phases returns [] when plan has no phases."""
     plan = _make_plan(db_session)
 
-    response = client.get(f"/api/v1/plans/{plan.id}/phases")
+    response = client.get(f"/api/v1/resources/plans/{plan.id}/phases")
 
     assert response.status_code == 200
     assert response.json() == []
@@ -220,7 +224,7 @@ def test_get_plan_phases_returns_empty_list_when_no_phases(
 
 def test_get_plan_phases_returns_404_for_missing_plan(client: TestClient) -> None:
     """GET /plans/{id}/phases returns 404 when the plan does not exist."""
-    response = client.get("/api/v1/plans/999/phases")
+    response = client.get("/api/v1/resources/plans/999/phases")
 
     assert response.status_code == 404
 
@@ -234,7 +238,7 @@ def test_get_phase_returns_phase(client: TestClient, db_session: Session) -> Non
     """GET /phases/{id} returns the phase for a known ID."""
     phase = _make_phase(db_session)
 
-    response = client.get(f"/api/v1/phases/{phase.id}")
+    response = client.get(f"/api/v1/resources/phases/{phase.id}")
 
     assert response.status_code == 200
     data = response.json()
@@ -244,7 +248,7 @@ def test_get_phase_returns_phase(client: TestClient, db_session: Session) -> Non
 
 def test_get_phase_returns_404_for_missing_phase(client: TestClient) -> None:
     """GET /phases/{id} returns 404 when the phase does not exist."""
-    response = client.get("/api/v1/phases/999")
+    response = client.get("/api/v1/resources/phases/999")
 
     assert response.status_code == 404
     assert response.json()["detail"] == "Phase not found"
@@ -256,7 +260,7 @@ def test_get_phase_workouts_returns_list(client: TestClient, db_session: Session
     w1 = _make_workout(db_session, phase, name="Run A")
     w2 = _make_workout(db_session, phase, name="Run B")
 
-    response = client.get(f"/api/v1/phases/{phase.id}/workouts")
+    response = client.get(f"/api/v1/resources/phases/{phase.id}/workouts")
 
     assert response.status_code == 200
     ids = {w["id"] for w in response.json()}
@@ -269,7 +273,7 @@ def test_get_phase_workouts_returns_empty_list_when_no_workouts(
     """GET /phases/{id}/workouts returns [] when phase has no workouts."""
     phase = _make_phase(db_session)
 
-    response = client.get(f"/api/v1/phases/{phase.id}/workouts")
+    response = client.get(f"/api/v1/resources/phases/{phase.id}/workouts")
 
     assert response.status_code == 200
     assert response.json() == []
@@ -277,7 +281,7 @@ def test_get_phase_workouts_returns_empty_list_when_no_workouts(
 
 def test_get_phase_workouts_returns_404_for_missing_phase(client: TestClient) -> None:
     """GET /phases/{id}/workouts returns 404 when the phase does not exist."""
-    response = client.get("/api/v1/phases/999/workouts")
+    response = client.get("/api/v1/resources/phases/999/workouts")
 
     assert response.status_code == 404
 
@@ -292,7 +296,7 @@ def test_get_workout_returns_workout(client: TestClient, db_session: Session) ->
     phase = _make_phase(db_session)
     workout = _make_workout(db_session, phase)
 
-    response = client.get(f"/api/v1/workouts/{workout.id}")
+    response = client.get(f"/api/v1/resources/workouts/{workout.id}")
 
     assert response.status_code == 200
     data = response.json()
@@ -312,7 +316,7 @@ def test_get_workout_returns_workout(client: TestClient, db_session: Session) ->
 
 def test_get_workout_returns_404_for_missing_workout(client: TestClient) -> None:
     """GET /workouts/{id} returns 404 when the workout does not exist."""
-    response = client.get("/api/v1/workouts/999")
+    response = client.get("/api/v1/resources/workouts/999")
 
     assert response.status_code == 404
     assert response.json()["detail"] == "Workout not found"
@@ -325,7 +329,7 @@ def test_get_workout_sessions_returns_list(client: TestClient, db_session: Sessi
     s1 = _make_session(db_session, workout, name="Session A")
     s2 = _make_session(db_session, workout, name="Session B")
 
-    response = client.get(f"/api/v1/workouts/{workout.id}/sessions")
+    response = client.get(f"/api/v1/resources/workouts/{workout.id}/sessions")
 
     assert response.status_code == 200
     ids = {s["id"] for s in response.json()}
@@ -334,7 +338,7 @@ def test_get_workout_sessions_returns_list(client: TestClient, db_session: Sessi
 
 def test_get_workout_sessions_returns_404_for_missing_workout(client: TestClient) -> None:
     """GET /workouts/{id}/sessions returns 404 when the workout does not exist."""
-    response = client.get("/api/v1/workouts/999/sessions")
+    response = client.get("/api/v1/resources/workouts/999/sessions")
 
     assert response.status_code == 404
 
@@ -348,7 +352,7 @@ def test_get_session_returns_session(client: TestClient, db_session: Session) ->
     """GET /sessions/{id} returns the session for a known ID."""
     tracked = _make_session(db_session)
 
-    response = client.get(f"/api/v1/sessions/{tracked.id}")
+    response = client.get(f"/api/v1/resources/sessions/{tracked.id}")
 
     assert response.status_code == 200
     data = response.json()
@@ -358,7 +362,7 @@ def test_get_session_returns_session(client: TestClient, db_session: Session) ->
 
 def test_get_session_returns_404_for_missing_session(client: TestClient) -> None:
     """GET /sessions/{id} returns 404 when the session does not exist."""
-    response = client.get("/api/v1/sessions/999")
+    response = client.get("/api/v1/resources/sessions/999")
 
     assert response.status_code == 404
     assert response.json()["detail"] == "Session not found"
@@ -372,7 +376,7 @@ def test_get_recent_sessions_returns_sessions_within_window(
     recent = _make_session(db_session, start=now - timedelta(days=3), name="Recent Session")
     _make_session(db_session, start=now - timedelta(days=30), name="Old Session")
 
-    response = client.get("/api/v1/sessions/recent?days=14")
+    response = client.get("/api/v1/resources/sessions/recent?days=14")
 
     assert response.status_code == 200
     ids = [s["id"] for s in response.json()]
@@ -388,7 +392,7 @@ def test_get_recent_sessions_default_window(client: TestClient, db_session: Sess
     now = datetime.now(tz=UTC)
     recent = _make_session(db_session, start=now - timedelta(days=7), name="Recent Default")
 
-    response = client.get("/api/v1/sessions/recent")
+    response = client.get("/api/v1/resources/sessions/recent")
 
     assert response.status_code == 200
     ids = [s["id"] for s in response.json()]
@@ -397,20 +401,21 @@ def test_get_recent_sessions_default_window(client: TestClient, db_session: Sess
 
 def test_get_recent_sessions_rejects_invalid_days(client: TestClient) -> None:
     """GET /sessions/recent returns 422 when days < 1."""
-    response = client.get("/api/v1/sessions/recent?days=0")
+    response = client.get("/api/v1/resources/sessions/recent?days=0")
 
     assert response.status_code == 422
 
+
 # ---------------------------------------------------------------------------
-# Training-context endpoint
+# Phase-context endpoint
 # ---------------------------------------------------------------------------
 
 
-def test_get_current_training_context_returns_workout_centric_snapshot(
+def test_get_phase_context_returns_workout_centric_snapshot(
     client: TestClient,
     db_session: Session,
 ) -> None:
-    """GET /training-context/current returns the workout-centric training snapshot."""
+    """GET /context/phases/{id} returns the phase snapshot for a known phase."""
     now = datetime.now(tz=UTC)
     plan = _make_plan(
         db_session,
@@ -425,281 +430,127 @@ def test_get_current_training_context_returns_workout_centric_snapshot(
         timeframe_start=now - timedelta(days=8),
         timeframe_end=now + timedelta(days=14),
     )
-    recent_workout = _make_workout(
+    done_workout = _make_workout(
         db_session,
         phase,
         name="Recent Workout",
         date_start=now - timedelta(days=2),
         done_date_start=now - timedelta(days=1),
         notion_page_content="Bike set",
+        status="Done",
     )
-    upcoming_a = _make_workout(
+    open_workout = _make_workout(
         db_session,
         phase,
-        name="Upcoming A",
+        name="Upcoming Workout",
         date_start=now + timedelta(days=1),
         notion_page_content="Run drills",
-    )
-    upcoming_b = _make_workout(
-        db_session,
-        phase,
-        name="Upcoming B",
-        date_start=now + timedelta(days=3),
-        notion_page_content="Swim set",
+        status="Open",
     )
     tracked_session = _make_session(
         db_session,
-        recent_workout,
+        done_workout,
         start=now - timedelta(days=1, hours=1),
         name="Recent Session",
     )
 
-    response = client.get("/api/v1/training-context/current")
+    response = client.get(f"/api/v1/context/phases/{phase.id}")
 
     assert response.status_code == 200
     data = response.json()
     assert data["metadata"]["timezone"] == "UTC"
-    assert data["current"]["plan"]["id"] == plan.id
-    assert data["current"]["phase"]["id"] == phase.id
-    assert data["current"]["current_phase_week"] == 2
-    assert [workout["id"] for workout in data["planned_workouts"]] == [upcoming_a.id, upcoming_b.id]
-    assert data["planned_workouts"][0]["notion_page_content"] == "Run drills"
-    assert [item["workout"]["id"] for item in data["recent_workouts"]] == [recent_workout.id]
-    assert data["recent_workouts"][0]["workout"]["notion_page_content"] == "Bike set"
-    assert data["recent_workouts"][0]["tracked_sessions"][0]["id"] == tracked_session.id
+    assert data["plan_summary"]["id"] == plan.id
+    assert data["phase"]["id"] == phase.id
+    assert [workout["id"] for workout in data["open_workouts"]] == [open_workout.id]
+    assert [workout["id"] for workout in data["done_workouts"]] == [done_workout.id]
+    assert data["done_workouts"][0]["tracked_sessions"][0]["id"] == tracked_session.id
     assert data["adherence"] == {
-        "planned_workouts": 1,
+        "planned_workouts": 2,
         "completed_workouts": 1,
         "skipped_workouts": 0,
-        "completion_ratio": 1.0,
+        "unknown_workouts": 0,
+        "completion_ratio": 0.5,
     }
     assert data["data_gaps"] == []
 
 
-def test_get_current_training_context_falls_back_to_latest_plan_and_phase(
+def test_get_phase_context_returns_sparse_response_when_no_workouts(
     client: TestClient,
     db_session: Session,
 ) -> None:
-    """GET /training-context/current falls back to the latest plan and phase."""
+    """GET /context/phases/{id} returns empty workout collections when none exist."""
     now = datetime.now(tz=UTC)
-    _make_plan(
+    plan = _make_plan(
         db_session,
-        name="Older Plan",
-        start_date_start=now - timedelta(days=90),
-        end_date_start=now - timedelta(days=60),
+        name="Sparse Plan",
+        start_date_start=now - timedelta(days=7),
+        end_date_start=now + timedelta(days=7),
     )
-    latest_plan = _make_plan(
+    phase = _make_phase(
         db_session,
-        name="Latest Plan",
-        start_date_start=now - timedelta(days=40),
-        end_date_start=now - timedelta(days=10),
-    )
-    _make_phase(
-        db_session,
-        name="Older Phase",
-        plan=latest_plan,
-        timeframe_start=now - timedelta(days=35),
-        timeframe_end=now - timedelta(days=21),
-    )
-    latest_phase = _make_phase(
-        db_session,
-        name="Latest Phase",
-        plan=latest_plan,
-        timeframe_start=now - timedelta(days=14),
-        timeframe_end=now - timedelta(days=2),
+        name="Sparse Phase",
+        plan=plan,
+        timeframe_start=now - timedelta(days=3),
+        timeframe_end=now + timedelta(days=3),
     )
 
-    response = client.get("/api/v1/training-context/current")
+    response = client.get(f"/api/v1/context/phases/{phase.id}")
 
     assert response.status_code == 200
     data = response.json()
-    assert data["current"]["plan"]["id"] == latest_plan.id
-    assert data["current"]["phase"]["id"] == latest_phase.id
-    assert "No active plan matched the current date; using the latest available plan instead." in data["data_gaps"]
-    assert "No active phase matched the current date; using the latest phase for the selected plan instead." in data["data_gaps"]
-
-
-def test_get_current_training_context_returns_sparse_response_when_no_data(
-    client: TestClient,
-) -> None:
-    """GET /training-context/current returns 200 with gaps when no data exists."""
-    response = client.get("/api/v1/training-context/current")
-
-    assert response.status_code == 200
-    data = response.json()
-    assert data["current"] == {
-        "plan": None,
-        "phase": None,
-        "current_phase_week": None,
-    }
-    assert data["planned_workouts"] == []
-    assert data["recent_workouts"] == []
+    assert data["open_workouts"] == []
+    assert data["done_workouts"] == []
+    assert data["weekly_metrics"] == []
     assert data["adherence"] == {
         "planned_workouts": 0,
         "completed_workouts": 0,
         "skipped_workouts": 0,
+        "unknown_workouts": 0,
         "completion_ratio": None,
     }
-    assert data["data_gaps"] == ["No plan data is available."]
 
 
-def test_get_current_training_context_excludes_workouts_without_scheduled_date(
+def test_get_phase_context_reports_data_gaps(
     client: TestClient,
     db_session: Session,
 ) -> None:
-    """GET /training-context/current excludes undated phase workouts from planned context."""
+    """GET /context/phases/{id} surfaces status and linkage gaps."""
     now = datetime.now(tz=UTC)
     plan = _make_plan(
         db_session,
-        name="Plan With Gap",
-        start_date_start=now - timedelta(days=3),
-        end_date_start=now + timedelta(days=30),
+        name="Gap Plan",
+        start_date_start=now - timedelta(days=7),
+        end_date_start=now + timedelta(days=7),
     )
     phase = _make_phase(
         db_session,
-        name="Phase With Gap",
+        name="Gap Phase",
         plan=plan,
         timeframe_start=now - timedelta(days=3),
-        timeframe_end=now + timedelta(days=30),
+        timeframe_end=now + timedelta(days=3),
     )
-    scheduled_workout = _make_workout(
+    _make_workout(
         db_session,
         phase,
-        name="Scheduled Workout",
-        date_start=now + timedelta(days=2),
-    )
-    _make_workout(db_session, phase, name="Missing Scheduled Date")
-
-    response = client.get("/api/v1/training-context/current")
-
-    assert response.status_code == 200
-    data = response.json()
-    assert [workout["id"] for workout in data["planned_workouts"]] == [scheduled_workout.id]
-    assert (
-        "1 workout in the current phase is missing date_start and was excluded from planned context."
-        in data["data_gaps"]
-    )
-
-
-def test_get_current_training_context_reports_adherence_summary(
-    client: TestClient,
-    db_session: Session,
-) -> None:
-    """GET /training-context/current summarizes adherence for the last seven days."""
-    now = datetime.now(tz=UTC)
-    plan = _make_plan(
-        db_session,
-        name="Adherence Plan",
-        start_date_start=now - timedelta(days=30),
-        end_date_start=now + timedelta(days=30),
-    )
-    phase = _make_phase(
-        db_session,
-        name="Adherence Phase",
-        plan=plan,
-        timeframe_start=now - timedelta(days=14),
-        timeframe_end=now + timedelta(days=14),
-    )
-    completed = _make_workout(
-        db_session,
-        phase,
-        name="Completed Workout",
+        name="Unknown Workout",
         date_start=now - timedelta(days=1),
-        done_date_start=now - timedelta(hours=12),
-        status="Done",
+        status="Unknown",
     )
     _make_workout(
         db_session,
         phase,
-        name="Skipped Workout",
-        date_start=now - timedelta(days=2),
-        status="Skipped",
-        skipped=True,
+        name="Missed Workout",
+        date_start=now,
+        status="Missed",
     )
-    _make_workout(
-        db_session,
-        phase,
-        name="Open Workout",
-        date_start=now - timedelta(days=3),
-        status="Planned",
-    )
-    _make_session(db_session, completed, start=now - timedelta(hours=10), name="Completed Session")
+    _make_session(db_session, None, start=now, name="Unlinked Session")
 
-    response = client.get("/api/v1/training-context/current")
-
-    assert response.status_code == 200
-    adherence = response.json()["adherence"]
-    assert adherence["planned_workouts"] == 3
-    assert adherence["completed_workouts"] == 1
-    assert adherence["skipped_workouts"] == 1
-    assert adherence["completion_ratio"] == pytest.approx(1 / 3)
-
-
-def test_get_current_training_context_reports_recent_unlinked_sessions(
-    client: TestClient,
-    db_session: Session,
-) -> None:
-    """GET /training-context/current reports recent sessions with no linked workout."""
-    now = datetime.now(tz=UTC)
-    plan = _make_plan(
-        db_session,
-        name="Session Gap Plan",
-        start_date_start=now - timedelta(days=30),
-        end_date_start=now + timedelta(days=30),
-    )
-    _make_phase(
-        db_session,
-        name="Session Gap Phase",
-        plan=plan,
-        timeframe_start=now - timedelta(days=7),
-        timeframe_end=now + timedelta(days=14),
-    )
-    _make_session(db_session, None, start=now - timedelta(days=1), name="Unlinked Recent Session")
-
-    response = client.get("/api/v1/training-context/current")
+    response = client.get(f"/api/v1/context/phases/{phase.id}")
 
     assert response.status_code == 200
     assert (
-        "1 recent tracked session is not linked to a workout."
+        "1 session within the phase timeframe is not linked to any workout."
         in response.json()["data_gaps"]
     )
-
-
-def test_get_current_training_context_adherence_uses_done_date_fallback(
-    client: TestClient,
-    db_session: Session,
-) -> None:
-    """GET /training-context/current counts done-only workouts in adherence window."""
-    now = datetime.now(tz=UTC)
-    plan = _make_plan(
-        db_session,
-        name="Done Date Fallback Plan",
-        start_date_start=now - timedelta(days=30),
-        end_date_start=now + timedelta(days=30),
-    )
-    phase = _make_phase(
-        db_session,
-        name="Done Date Fallback Phase",
-        plan=plan,
-        timeframe_start=now - timedelta(days=14),
-        timeframe_end=now + timedelta(days=14),
-    )
-    workout = _make_workout(
-        db_session,
-        phase,
-        name="Done Only Recent",
-        date_start=None,
-        done_date_start=now - timedelta(days=1),
-        status="Done",
-    )
-    _make_session(db_session, workout, start=now - timedelta(hours=6), name="Done Only Session")
-
-    response = client.get("/api/v1/training-context/current")
-
-    assert response.status_code == 200
-    adherence = response.json()["adherence"]
-    assert adherence["planned_workouts"] == 1
-    assert adherence["completed_workouts"] == 1
-    assert adherence["skipped_workouts"] == 0
-    assert adherence["completion_ratio"] == pytest.approx(1.0)
-
+    assert "1 workout in this phase has an unknown status." in response.json()["data_gaps"]
+    assert "1 workout in this phase was missed." in response.json()["data_gaps"]

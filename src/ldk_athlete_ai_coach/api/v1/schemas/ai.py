@@ -2,14 +2,14 @@ from __future__ import annotations
 
 from pydantic import BaseModel
 
-from ldk_athlete_ai_coach.ai.schemas import CurrentContextAnalysisResult
+from ldk_athlete_ai_coach.ai.schemas import PhaseContextAnalysisResult
 
 
-class AnalyzeCurrentContextRequest(BaseModel):
-    """Request payload for current-context analysis."""
+class AnalyzePhaseContextRequest(BaseModel):
+    """Request payload for phase-context analysis."""
 
     instruction: str | None = None
 
 
-class AnalyzeCurrentContextResponse(CurrentContextAnalysisResult):
+class AnalyzePhaseContextResponse(PhaseContextAnalysisResult):
     """API response schema for current-context analysis."""

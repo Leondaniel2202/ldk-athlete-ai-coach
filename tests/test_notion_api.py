@@ -42,8 +42,10 @@ def test_notion_sync_endpoint_returns_summary_on_success() -> None:
     """Endpoint returns 200 with aggregate and per-entity sync counts."""
 
     with (
-        patch("ldk_athlete_ai_coach.api.v1.notion.NotionClient") as mock_client_cls,
-        patch("ldk_athlete_ai_coach.api.v1.notion.NotionSyncService") as mock_service_cls,
+        patch("ldk_athlete_ai_coach.api.v1.routers.sync.notion.NotionClient") as mock_client_cls,
+        patch(
+            "ldk_athlete_ai_coach.api.v1.routers.sync.notion.NotionSyncService"
+        ) as mock_service_cls,
     ):
         mock_client = MagicMock()
         mock_client_cls.return_value = mock_client
@@ -56,7 +58,7 @@ def test_notion_sync_endpoint_returns_summary_on_success() -> None:
         ]
         mock_service_cls.return_value = mock_service
 
-        response = client.post("/api/v1/notion/sync")
+        response = client.post("/api/v1/sync/notion")
 
     assert response.status_code == 200
     assert response.json() == {
@@ -78,8 +80,10 @@ def test_notion_sync_endpoint_defaults_hard_fail_to_false() -> None:
     """Endpoint constructs the sync service with hard_fail=False by default."""
 
     with (
-        patch("ldk_athlete_ai_coach.api.v1.notion.NotionClient") as mock_client_cls,
-        patch("ldk_athlete_ai_coach.api.v1.notion.NotionSyncService") as mock_service_cls,
+        patch("ldk_athlete_ai_coach.api.v1.routers.sync.notion.NotionClient") as mock_client_cls,
+        patch(
+            "ldk_athlete_ai_coach.api.v1.routers.sync.notion.NotionSyncService"
+        ) as mock_service_cls,
     ):
         mock_client = MagicMock()
         mock_client_cls.return_value = mock_client
@@ -87,7 +91,7 @@ def test_notion_sync_endpoint_defaults_hard_fail_to_false() -> None:
         mock_service.sync_all.return_value = []
         mock_service_cls.return_value = mock_service
 
-        response = client.post("/api/v1/notion/sync")
+        response = client.post("/api/v1/sync/notion")
 
     assert response.status_code == 200
     mock_service_cls.assert_called_once()
@@ -99,8 +103,10 @@ def test_notion_sync_endpoint_accepts_hard_fail_query_param() -> None:
     """Endpoint forwards hard_fail=true to the sync service constructor."""
 
     with (
-        patch("ldk_athlete_ai_coach.api.v1.notion.NotionClient") as mock_client_cls,
-        patch("ldk_athlete_ai_coach.api.v1.notion.NotionSyncService") as mock_service_cls,
+        patch("ldk_athlete_ai_coach.api.v1.routers.sync.notion.NotionClient") as mock_client_cls,
+        patch(
+            "ldk_athlete_ai_coach.api.v1.routers.sync.notion.NotionSyncService"
+        ) as mock_service_cls,
     ):
         mock_client = MagicMock()
         mock_client_cls.return_value = mock_client
@@ -108,7 +114,7 @@ def test_notion_sync_endpoint_accepts_hard_fail_query_param() -> None:
         mock_service.sync_all.return_value = []
         mock_service_cls.return_value = mock_service
 
-        response = client.post("/api/v1/notion/sync?hard_fail=true")
+        response = client.post("/api/v1/sync/notion?hard_fail=true")
 
     assert response.status_code == 200
     mock_service_cls.assert_called_once()
@@ -119,7 +125,9 @@ def test_notion_sync_endpoint_accepts_hard_fail_query_param() -> None:
 def test_notion_sync_endpoint_returns_500_summary_on_partial_failure() -> None:
     """Endpoint returns the sync summary with 500 when any entity fails."""
 
-    with patch("ldk_athlete_ai_coach.api.v1.notion.NotionSyncService") as mock_service_cls:
+    with patch(
+        "ldk_athlete_ai_coach.api.v1.routers.sync.notion.NotionSyncService"
+    ) as mock_service_cls:
         mock_service = MagicMock()
         mock_service.sync_all.return_value = [
             _result("Phase", fetched=2, success=2, failed=0),
@@ -127,7 +135,7 @@ def test_notion_sync_endpoint_returns_500_summary_on_partial_failure() -> None:
         ]
         mock_service_cls.return_value = mock_service
 
-        response = client.post("/api/v1/notion/sync")
+        response = client.post("/api/v1/sync/notion")
 
     assert response.status_code == 500
     assert response.json() == {
@@ -144,12 +152,14 @@ def test_notion_sync_endpoint_returns_500_summary_on_partial_failure() -> None:
 def test_notion_sync_endpoint_translates_rate_limit_errors() -> None:
     """Endpoint returns 503 when the Notion client exhausts rate-limit retries."""
 
-    with patch("ldk_athlete_ai_coach.api.v1.notion.NotionSyncService") as mock_service_cls:
+    with patch(
+        "ldk_athlete_ai_coach.api.v1.routers.sync.notion.NotionSyncService"
+    ) as mock_service_cls:
         mock_service = MagicMock()
         mock_service.sync_all.side_effect = NotionRateLimitError("rate limited")
         mock_service_cls.return_value = mock_service
 
-        response = client.post("/api/v1/notion/sync")
+        response = client.post("/api/v1/sync/notion")
 
     assert response.status_code == 503
     assert response.json() == {"detail": "rate limited"}
@@ -158,12 +168,14 @@ def test_notion_sync_endpoint_translates_rate_limit_errors() -> None:
 def test_notion_sync_endpoint_translates_auth_errors() -> None:
     """Endpoint returns 502 for Notion authentication failures."""
 
-    with patch("ldk_athlete_ai_coach.api.v1.notion.NotionSyncService") as mock_service_cls:
+    with patch(
+        "ldk_athlete_ai_coach.api.v1.routers.sync.notion.NotionSyncService"
+    ) as mock_service_cls:
         mock_service = MagicMock()
         mock_service.sync_all.side_effect = NotionAuthError("bad credentials")
         mock_service_cls.return_value = mock_service
 
-        response = client.post("/api/v1/notion/sync")
+        response = client.post("/api/v1/sync/notion")
 
     assert response.status_code == 502
     assert response.json() == {"detail": "bad credentials"}
@@ -172,12 +184,14 @@ def test_notion_sync_endpoint_translates_auth_errors() -> None:
 def test_notion_sync_endpoint_translates_database_not_found_errors() -> None:
     """Endpoint returns 502 for inaccessible Notion databases."""
 
-    with patch("ldk_athlete_ai_coach.api.v1.notion.NotionSyncService") as mock_service_cls:
+    with patch(
+        "ldk_athlete_ai_coach.api.v1.routers.sync.notion.NotionSyncService"
+    ) as mock_service_cls:
         mock_service = MagicMock()
         mock_service.sync_all.side_effect = NotionDatabaseNotFoundError("missing database")
         mock_service_cls.return_value = mock_service
 
-        response = client.post("/api/v1/notion/sync")
+        response = client.post("/api/v1/sync/notion")
 
     assert response.status_code == 502
     assert response.json() == {"detail": "missing database"}
@@ -186,12 +200,14 @@ def test_notion_sync_endpoint_translates_database_not_found_errors() -> None:
 def test_notion_sync_endpoint_translates_generic_notion_api_errors() -> None:
     """Endpoint returns 502 for other Notion API failures."""
 
-    with patch("ldk_athlete_ai_coach.api.v1.notion.NotionSyncService") as mock_service_cls:
+    with patch(
+        "ldk_athlete_ai_coach.api.v1.routers.sync.notion.NotionSyncService"
+    ) as mock_service_cls:
         mock_service = MagicMock()
         mock_service.sync_all.side_effect = NotionAPIError("unexpected notion error")
         mock_service_cls.return_value = mock_service
 
-        response = client.post("/api/v1/notion/sync")
+        response = client.post("/api/v1/sync/notion")
 
     assert response.status_code == 502
     assert response.json() == {"detail": "unexpected notion error"}
@@ -200,12 +216,14 @@ def test_notion_sync_endpoint_translates_generic_notion_api_errors() -> None:
 def test_notion_sync_endpoint_translates_unexpected_errors() -> None:
     """Endpoint returns 500 for unexpected sync failures."""
 
-    with patch("ldk_athlete_ai_coach.api.v1.notion.NotionSyncService") as mock_service_cls:
+    with patch(
+        "ldk_athlete_ai_coach.api.v1.routers.sync.notion.NotionSyncService"
+    ) as mock_service_cls:
         mock_service = MagicMock()
         mock_service.sync_all.side_effect = RuntimeError("boom")
         mock_service_cls.return_value = mock_service
 
-        response = client.post("/api/v1/notion/sync")
+        response = client.post("/api/v1/sync/notion")
 
     assert response.status_code == 500
     assert response.json() == {"detail": "Unexpected error during full Notion sync"}
@@ -214,7 +232,9 @@ def test_notion_sync_endpoint_translates_unexpected_errors() -> None:
 def test_notion_sync_endpoint_translates_hard_fail_sync_error() -> None:
     """Endpoint returns structured details when hard-fail sync raises NotionSyncError."""
 
-    with patch("ldk_athlete_ai_coach.api.v1.notion.NotionSyncService") as mock_service_cls:
+    with patch(
+        "ldk_athlete_ai_coach.api.v1.routers.sync.notion.NotionSyncService"
+    ) as mock_service_cls:
         mock_service = MagicMock()
         mock_service.sync_all.side_effect = NotionSyncError(
             entity="Phase",
@@ -225,7 +245,7 @@ def test_notion_sync_endpoint_translates_hard_fail_sync_error() -> None:
         )
         mock_service_cls.return_value = mock_service
 
-        response = client.post("/api/v1/notion/sync?hard_fail=true")
+        response = client.post("/api/v1/sync/notion?hard_fail=true")
 
     assert response.status_code == 500
     assert response.json() == {
