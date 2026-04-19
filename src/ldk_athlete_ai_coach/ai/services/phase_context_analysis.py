@@ -6,7 +6,7 @@ This module is reserved for the upcoming \"analyze specific phase\" use case.
 from __future__ import annotations
 
 from ldk_athlete_ai_coach.ai.llm.openai_client import OpenAIClient
-from ldk_athlete_ai_coach.ai.prompts.phase_context import build_analyze_phase_context_prompt
+from ldk_athlete_ai_coach.ai.prompts.context_analysis import build_analyze_phase_context_prompt
 from ldk_athlete_ai_coach.api.v1.schemas.ai import AnalyzePhaseContextResponse
 from ldk_athlete_ai_coach.application.services.phase_context_service import PhaseContextService
 
