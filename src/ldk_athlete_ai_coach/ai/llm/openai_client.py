@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Any, TypeVar
 
-from pydantic import ValidationError
+from pydantic import BaseModel, ValidationError
 
 from ldk_athlete_ai_coach.ai.errors import AIConfigurationError, AIProviderError
 
@@ -36,7 +36,7 @@ class OpenAIClient:
         try:
             response = self._client.responses.parse(
                 model=self._model,
-                input=messages,
+                input=messages,  # pyright: ignore[reportArgumentType]
                 text_format=schema,
             )
         except Exception as exc:  # pragma: no cover - SDK error surface varies
@@ -48,7 +48,7 @@ class OpenAIClient:
         return parsed
 
     @staticmethod
-    def validate_or_raise(parsed: Any, *, schema: Any) -> Any:
+    def validate_or_raise(parsed: Any, *, schema: type[BaseModel]) -> Any:
         """Normalize parsed output into the requested schema."""
         if isinstance(parsed, schema):
             return parsed
@@ -56,4 +56,3 @@ class OpenAIClient:
             return schema.model_validate(parsed)
         except ValidationError as exc:
             raise AIProviderError("AI provider returned invalid structured output.") from exc
-

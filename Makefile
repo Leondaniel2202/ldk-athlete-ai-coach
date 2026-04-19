@@ -25,7 +25,7 @@ add-dev: ## Add a dev dependency, e.g. make add-dev PKG=pytest
 
 remove: ## Remove a dependency, e.g. make remove PKG=httpx
 	$(UV) remove $(PKG)
-11111111
+
 ## ── Application ───────────────────────────────────────────────────────────────
 
 api: ## Start the FastAPI development server with auto-reload

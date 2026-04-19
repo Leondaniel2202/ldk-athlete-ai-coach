@@ -5,13 +5,15 @@ from __future__ import annotations
 from datetime import date
 
 from ldk_athlete_ai_coach.ai.prompts.phase_context import build_analyze_phase_context_prompt
+from ldk_athlete_ai_coach.ai.prompts.workout_context import build_analyze_workout_context_prompt
 from ldk_athlete_ai_coach.api.v1.schemas.adherence import WorkoutAdherenceSummaryResponse
 from ldk_athlete_ai_coach.api.v1.schemas.common import ContextMetadataResponse
 from ldk_athlete_ai_coach.api.v1.schemas.metrics import TrainingMetricsResponse
 from ldk_athlete_ai_coach.api.v1.schemas.phase_context import PhaseContextResponse
-from ldk_athlete_ai_coach.api.v1.schemas.phases import PhaseResponse
+from ldk_athlete_ai_coach.api.v1.schemas.phases import PhaseResponse, PhaseSummaryResponse
 from ldk_athlete_ai_coach.api.v1.schemas.plans import PlanSummaryResponse
 from ldk_athlete_ai_coach.api.v1.schemas.sessions import SessionResponse
+from ldk_athlete_ai_coach.api.v1.schemas.workout_context import WorkoutContextResponse
 from ldk_athlete_ai_coach.api.v1.schemas.workouts import (
     WorkoutContentResponse,
     WorkoutDetailResponse,
@@ -177,3 +179,34 @@ def test_prompt_builder_includes_optional_instruction() -> None:
         in messages[1]["content"]
     )
     assert "confidence score" not in messages[1]["content"]
+
+
+def test_workout_prompt_builder_labels_workout_payload_correctly() -> None:
+    """Workout prompts should label the JSON payload correctly and preserve instructions."""
+    phase_context = _context()
+    workout_context = WorkoutContextResponse(
+        metadata=phase_context.metadata,
+        plan_summary=phase_context.plan_summary,
+        phase_summary=PhaseSummaryResponse(
+            id=phase_context.phase.id,
+            name=phase_context.phase.name,
+            phase_type=phase_context.phase.phase_type,
+            timeframe_start=phase_context.phase.timeframe_start,
+            timeframe_end=phase_context.phase.timeframe_end,
+        ),
+        workout_status=WorkoutStatus.OPEN,
+        workout_details=WorkoutDetailResponse(
+            **phase_context.open_workouts[0].model_dump(),
+            tracked_sessions=[],
+        ),
+    )
+
+    messages = build_analyze_workout_context_prompt(
+        workout_context,
+        instruction="Focus on pacing discipline.",
+    )
+
+    user_content = messages[1]["content"]
+    assert "Workout context JSON:" in user_content
+    assert "Phase context JSON:" not in user_content
+    assert "Additional instruction: Focus on pacing discipline." in user_content
