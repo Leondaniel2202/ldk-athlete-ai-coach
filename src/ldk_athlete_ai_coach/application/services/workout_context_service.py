@@ -61,8 +61,7 @@ class WorkoutContextService:
         metadata = ContextMetadataResponse(
             as_of_date=as_of.date(), timezone=as_of.tzname() or "UTC"
         )
-        phase_summary: PhaseSummaryResponse = PhaseSummaryResponse.model_validate(workout.phase)
-        plan_summary: PlanSummaryResponse | None = PlanSummaryResponse.model_validate(
+        plan_summary: PlanSummaryResponse = PlanSummaryResponse.model_validate(
             workout.phase.plan if workout.phase else None
         )
 
