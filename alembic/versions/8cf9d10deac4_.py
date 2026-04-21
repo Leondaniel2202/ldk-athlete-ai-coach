@@ -8,8 +8,8 @@ Create Date: 2026-04-03 12:39:20.699369
 from __future__ import annotations
 
 # revision identifiers, used by Alembic.
-revision = '8cf9d10deac4'
-down_revision = '18eac510816c'
+revision = "8cf9d10deac4"
+down_revision = "18eac510816c"
 branch_labels = None
 depends_on = None
 
