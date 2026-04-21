@@ -7,9 +7,14 @@ Create Date: 2026-04-17 22:47:32.426369
 
 from __future__ import annotations
 
+from alembic import op
+import sqlalchemy as sa
+
+
+
 # revision identifiers, used by Alembic.
-revision = "887db4f5c482"
-down_revision = "0cf4ac460203"
+revision = '887db4f5c482'
+down_revision = '0cf4ac460203'
 branch_labels = None
 depends_on = None
 
