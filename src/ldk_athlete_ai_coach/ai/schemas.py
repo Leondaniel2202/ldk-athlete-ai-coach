@@ -22,3 +22,17 @@ class PhaseContextAnalysisResult(BaseModel):
     positives: list[str]
     concerns: list[str]
     recommendation: str
+
+
+class WorkoutContextAnalysisResult(BaseModel):
+    """Structured result of workout-context AI analysis.
+
+    This schema is used internally by the AI service layer. The API may expose a
+    separate response DTO if versioning or transport concerns diverge.
+    """
+
+    summary: str
+    workout_focus: str
+    positives: list[str]
+    concerns: list[str]
+    recommendation: str

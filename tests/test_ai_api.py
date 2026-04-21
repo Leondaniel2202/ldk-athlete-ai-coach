@@ -7,7 +7,10 @@ from unittest.mock import MagicMock, patch
 from fastapi.testclient import TestClient
 
 from ldk_athlete_ai_coach.ai.errors import AIConfigurationError, AIProviderError
-from ldk_athlete_ai_coach.api.v1.schemas.ai import AnalyzePhaseContextResponse
+from ldk_athlete_ai_coach.api.v1.schemas.ai import (
+    AnalyzePhaseContextResponse,
+    AnalyzeWorkoutContextResponse,
+)
 from ldk_athlete_ai_coach.main import app
 
 client = TestClient(app)
@@ -20,6 +23,16 @@ def _analysis_response() -> AnalyzePhaseContextResponse:
         positives=["Workouts are aligned with the phase."],
         concerns=["Recent intensity may be clustered."],
         recommendation="Keep the current direction and protect recovery.",
+    )
+
+
+def _workout_analysis_response() -> AnalyzeWorkoutContextResponse:
+    return AnalyzeWorkoutContextResponse(
+        summary="Workout context looks coherent.",
+        workout_focus="Execute the key intervals with controlled pacing.",
+        positives=["The workout objective is clear."],
+        concerns=["Fatigue could reduce late-session quality."],
+        recommendation="Start conservatively and protect execution quality.",
     )
 
 
@@ -53,6 +66,26 @@ def test_ai_analysis_endpoint_accepts_empty_json_body() -> None:
 
     assert response.status_code == 200
     mock_service.analyze_phase_context.assert_called_once_with(phase_id=42, instruction=None)
+
+
+def test_workout_analysis_endpoint_returns_structured_response() -> None:
+    """Workout endpoint returns a structured AI assessment on success."""
+    with patch(
+        "ldk_athlete_ai_coach.api.v1.routers.ai.analysis.build_analyze_context_service"
+    ) as mock_builder:
+        mock_service = MagicMock()
+        mock_service.analyze_specific_workout_context.return_value = _workout_analysis_response()
+        mock_builder.return_value = mock_service
+
+        response = client.post("/api/v1/ai/analysis/specific-workout-context/7")
+
+    assert response.status_code == 200
+    assert response.json() == _workout_analysis_response().model_dump(mode="json")
+    assert mock_builder.call_args.kwargs["context"] == "workout_context"
+    mock_service.analyze_specific_workout_context.assert_called_once_with(
+        workout_id=7,
+        instruction=None,
+    )
 
 
 def test_ai_analysis_endpoint_passes_optional_instruction() -> None:
