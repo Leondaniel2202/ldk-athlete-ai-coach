@@ -11,6 +11,7 @@ from ldk_athlete_ai_coach.ai.prompts.context_analysis import (
     build_analyze_workout_context_prompt,
 )
 from ldk_athlete_ai_coach.api.v1.schemas.ai import AnalyzeWorkoutContextResponse
+from ldk_athlete_ai_coach.api.v1.schemas.workout_context import WorkoutContextResponse
 from ldk_athlete_ai_coach.application.services.workout_context_service import WorkoutContextService
 
 
@@ -28,13 +29,13 @@ class AnalyzeWorkoutContextService:
     def analyze_specific_workout_context(
         self, workout_id: int, instruction: str | None = None
     ) -> AnalyzeWorkoutContextResponse:
-        context = self.workout_context_service.get_specific_workout_context(workout_id=workout_id)
-        messages: list[PromptMessage] = build_analyze_workout_context_prompt(context, instruction)
-        parsed = self._llm.parse_structured(
+        context: WorkoutContextResponse = self.workout_context_service.get_specific_workout_context(workout_id=workout_id)
+        messages: list[PromptMessage] = build_analyze_workout_context_prompt(context=context, instruction=instruction)
+        parsed: AnalyzeWorkoutContextResponse = self._llm.parse_structured(
             messages=messages,
             schema=AnalyzeWorkoutContextResponse,
         )
         return self._llm.validate_or_raise(
-            parsed,
+            parsed=parsed,
             schema=AnalyzeWorkoutContextResponse,
         )
