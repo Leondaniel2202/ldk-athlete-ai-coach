@@ -108,7 +108,7 @@ def _place_prop(
 
 def _empty_prop(type_: str) -> dict[str, Any]:
     """Return a property whose value is null / empty for its type."""
-    mapping: dict[str, Any] = {
+    mapping: dict[str, dict[str, Any]] = {
         "title": {"type": "title", "title": []},
         "rich_text": {"type": "rich_text", "rich_text": []},
         "select": {"type": "select", "select": None},

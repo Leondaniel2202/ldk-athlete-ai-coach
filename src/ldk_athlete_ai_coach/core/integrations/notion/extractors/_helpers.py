@@ -74,7 +74,7 @@ def get_property_by_alias(props: dict[str, Any], *names: str) -> dict[str, Any]:
 
     """
     for name in names:
-        prop = props.get(name)
+        prop: dict[str, Any] | None = props.get(name)
         if prop is not None:
             return prop
     return {}
@@ -248,7 +248,7 @@ def get_first_relation(prop: dict[str, Any]) -> str | None:
         First relation page ID, or ``None`` when no relations exist.
 
     """
-    relations: list[Any] = prop.get("relation", [])
+    relations: list[dict[str, Any]] = prop.get("relation", [])
     if not relations:
         return None
     return relations[0].get("id")

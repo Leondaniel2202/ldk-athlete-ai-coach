@@ -31,4 +31,4 @@ class AnalyzePhaseContextService:
         context = self.phase_context_service.get_specific_phase_context(phase_id=phase_id)
         messages: list[PromptMessage] = build_analyze_phase_context_prompt(context, instruction)
         parsed = self._llm.parse_structured(messages=messages, schema=AnalyzePhaseContextResponse)
-        return self._llm.validate_or_raise(parsed, schema=AnalyzePhaseContextResponse)
+        return self._llm.validate_or_raise(parsed=parsed, schema=AnalyzePhaseContextResponse)

@@ -49,7 +49,7 @@ class OpenAIClient:
         return parsed
 
     @staticmethod
-    def validate_or_raise(parsed: Any, *, schema: type[BaseModel]) -> Any:
+    def validate_or_raise(parsed: Any, *, schema: type[BaseModel]) -> BaseModel:
         """Normalize parsed output into the requested schema."""
         if isinstance(parsed, schema):
             return parsed
