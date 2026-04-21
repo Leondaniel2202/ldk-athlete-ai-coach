@@ -16,7 +16,7 @@ class WorkoutContextResponse(BaseModel):
     the phase/plan context."""
 
     metadata: ContextMetadataResponse
-    plan_summary: PlanSummaryResponse
-    phase_summary: PhaseSummaryResponse
+    plan_summary: PlanSummaryResponse | None
+    phase_summary: PhaseSummaryResponse | None
     workout_status: WorkoutStatus
     workout_details: WorkoutDetailResponse

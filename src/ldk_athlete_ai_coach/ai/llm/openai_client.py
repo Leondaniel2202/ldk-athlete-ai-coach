@@ -4,9 +4,10 @@ from __future__ import annotations
 
 from typing import Any, TypeVar
 
-from pydantic import ValidationError
+from pydantic import BaseModel, ValidationError
 
 from ldk_athlete_ai_coach.ai.errors import AIConfigurationError, AIProviderError
+from ldk_athlete_ai_coach.ai.prompts.context_analysis import PromptMessages
 
 TModel = TypeVar("TModel")
 
@@ -24,19 +25,19 @@ class OpenAIClient:
         if not api_key:
             raise AIConfigurationError("OPENAI_API_KEY is not configured.")
         try:
-            from openai import OpenAI  # type: ignore[import-not-found]
+            from openai import OpenAI
         except ImportError as exc:  # pragma: no cover - environment dependent
             raise AIConfigurationError("OpenAI SDK is not installed.") from exc
 
         self._client = OpenAI(api_key=api_key, timeout=timeout_seconds)
         self._model = model
 
-    def parse_structured(self, *, messages: list[dict[str, str]], schema: Any) -> Any:
+    def parse_structured(self, *, messages: PromptMessages, schema: Any) -> Any:
         """Call OpenAI Responses API and return parsed structured output."""
         try:
             response = self._client.responses.parse(
                 model=self._model,
-                input=messages,
+                input=messages,  # type: ignore[arg-type]
                 text_format=schema,
             )
         except Exception as exc:  # pragma: no cover - SDK error surface varies
@@ -48,7 +49,7 @@ class OpenAIClient:
         return parsed
 
     @staticmethod
-    def validate_or_raise(parsed: Any, *, schema: Any) -> Any:
+    def validate_or_raise(parsed: Any, *, schema: type[BaseModel]) -> Any:
         """Normalize parsed output into the requested schema."""
         if isinstance(parsed, schema):
             return parsed
@@ -56,4 +57,3 @@ class OpenAIClient:
             return schema.model_validate(parsed)
         except ValidationError as exc:
             raise AIProviderError("AI provider returned invalid structured output.") from exc
-
