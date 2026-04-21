@@ -29,7 +29,13 @@ class AnalyzePhaseContextService:
     def analyze_phase_context(
         self, phase_id: int, instruction: str | None = None
     ) -> AnalyzePhaseContextResponse:
-        context: PhaseContextResponse = self.phase_context_service.get_specific_phase_context(phase_id=phase_id)
-        messages: list[PromptMessage] = build_analyze_phase_context_prompt(context=context, instruction=instruction)
-        parsed: AnalyzePhaseContextResponse = self._llm.parse_structured(messages=messages, schema=AnalyzePhaseContextResponse)
+        context: PhaseContextResponse = self.phase_context_service.get_specific_phase_context(
+            phase_id=phase_id
+        )
+        messages: list[PromptMessage] = build_analyze_phase_context_prompt(
+            context=context, instruction=instruction
+        )
+        parsed: AnalyzePhaseContextResponse = self._llm.parse_structured(
+            messages=messages, schema=AnalyzePhaseContextResponse
+        )
         return self._llm.validate_or_raise(parsed=parsed, schema=AnalyzePhaseContextResponse)

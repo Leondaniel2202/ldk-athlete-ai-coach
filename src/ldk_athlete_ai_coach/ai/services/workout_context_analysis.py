@@ -29,8 +29,12 @@ class AnalyzeWorkoutContextService:
     def analyze_specific_workout_context(
         self, workout_id: int, instruction: str | None = None
     ) -> AnalyzeWorkoutContextResponse:
-        context: WorkoutContextResponse = self.workout_context_service.get_specific_workout_context(workout_id=workout_id)
-        messages: list[PromptMessage] = build_analyze_workout_context_prompt(context=context, instruction=instruction)
+        context: WorkoutContextResponse = self.workout_context_service.get_specific_workout_context(
+            workout_id=workout_id
+        )
+        messages: list[PromptMessage] = build_analyze_workout_context_prompt(
+            context=context, instruction=instruction
+        )
         parsed: AnalyzeWorkoutContextResponse = self._llm.parse_structured(
             messages=messages,
             schema=AnalyzeWorkoutContextResponse,

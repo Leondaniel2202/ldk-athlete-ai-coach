@@ -88,7 +88,9 @@ def _nutrition_schema(
     return NotionNutritionGuideline(**defaults)  # pyright: ignore[reportArgumentType]
 
 
-def _phase_schema(notion_id: str = "phase-1", name: str = "Base Phase", **kwargs: dict[str, Any]) -> NotionPhase:
+def _phase_schema(
+    notion_id: str = "phase-1", name: str = "Base Phase", **kwargs: dict[str, Any]
+) -> NotionPhase:
     defaults = {
         "notion_id": notion_id,
         "name": name,
@@ -99,7 +101,9 @@ def _phase_schema(notion_id: str = "phase-1", name: str = "Base Phase", **kwargs
     return NotionPhase(**defaults)  # pyright: ignore[reportArgumentType]
 
 
-def _plan_schema(notion_id: str = "plan-1", name: str = "Base Plan", **kwargs: dict[str, Any]) -> NotionPlan:
+def _plan_schema(
+    notion_id: str = "plan-1", name: str = "Base Plan", **kwargs: dict[str, Any]
+) -> NotionPlan:
     defaults = {
         "notion_id": notion_id,
         "name": name,
@@ -125,7 +129,9 @@ def _workout_schema(
     return NotionWorkout(**defaults)  # pyright: ignore[reportArgumentType]
 
 
-def _event_schema(notion_id: str = "event-1", name: str = "Goal Race", **kwargs: dict[str, Any]) -> NotionEvent:
+def _event_schema(
+    notion_id: str = "event-1", name: str = "Goal Race", **kwargs: dict[str, Any]
+) -> NotionEvent:
     defaults = {
         "notion_id": notion_id,
         "name": name,

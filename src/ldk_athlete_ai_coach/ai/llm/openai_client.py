@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any, TypeVar
+from typing import TypeVar
 
 from openai.types.responses.parsed_response import ParsedResponse
 from pydantic import BaseModel, ValidationError
@@ -36,7 +36,7 @@ class OpenAIClient:
     def parse_structured(self, *, messages: PromptMessages, schema: type[TModel]) -> TModel:
         """Call OpenAI Responses API and return parsed structured output."""
         try:
-            response: ParsedResponse[TModel]= self._client.responses.parse(
+            response: ParsedResponse[TModel] = self._client.responses.parse(
                 model=self._model,
                 input=messages,  # type: ignore[arg-type]
                 text_format=schema,
