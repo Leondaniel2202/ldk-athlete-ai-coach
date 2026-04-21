@@ -70,7 +70,13 @@ skip_covered = true
 
 [tool.mypy]
 python_version = "3.12"
+strict = true
 strict_equality = true
 warn_redundant_casts = true
 warn_unused_configs = true
 warn_unused_ignores = true
+
+[[tool.mypy.overrides]]
+module = ["tests.*"]
+disallow_untyped_defs = false
+check_untyped_defs = false
