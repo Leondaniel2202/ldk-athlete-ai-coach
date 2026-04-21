@@ -32,7 +32,7 @@ class OpenAIClient:
         self._client = OpenAI(api_key=api_key, timeout=timeout_seconds)
         self._model = model
 
-    def parse_structured(self, *, messages: list[PromptMessages], schema: Any) -> Any:
+    def parse_structured(self, *, messages: PromptMessages, schema: Any) -> Any:
         """Call OpenAI Responses API and return parsed structured output."""
         try:
             response = self._client.responses.parse(
