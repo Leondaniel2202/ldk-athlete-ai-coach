@@ -1,4 +1,4 @@
-"""Aggregate current phase context from the local database."""
+"""Aggregate current workout context from the local database."""
 
 from __future__ import annotations
 
@@ -49,23 +49,25 @@ class WorkoutContextService:
             A fully populated ``WorkoutContextResponse``.
 
         Raises:
-            ValueError: If no phase with the given ``phase_id`` exists.
+            ValueError: If no workout with the given ``workout_id`` exists.
         """
         as_of = datetime.now(tz=UTC)
 
         workout: Workout | None = self._workout_repository.get_by_id(entity_id=workout_id)
         if workout is None:
             raise ValueError("Workout not found")
-        phase_summary: PhaseSummaryResponse | None = PhaseSummaryResponse.model_validate(
-            workout.phase
-        ) if workout.phase else None
+        phase_summary: PhaseSummaryResponse | None = (
+            PhaseSummaryResponse.model_validate(workout.phase) if workout.phase else None
+        )
 
         metadata = ContextMetadataResponse(
             as_of_date=as_of.date(), timezone=as_of.tzname() or "UTC"
         )
-        plan_summary: PlanSummaryResponse | None = PlanSummaryResponse.model_validate(
-            workout.phase.plan
-        ) if workout.phase and workout.phase.plan else None
+        plan_summary: PlanSummaryResponse | None = (
+            PlanSummaryResponse.model_validate(workout.phase.plan)
+            if workout.phase and workout.phase.plan
+            else None
+        )
 
         return WorkoutContextResponse(
             metadata=metadata,

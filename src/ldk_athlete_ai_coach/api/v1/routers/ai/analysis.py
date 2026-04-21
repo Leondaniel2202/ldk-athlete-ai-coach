@@ -52,7 +52,7 @@ def build_analyze_context_service(
         model=settings.openai_model,
         timeout_seconds=settings.openai_timeout_seconds,
     )
-    context_services = {
+    context_services: dict[str, AnalyzePhaseContextService | AnalyzeWorkoutContextService] = {
         "phase_context": AnalyzePhaseContextService(
             PhaseContextService(
                 phase_repository=PhaseRepository(db),

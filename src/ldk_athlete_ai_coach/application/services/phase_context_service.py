@@ -52,7 +52,6 @@ class PhaseContextService:
         """Initialize the service with all required repositories.
 
         Args:
-            plan_repository: Repository for training plan lookups.
             phase_repository: Repository for training phase lookups.
             workout_repository: Repository for workout lookups.
             session_repository: Repository for tracked-session lookups.

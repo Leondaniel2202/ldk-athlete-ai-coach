@@ -30,5 +30,5 @@ def get_db_session() -> Generator[Session, Any, None]:
     session = SessionLocal()
     try:
         yield session
-    finally:    
+    finally:
         session.close()

@@ -317,7 +317,6 @@ class TestNotionPersistenceService:
 
         assert phase.nutrition_guideline_id == guideline.id
 
-
     def test_persist_phases_resolves_plan_fk_by_notion_id(self, session: Session) -> None:
         svc = NotionPersistenceService(session)
 
@@ -445,7 +444,6 @@ class TestNotionPersistenceService:
             .all()
         )
         assert len(rows) == 1
-
 
     def test_persist_sessions_resolves_workout_fk_by_notion_id(self, session: Session) -> None:
         svc = NotionPersistenceService(session)
@@ -582,7 +580,9 @@ class TestNotionPersistenceService:
             ],
         )
 
-        plan = session.execute(select(Plan).where(Plan.notion_page_id == "content-plan")).scalar_one()
+        plan = session.execute(
+            select(Plan).where(Plan.notion_page_id == "content-plan")
+        ).scalar_one()
         nutrition = session.execute(
             select(NutritionGuideline).where(
                 NutritionGuideline.notion_page_id == "content-nutrition"
