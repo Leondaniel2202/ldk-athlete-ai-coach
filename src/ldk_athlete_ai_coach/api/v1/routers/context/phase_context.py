@@ -34,7 +34,7 @@ def get_specific_phase_context(db: DbSession, phase_id: int) -> PhaseContextResp
     return service.get_specific_phase_context(phase_id=phase_id)
 
 
-@router.get("/{phase_id}", response_model=PhaseContextResponse)
+@router.get("/{phase_id}/weeks", response_model=PhaseWeekContextResponse)
 def get_phase_week_context(
     db: DbSession,
     phase_id: int,
