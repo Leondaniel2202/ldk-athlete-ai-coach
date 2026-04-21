@@ -31,7 +31,7 @@ class AnalyzeWorkoutContextService:
         context = self.workout_context_service.get_specific_workout_context(workout_id=workout_id)
         messages: list[PromptMessage] = build_analyze_workout_context_prompt(context, instruction)
         parsed = self._llm.parse_structured(
-            messages=messages, 
+            messages=messages,
             schema=AnalyzeWorkoutContextResponse,
         )
         return self._llm.validate_or_raise(

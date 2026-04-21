@@ -45,9 +45,7 @@ def extract_phase(raw_page: dict[str, Any]) -> NotionPhase:
         timeframe_start, timeframe_end, timeframe_is_datetime = get_date(props.get("Timeframe", {}))
         phase_type_prop = get_property_by_alias(props, "Phase type", "Phase Type")
         focus_tags_prop = get_property_by_alias(props, "Focus tags", "Focus Tags")
-        weekly_structure_prop = get_property_by_alias(
-            props, "Weekly structure", "Weekly Structure"
-        )
+        weekly_structure_prop = get_property_by_alias(props, "Weekly structure", "Weekly Structure")
         nutrition_guideline_prop = get_property_by_alias(
             props, "Nutrition Guidelines", "Nutrition Guideline"
         )

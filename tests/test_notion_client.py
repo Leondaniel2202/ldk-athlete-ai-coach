@@ -356,9 +356,11 @@ class TestRateLimitHandling:
         client, sdk = _make_client(notion_max_retries=2)
         sdk.request.side_effect = _make_http_error(429)
 
-        with patch("ldk_athlete_ai_coach.core.integrations.notion.client.time.sleep"):
-            with pytest.raises(NotionRateLimitError):
-                client.query_data_source("ds-123")
+        with (
+            patch("ldk_athlete_ai_coach.core.integrations.notion.client.time.sleep"),
+            pytest.raises(NotionRateLimitError),
+        ):
+            client.query_data_source("ds-123")
 
     def test_retries_on_api_response_error_429_and_succeeds(self) -> None:
         client, sdk = _make_client(notion_max_retries=3)
@@ -380,9 +382,11 @@ class TestRateLimitHandling:
         client, sdk = _make_client(notion_max_retries=1)
         sdk.request.side_effect = _make_api_error(429, "rate_limited")
 
-        with patch("ldk_athlete_ai_coach.core.integrations.notion.client.time.sleep"):
-            with pytest.raises(NotionRateLimitError):
-                client.query_data_source("ds-123")
+        with (
+            patch("ldk_athlete_ai_coach.core.integrations.notion.client.time.sleep"),
+            pytest.raises(NotionRateLimitError),
+        ):
+            client.query_data_source("ds-123")
 
 
 class TestNotionSettings:
