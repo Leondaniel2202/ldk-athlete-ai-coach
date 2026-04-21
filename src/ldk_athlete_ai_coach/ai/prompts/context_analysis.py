@@ -3,13 +3,28 @@
 from __future__ import annotations
 
 import json
-from typing import Literal
+from typing import Literal, TypedDict
 
 from ldk_athlete_ai_coach.api.v1.schemas.phase_context import PhaseContextResponse
 from ldk_athlete_ai_coach.api.v1.schemas.workout_context import WorkoutContextResponse
 
-type PromptMessages = list[dict[str, str]]
+
+class PromptMessage(TypedDict):
+    """Single chat message for the LLM input payload."""
+
+    role: str
+    content: str
+
+
+type PromptMessages = list[PromptMessage]
 type ContextKind = Literal["phase", "workout"]
+type AnalysisContext = PhaseContextResponse | WorkoutContextResponse
+
+_ANALYSIS_REQUEST_TEMPLATE = (
+    "Analyze the athlete's current {context_kind} context "
+    "and return a compact structured assessment."
+)
+_ADDITIONAL_INSTRUCTION_PREFIX = "Additional instruction: "
 
 _SYSTEM_PROMPTS: dict[ContextKind, str] = {
     "phase": """You are an AI hybrid coach analyzing a phase snapshot.
@@ -30,6 +45,25 @@ Return content that matches the requested schema exactly.""",
 }
 
 
+
+def _serialize_context_payload(context: AnalysisContext) -> str:
+    """Serialize context models with deterministic formatting for stable prompts."""
+    return json.dumps(context.model_dump(mode="json"), indent=2, sort_keys=True)
+
+
+def _build_user_sections(
+    *,
+    context_kind: ContextKind,
+    payload: str,
+    instruction: str | None,
+) -> list[str]:
+    sections = [_ANALYSIS_REQUEST_TEMPLATE.format(context_kind=context_kind)]
+    if cleaned_instruction := (instruction or "").strip():
+        sections.append(f"{_ADDITIONAL_INSTRUCTION_PREFIX}{cleaned_instruction}")
+    sections.extend([f"{context_kind.capitalize()} context JSON:", payload])
+    return sections
+
+
 def build_analyze_context_prompt(
     *,
     context_kind: ContextKind,
@@ -37,15 +71,11 @@ def build_analyze_context_prompt(
     instruction: str | None = None,
 ) -> PromptMessages:
     """Build deterministic model input for a context-analysis request."""
-    sections = [
-        (
-            f"Analyze the athlete's current {context_kind} context "
-            "and return a compact structured assessment."
-        ),
-    ]
-    if cleaned_instruction := (instruction or "").strip():
-        sections.append(f"Additional instruction: {cleaned_instruction}")
-    sections.extend([f"{context_kind.capitalize()} context JSON:", payload])
+    sections = _build_user_sections(
+        context_kind=context_kind,
+        payload=payload,
+        instruction=instruction,
+    )
 
     return [
         {"role": "system", "content": _SYSTEM_PROMPTS[context_kind]},
@@ -58,7 +88,7 @@ def build_analyze_phase_context_prompt(
     instruction: str | None = None,
 ) -> PromptMessages:
     """Build prompt messages for phase-context analysis."""
-    payload = json.dumps(context.model_dump(mode="json"), indent=2)
+    payload = _serialize_context_payload(context)
     return build_analyze_context_prompt(
         context_kind="phase",
         payload=payload,
@@ -71,7 +101,7 @@ def build_analyze_workout_context_prompt(
     instruction: str | None = None,
 ) -> PromptMessages:
     """Build prompt messages for workout-context analysis."""
-    payload = json.dumps(context.model_dump(mode="json"), indent=2)
+    payload = _serialize_context_payload(context)
     return build_analyze_context_prompt(
         context_kind="workout",
         payload=payload,

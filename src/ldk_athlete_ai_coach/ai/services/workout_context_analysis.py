@@ -7,6 +7,7 @@ from __future__ import annotations
 
 from ldk_athlete_ai_coach.ai.llm.openai_client import OpenAIClient
 from ldk_athlete_ai_coach.ai.prompts.context_analysis import (
+    PromptMessage,
     build_analyze_workout_context_prompt,
 )
 from ldk_athlete_ai_coach.api.v1.schemas.ai import AnalyzeWorkoutContextResponse
@@ -28,9 +29,9 @@ class AnalyzeWorkoutContextService:
         self, workout_id: int, instruction: str | None = None
     ) -> AnalyzeWorkoutContextResponse:
         context = self.workout_context_service.get_specific_workout_context(workout_id=workout_id)
-        messages = build_analyze_workout_context_prompt(context, instruction)
+        messages: list[PromptMessage] = build_analyze_workout_context_prompt(context, instruction)
         parsed = self._llm.parse_structured(
-            messages=messages,
+            messages=messages, 
             schema=AnalyzeWorkoutContextResponse,
         )
         return self._llm.validate_or_raise(

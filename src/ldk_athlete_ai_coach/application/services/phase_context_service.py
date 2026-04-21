@@ -317,7 +317,7 @@ class PhaseContextService:
         metadata = ContextMetadataResponse(
             as_of_date=as_of.date(), timezone=as_of.tzname() or "UTC"
         )
-        plan_summary: PlanSummaryResponse | None = PlanSummaryResponse.model_validate(phase.plan)
+        plan_summary: PlanSummaryResponse = PlanSummaryResponse.model_validate(phase.plan)
         phase_response: PhaseResponse = PhaseResponse.model_validate(phase)
         adherence = WorkoutAdherenceSummaryResponse(
             planned_workouts=len(all_workouts),
@@ -437,7 +437,7 @@ class PhaseContextService:
             phase_week_start_date=week_start_date,
             phase_week_end_date=get_week_end_for_date(week_start_date),
         )
-        plan_summary: PlanSummaryResponse | None = PlanSummaryResponse.model_validate(phase.plan)
+        plan_summary: PlanSummaryResponse = PlanSummaryResponse.model_validate(phase.plan)
         phase_summary: PhaseSummaryResponse = PhaseSummaryResponse.model_validate(phase)
         adherence = WorkoutAdherenceSummaryResponse(
             planned_workouts=len(all_workouts),
