@@ -1,3 +1,5 @@
+"""Training metrics calculation utilities."""
+
 from ldk_athlete_ai_coach.db.models.training import Workout
 from ldk_athlete_ai_coach.domain.enums.status import WorkoutStatus
 from ldk_athlete_ai_coach.domain.models.training_metrics import MetricAdherence, TrainingMetrics

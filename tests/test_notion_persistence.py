@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from datetime import UTC, datetime
+from typing import Any
 
 import pytest
 from sqlalchemy import create_engine, event, select
@@ -75,7 +76,7 @@ def session(engine):
 def _nutrition_schema(
     notion_id: str = "nutrition-1",
     name: str = "Performance Fueling",
-    **kwargs,
+    **kwargs: dict[str, Any],
 ) -> NotionNutritionGuideline:
     defaults = {
         "notion_id": notion_id,
@@ -87,7 +88,9 @@ def _nutrition_schema(
     return NotionNutritionGuideline(**defaults)  # pyright: ignore[reportArgumentType]
 
 
-def _phase_schema(notion_id: str = "phase-1", name: str = "Base Phase", **kwargs) -> NotionPhase:
+def _phase_schema(
+    notion_id: str = "phase-1", name: str = "Base Phase", **kwargs: dict[str, Any]
+) -> NotionPhase:
     defaults = {
         "notion_id": notion_id,
         "name": name,
@@ -98,7 +101,9 @@ def _phase_schema(notion_id: str = "phase-1", name: str = "Base Phase", **kwargs
     return NotionPhase(**defaults)  # pyright: ignore[reportArgumentType]
 
 
-def _plan_schema(notion_id: str = "plan-1", name: str = "Base Plan", **kwargs) -> NotionPlan:
+def _plan_schema(
+    notion_id: str = "plan-1", name: str = "Base Plan", **kwargs: dict[str, Any]
+) -> NotionPlan:
     defaults = {
         "notion_id": notion_id,
         "name": name,
@@ -112,7 +117,7 @@ def _plan_schema(notion_id: str = "plan-1", name: str = "Base Plan", **kwargs) -
 def _workout_schema(
     notion_id: str = "workout-1",
     name: str = "Long Run",
-    **kwargs,
+    **kwargs: dict[str, Any],
 ) -> NotionWorkout:
     defaults = {
         "notion_id": notion_id,
@@ -124,7 +129,9 @@ def _workout_schema(
     return NotionWorkout(**defaults)  # pyright: ignore[reportArgumentType]
 
 
-def _event_schema(notion_id: str = "event-1", name: str = "Goal Race", **kwargs) -> NotionEvent:
+def _event_schema(
+    notion_id: str = "event-1", name: str = "Goal Race", **kwargs: dict[str, Any]
+) -> NotionEvent:
     defaults = {
         "notion_id": notion_id,
         "name": name,
@@ -138,7 +145,7 @@ def _event_schema(notion_id: str = "event-1", name: str = "Goal Race", **kwargs)
 def _session_schema(
     notion_id: str = "session-1",
     name: str = "Morning Run",
-    **kwargs,
+    **kwargs: dict[str, Any],
 ) -> NotionSession:
     defaults = {
         "notion_id": notion_id,
@@ -153,7 +160,7 @@ def _session_schema(
 def _feedback_schema(
     notion_id: str = "feedback-1",
     week: str = "2024-W10",
-    **kwargs,
+    **kwargs: dict[str, Any],
 ) -> NotionWeeklyFeedback:
     defaults = {
         "notion_id": notion_id,
@@ -317,7 +324,6 @@ class TestNotionPersistenceService:
 
         assert phase.nutrition_guideline_id == guideline.id
 
-
     def test_persist_phases_resolves_plan_fk_by_notion_id(self, session: Session) -> None:
         svc = NotionPersistenceService(session)
 
@@ -445,7 +451,6 @@ class TestNotionPersistenceService:
             .all()
         )
         assert len(rows) == 1
-
 
     def test_persist_sessions_resolves_workout_fk_by_notion_id(self, session: Session) -> None:
         svc = NotionPersistenceService(session)
@@ -582,7 +587,9 @@ class TestNotionPersistenceService:
             ],
         )
 
-        plan = session.execute(select(Plan).where(Plan.notion_page_id == "content-plan")).scalar_one()
+        plan = session.execute(
+            select(Plan).where(Plan.notion_page_id == "content-plan")
+        ).scalar_one()
         nutrition = session.execute(
             select(NutritionGuideline).where(
                 NutritionGuideline.notion_page_id == "content-nutrition"

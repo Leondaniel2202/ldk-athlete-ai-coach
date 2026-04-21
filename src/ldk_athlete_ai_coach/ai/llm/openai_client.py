@@ -2,14 +2,15 @@
 
 from __future__ import annotations
 
-from typing import Any, TypeVar
+from typing import TypeVar
 
+from openai.types.responses.parsed_response import ParsedResponse
 from pydantic import BaseModel, ValidationError
 
 from ldk_athlete_ai_coach.ai.errors import AIConfigurationError, AIProviderError
 from ldk_athlete_ai_coach.ai.prompts.context_analysis import PromptMessages
 
-TModel = TypeVar("TModel")
+TModel = TypeVar("TModel", bound=BaseModel)
 
 
 class OpenAIClient:
@@ -32,10 +33,10 @@ class OpenAIClient:
         self._client = OpenAI(api_key=api_key, timeout=timeout_seconds)
         self._model = model
 
-    def parse_structured(self, *, messages: PromptMessages, schema: Any) -> Any:
+    def parse_structured(self, *, messages: PromptMessages, schema: type[TModel]) -> TModel:
         """Call OpenAI Responses API and return parsed structured output."""
         try:
-            response = self._client.responses.parse(
+            response: ParsedResponse[TModel] = self._client.responses.parse(
                 model=self._model,
                 input=messages,  # type: ignore[arg-type]
                 text_format=schema,
@@ -43,13 +44,13 @@ class OpenAIClient:
         except Exception as exc:  # pragma: no cover - SDK error surface varies
             raise AIProviderError("AI provider request failed.") from exc
 
-        parsed = response.output_parsed
+        parsed: TModel | None = response.output_parsed
         if parsed is None:
             raise AIProviderError("AI provider returned no structured output.")
         return parsed
 
     @staticmethod
-    def validate_or_raise(parsed: Any, *, schema: type[BaseModel]) -> Any:
+    def validate_or_raise(parsed: TModel, *, schema: type[TModel]) -> TModel:
         """Normalize parsed output into the requested schema."""
         if isinstance(parsed, schema):
             return parsed
