@@ -194,7 +194,7 @@ def upgrade() -> None:
     sa.PrimaryKeyConstraint('id'),
     sa.UniqueConstraint('notion_url')
     )
-    op.create_index(op.f('ix_tracked_sessions_notion_page_id'), 'tracked_sessions', ['notion_page_id'], unique=True)  # noqa: E501
+    op.create_index(op.f('ix_tracked_sessions_notion_page_id'), 'tracked_sessions', ['notion_page_id'], unique=True)
     # ### end Alembic commands ###
 
 
