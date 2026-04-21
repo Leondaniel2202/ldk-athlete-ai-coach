@@ -5,7 +5,7 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
 from ldk_athlete_ai_coach.api.v1.schemas.phase_context import (
@@ -23,6 +23,13 @@ router = APIRouter(prefix="/phases", tags=["phase_context"])
 DbSession = Annotated[Session, Depends(get_db_session)]
 
 
+def _phase_context_http_error(exc: ValueError) -> HTTPException:
+    """Convert service-layer missing-phase errors into an API exception."""
+    if str(exc) == "Phase not found":
+        return HTTPException(status_code=404, detail="Phase not found")
+    return HTTPException(status_code=500, detail=str(exc))
+
+
 @router.get("/{phase_id}", response_model=PhaseContextResponse)
 def get_specific_phase_context(db: DbSession, phase_id: int) -> PhaseContextResponse:
     """Return the current workout-centric training context snapshot."""
@@ -31,7 +38,10 @@ def get_specific_phase_context(db: DbSession, phase_id: int) -> PhaseContextResp
         workout_repository=WorkoutRepository(db),
         session_repository=SessionRepository(db),
     )
-    return service.get_specific_phase_context(phase_id=phase_id)
+    try:
+        return service.get_specific_phase_context(phase_id=phase_id)
+    except ValueError as exc:
+        raise _phase_context_http_error(exc) from exc
 
 
 @router.get("/{phase_id}/weeks", response_model=PhaseWeekContextResponse)
@@ -49,6 +59,9 @@ def get_phase_week_context(
         workout_repository=WorkoutRepository(db),
         session_repository=SessionRepository(db),
     )
-    return service.get_specific_phase_week_context(
-        phase_id=phase_id, week_start_date=week_start_date
-    )
+    try:
+        return service.get_specific_phase_week_context(
+            phase_id=phase_id, week_start_date=week_start_date
+        )
+    except ValueError as exc:
+        raise _phase_context_http_error(exc) from exc

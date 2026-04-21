@@ -554,3 +554,30 @@ def test_get_phase_context_reports_data_gaps(
     )
     assert "1 workout in this phase has an unknown status." in response.json()["data_gaps"]
     assert "1 workout in this phase was missed." in response.json()["data_gaps"]
+
+
+def test_get_phase_context_returns_404_for_missing_phase(client: TestClient) -> None:
+    """GET /context/phases/{id} returns 404 when the phase does not exist."""
+    response = client.get("/api/v1/context/phases/999999")
+
+    assert response.status_code == 404
+    assert response.json()["detail"] == "Phase not found"
+
+
+def test_get_phase_week_context_returns_404_for_missing_phase(client: TestClient) -> None:
+    """GET /context/phases/{id}/weeks returns 404 when the phase does not exist."""
+    response = client.get(
+        "/api/v1/context/phases/999999/weeks",
+        params={"week_start_date": "2026-04-14T00:00:00"},
+    )
+
+    assert response.status_code == 404
+    assert response.json()["detail"] == "Phase not found"
+
+
+def test_get_workout_context_returns_404_for_missing_workout(client: TestClient) -> None:
+    """GET /context/workouts/{id} returns 404 when the workout does not exist."""
+    response = client.get("/api/v1/context/workouts/999999")
+
+    assert response.status_code == 404
+    assert response.json()["detail"] == "Workout not found"

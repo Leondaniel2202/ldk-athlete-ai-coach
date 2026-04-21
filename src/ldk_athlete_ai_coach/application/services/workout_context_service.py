@@ -56,14 +56,16 @@ class WorkoutContextService:
         workout: Workout | None = self._workout_repository.get_by_id(entity_id=workout_id)
         if workout is None:
             raise ValueError("Workout not found")
-        phase_summary: PhaseSummaryResponse = PhaseSummaryResponse.model_validate(workout.phase)
+        phase_summary: PhaseSummaryResponse | None = PhaseSummaryResponse.model_validate(
+            workout.phase
+        ) if workout.phase else None
 
         metadata = ContextMetadataResponse(
             as_of_date=as_of.date(), timezone=as_of.tzname() or "UTC"
         )
-        plan_summary: PlanSummaryResponse = PlanSummaryResponse.model_validate(
-            workout.phase.plan if workout.phase else None
-        )
+        plan_summary: PlanSummaryResponse | None = PlanSummaryResponse.model_validate(
+            workout.phase.plan
+        ) if workout.phase and workout.phase.plan else None
 
         return WorkoutContextResponse(
             metadata=metadata,
