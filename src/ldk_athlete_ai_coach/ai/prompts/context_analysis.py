@@ -45,7 +45,6 @@ Return content that matches the requested schema exactly.""",
 }
 
 
-
 def _serialize_context_payload(context: AnalysisContext) -> str:
     """Serialize context models with deterministic formatting for stable prompts."""
     return json.dumps(context.model_dump(mode="json"), indent=2, sort_keys=True)

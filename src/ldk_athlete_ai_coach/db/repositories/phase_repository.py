@@ -38,8 +38,10 @@ class PhaseRepository(TrainingBaseRepository[Phase]):
         return self._session.execute(stmt).scalar_one_or_none()
 
     def get_by_date(self, date: datetime) -> Phase | None:
-        """Return the phase active at the given date, or None if no such phase exists. If multiple
-        phases match, return the one with the latest timeframe start date."""
+        """Return the phase active at the given date, or ``None`` if no such phase exists.
+
+        If multiple phases match, return the one with the latest timeframe start date.
+        """
         stmt = (
             select(Phase)
             .where(
