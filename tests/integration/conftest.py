@@ -9,7 +9,6 @@ Override via environment variables (TEST_POSTGRES_*) as needed.
 
 from __future__ import annotations
 
-import os
 from collections.abc import Generator
 
 import pytest
@@ -17,17 +16,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
 
 from ldk_athlete_ai_coach.db.base import Base
-
-
-def _test_db_url() -> str:
-    host = os.getenv("TEST_POSTGRES_HOST", os.getenv("POSTGRES_HOST", "localhost"))
-    port = os.getenv("TEST_POSTGRES_PORT", "5433")
-    db = os.getenv("TEST_POSTGRES_DB", "ldk_athlete_ai_coach_test")
-    user = os.getenv("TEST_POSTGRES_USER", os.getenv("POSTGRES_USER", "postgres"))
-    password = os.getenv(
-        "TEST_POSTGRES_PASSWORD", os.getenv("POSTGRES_PASSWORD", "postgres")
-    )
-    return f"postgresql+psycopg://{user}:{password}@{host}:{port}/{db}"
+from tests.factories.database import test_db_url
 
 
 @pytest.fixture(scope="session")
@@ -37,7 +26,7 @@ def pg_engine():
     Creates the full schema once at the start of the test session and drops
     it when the session ends. No test should ever touch the dev database.
     """
-    engine = create_engine(_test_db_url())
+    engine = create_engine(test_db_url())
     Base.metadata.create_all(engine)
     yield engine
     Base.metadata.drop_all(engine)

@@ -9,7 +9,6 @@ Override via environment variables (TEST_POSTGRES_*) as needed.
 
 from __future__ import annotations
 
-import os
 from collections.abc import Generator
 
 import pytest
@@ -20,27 +19,17 @@ from sqlalchemy.orm import Session
 from ldk_athlete_ai_coach.db.base import Base
 from ldk_athlete_ai_coach.db.session import get_db_session
 from ldk_athlete_ai_coach.main import app
+from tests.factories.database import test_db_url
 
 
-def _test_db_url() -> str:
-    host = os.getenv("TEST_POSTGRES_HOST", os.getenv("POSTGRES_HOST", "localhost"))
-    port = os.getenv("TEST_POSTGRES_PORT", "5433")
-    db = os.getenv("TEST_POSTGRES_DB", "ldk_athlete_ai_coach_test")
-    user = os.getenv("TEST_POSTGRES_USER", os.getenv("POSTGRES_USER", "postgres"))
-    password = os.getenv(
-        "TEST_POSTGRES_PASSWORD", os.getenv("POSTGRES_PASSWORD", "postgres")
-    )
-    return f"postgresql+psycopg://{user}:{password}@{host}:{port}/{db}"
-
-
-@pytest.fixture(scope="module")
+@pytest.fixture(scope="session")
 def pg_engine():
-    """Module-scoped engine targeting the postgres_test database.
+    """Session-scoped engine targeting the postgres_test database.
 
-    Creates the full schema once per test module and drops it at the end.
-    No test should ever touch the dev database.
+    Creates the full schema once at the start of the test session and drops
+    it when the session ends. No test should ever touch the dev database.
     """
-    engine = create_engine(_test_db_url())
+    engine = create_engine(test_db_url())
     Base.metadata.create_all(engine)
     yield engine
     Base.metadata.drop_all(engine)
@@ -74,6 +63,6 @@ def client(db_session: Session) -> Generator[TestClient, None, None]:
         return db_session
 
     app.dependency_overrides[get_db_session] = _override
-    tc = TestClient(app)
-    yield tc
+    with TestClient(app) as tc:
+        yield tc
     app.dependency_overrides.clear()
