@@ -58,14 +58,14 @@ alembic-revision: ## Generate a new Alembic migration, e.g. make alembic-revisio
 test: ## Run the full test suite
 	$(UV) run pytest
 
-test-unit: ## Run only unit tests
-	$(UV) run pytest -m unit
+test-unit: ## Run only unit tests (COV=1 to enable coverage)
+	$(UV) run pytest -m unit $(if $(COV),--cov=ldk_athlete_ai_coach --cov-report=term-missing)
 
-test-integration: ## Run only integration tests
-	$(UV) run pytest -m integration
+test-integration: ## Run only integration tests (COV=1 to enable coverage)
+	$(UV) run pytest -m integration $(if $(COV),--cov=ldk_athlete_ai_coach --cov-report=term-missing)
 
-test-api: ## Run only API tests
-	$(UV) run pytest -m api
+test-api: ## Run only API tests (COV=1 to enable coverage)
+	$(UV) run pytest -m api $(if $(COV),--cov=ldk_athlete_ai_coach --cov-report=term-missing)
 
 test-cov: ## Run tests with coverage output
 	$(UV) run pytest --cov=ldk_athlete_ai_coach --cov-report=term-missing
