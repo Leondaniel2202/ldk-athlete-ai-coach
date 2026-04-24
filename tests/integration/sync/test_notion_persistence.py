@@ -34,6 +34,7 @@ from ldk_athlete_ai_coach.db.models.training import (
 )
 from ldk_athlete_ai_coach.db.repositories.training_base_repository import TrainingBaseRepository
 
+pytestmark = pytest.mark.integration
 
 @pytest.fixture(scope="module")
 def engine():
@@ -582,7 +583,9 @@ class TestNotionPersistenceService:
             ],
         )
 
-        plan = session.execute(select(Plan).where(Plan.notion_page_id == "content-plan")).scalar_one()
+        plan = session.execute(
+            select(Plan).where(Plan.notion_page_id == "content-plan")
+        ).scalar_one()
         nutrition = session.execute(
             select(NutritionGuideline).where(
                 NutritionGuideline.notion_page_id == "content-nutrition"

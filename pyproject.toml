@@ -59,6 +59,11 @@ quote-style = "double"
 [tool.pytest.ini_options]
 addopts = "-ra -p no:cacheprovider"
 testpaths = ["tests"]
+markers = [
+    "unit: Fast unit tests that do not require a database or external services",
+    "integration: Integration tests that may use an in-memory or test database",
+    "api: API tests using FastAPI TestClient",
+]
 
 [tool.coverage.run]
 source = ["src/ldk_athlete_ai_coach"]

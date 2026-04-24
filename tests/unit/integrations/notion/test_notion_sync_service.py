@@ -7,7 +7,6 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from ldk_athlete_ai_coach.core.config import Settings
 from ldk_athlete_ai_coach.core.integrations.notion.client import NotionClient
 from ldk_athlete_ai_coach.core.integrations.notion.sync_service import (
     NotionSyncError,
@@ -24,37 +23,9 @@ from ldk_athlete_ai_coach.db.models.training import (
     TrainingEntityMixin,
     Workout,
 )
+from tests.factories.settings import make_settings
 
-
-def _settings(**overrides: Any) -> Settings:
-    """Build a minimal Settings instance with required fields populated.
-
-    Args:
-        **overrides: Setting overrides applied to the default test values.
-
-    Returns:
-        Settings instance suitable for Notion sync tests.
-    """
-    defaults: dict[str, Any] = {
-        "postgres_db": "test_db",
-        "postgres_user": "postgres",
-        "postgres_password": "postgres",
-        "postgres_host": "localhost",
-        "postgres_port": 5432,
-        "notion_api_key": "secret_test_key",
-        "notion_plan_data_source_id": "plan-data-source-id",
-        "notion_phase_data_source_id": "phase-data-source-id",
-        "notion_nutrition_guideline_data_source_id": "nutrition-data-source-id",
-        "notion_workout_data_source_id": "workout-data-source-id",
-        "notion_event_data_source_id": "event-data-source-id",
-        "notion_session_data_source_id": "session-data-source-id",
-        "notion_feedback_data_source_id": "feedback-data-source-id",
-        "notion_page_size": 100,
-        "notion_timeout_seconds": 30,
-        "notion_max_retries": 3,
-    }
-    defaults.update(overrides)
-    return Settings(**defaults)  # pyright: ignore[reportCallIssue]
+pytestmark = pytest.mark.unit
 
 
 def _make_service(
@@ -75,7 +46,7 @@ def _make_service(
     Returns:
         Sync service configured with mocked client and session factory.
     """
-    settings = _settings()
+    settings = make_settings()
     client = MagicMock(spec=NotionClient)
 
     def _iter(data_source_id: str):
