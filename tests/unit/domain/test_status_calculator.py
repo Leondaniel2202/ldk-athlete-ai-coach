@@ -113,7 +113,7 @@ def test_calculate_plan_status_active_when_no_boundaries() -> None:
         as_of_date=date(2026, 4, 17),
     )
 
-    assert status == PlanStatus.ACTIVE
+    assert status == PlanStatus.UNKNOWN
 
 
 def test_calculate_phase_status_unknown_when_no_boundaries() -> None:
@@ -125,7 +125,7 @@ def test_calculate_phase_status_unknown_when_no_boundaries() -> None:
         as_of_date=date(2026, 4, 17),
     )
 
-    assert status == PhaseStatus.ACTIVE
+    assert status == PhaseStatus.UNKNOWN
 
 
 def test_calculate_workout_status_cancelled_takes_priority() -> None:
