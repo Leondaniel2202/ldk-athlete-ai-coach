@@ -2,63 +2,15 @@
 
 from __future__ import annotations
 
-from collections.abc import Generator
 from datetime import UTC, datetime, timedelta
 
 import pytest
 from fastapi.testclient import TestClient
-from sqlalchemy import create_engine
-from sqlalchemy.orm import Session, sessionmaker
-from sqlalchemy.pool import StaticPool
+from sqlalchemy.orm import Session
 
-from ldk_athlete_ai_coach.db.base import Base
 from ldk_athlete_ai_coach.db.models.training import Phase, Plan, TrackedSession, Workout
-from ldk_athlete_ai_coach.db.session import get_db_session
-from ldk_athlete_ai_coach.main import app
 
 pytestmark = pytest.mark.api
-
-# ---------------------------------------------------------------------------
-# In-memory SQLite setup
-# ---------------------------------------------------------------------------
-
-_SQLITE_URL = "sqlite:///:memory:"
-
-_engine = create_engine(
-    _SQLITE_URL,
-    connect_args={"check_same_thread": False},
-    poolclass=StaticPool,
-)
-_TestingSessionLocal = sessionmaker(bind=_engine, class_=Session)
-
-
-@pytest.fixture(autouse=True)
-def _create_tables() -> Generator[None, None, None]:
-    """Create all tables before each test and drop them after."""
-    Base.metadata.create_all(bind=_engine)
-    yield  # type: ignore[misc]
-    Base.metadata.drop_all(bind=_engine)
-
-
-@pytest.fixture()
-def db_session() -> Session:
-    """Return a fresh test database session."""
-    return _TestingSessionLocal()
-
-
-@pytest.fixture()
-def client(db_session: Session) -> Generator[TestClient, None, None]:
-    """Return a test client wired to the in-memory database."""
-
-    def _override() -> Session:
-        return db_session
-
-    app.dependency_overrides[get_db_session] = _override
-    tc = TestClient(app)
-    yield tc  # type: ignore[misc]
-    app.dependency_overrides.clear()
-    db_session.close()
-
 
 # ---------------------------------------------------------------------------
 # Helpers

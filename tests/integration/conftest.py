@@ -1,40 +1,43 @@
-"""Integration test fixtures.
+"""Integration test fixtures using the dedicated postgres_test database.
 
-Provides shared SQLite database fixtures for integration tests.
-The target direction is a dedicated Postgres test database (postgres_test
-from docker-compose.yml). SQLite is retained here for CI portability while
-the Postgres test service is not yet wired into the CI pipeline.
+Start the test database before running integration tests:
+    docker compose up -d postgres_test
+
+Connection defaults match the postgres_test service from docker-compose.yml.
+Override via environment variables (TEST_POSTGRES_*) as needed.
 """
 
 from __future__ import annotations
 
+import os
 from collections.abc import Generator
 
 import pytest
-from sqlalchemy import create_engine, event
-from sqlalchemy.orm import Session, sessionmaker
-from sqlalchemy.pool import StaticPool
+from sqlalchemy import create_engine
+from sqlalchemy.orm import Session
 
 from ldk_athlete_ai_coach.db.base import Base
 
 
-@pytest.fixture(scope="session")
-def sqlite_engine():
-    """Create a shared in-memory SQLite engine for the integration test session.
+def _test_db_url() -> str:
+    host = os.getenv("TEST_POSTGRES_HOST", os.getenv("POSTGRES_HOST", "localhost"))
+    port = os.getenv("TEST_POSTGRES_PORT", "5433")
+    db = os.getenv("TEST_POSTGRES_DB", "ldk_athlete_ai_coach_test")
+    user = os.getenv("TEST_POSTGRES_USER", os.getenv("POSTGRES_USER", "postgres"))
+    password = os.getenv(
+        "TEST_POSTGRES_PASSWORD", os.getenv("POSTGRES_PASSWORD", "postgres")
+    )
+    return f"postgresql+psycopg://{user}:{password}@{host}:{port}/{db}"
 
-    Foreign-key enforcement is enabled so that referential integrity is
-    tested even with SQLite.
+
+@pytest.fixture(scope="session")
+def pg_engine():
+    """Session-scoped engine targeting the postgres_test database.
+
+    Creates the full schema once at the start of the test session and drops
+    it when the session ends. No test should ever touch the dev database.
     """
-    engine = create_engine(
-        "sqlite:///:memory:",
-        connect_args={"check_same_thread": False},
-        poolclass=StaticPool,
-    )
-    event.listen(
-        engine,
-        "connect",
-        lambda conn, _: conn.execute("PRAGMA foreign_keys=ON"),
-    )
+    engine = create_engine(_test_db_url())
     Base.metadata.create_all(engine)
     yield engine
     Base.metadata.drop_all(engine)
@@ -42,16 +45,19 @@ def sqlite_engine():
 
 
 @pytest.fixture()
-def db_session(sqlite_engine) -> Generator[Session, None, None]:
-    """Yield a per-test SQLAlchemy session backed by the shared SQLite engine.
+def db_session(pg_engine) -> Generator[Session, None, None]:
+    """Per-test transactional session that rolls back after each test.
 
-    Each test gets a fresh session. Uncommitted changes are rolled back
-    after the test completes, keeping tests isolated.
+    Opens a connection, starts an outer transaction, then yields a session
+    joined to that transaction via a savepoint. The outer transaction is
+    rolled back unconditionally so each test starts with a clean slate.
     """
-    SessionLocal = sessionmaker(bind=sqlite_engine, class_=Session)
-    session = SessionLocal()
+    connection = pg_engine.connect()
+    transaction = connection.begin()
+    session = Session(bind=connection, join_transaction_mode="create_savepoint")
     try:
         yield session
     finally:
-        session.rollback()
         session.close()
+        transaction.rollback()
+        connection.close()
