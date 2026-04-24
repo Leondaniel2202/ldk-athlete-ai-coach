@@ -289,20 +289,8 @@ class TestNotionPersistenceService:
 
         assert phase.nutrition_guideline_id == guideline.id
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-    def test_persist_phases_resolves_plan_fk_by_notion_id(self, session: Session) -> None:
-        svc = NotionPersistenceService(session)
-=======
-
     def test_persist_phases_resolves_plan_fk_by_notion_id(self, db_session: Session) -> None:
         svc = NotionPersistenceService(db_session)
->>>>>>> dca8fae (fix: switch integration and API test fixtures from SQLite to postgres_test)
-=======
-
-    def test_persist_phases_resolves_plan_fk_by_notion_id(self, db_session: Session) -> None:
-        svc = NotionPersistenceService(db_session)
->>>>>>> b43b617ba5fa1434151968117d4ebe26b7a282b7
 
         [plan] = svc.persist_plans([_plan_schema("plan-parent")])
         [phase] = svc.persist_phases([_phase_schema("phase-child", plan_notion_id="plan-parent")])
@@ -431,20 +419,8 @@ class TestNotionPersistenceService:
         )
         assert len(rows) == 1
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-    def test_persist_sessions_resolves_workout_fk_by_notion_id(self, session: Session) -> None:
-        svc = NotionPersistenceService(session)
-=======
-
     def test_persist_sessions_resolves_workout_fk_by_notion_id(self, db_session: Session) -> None:
         svc = NotionPersistenceService(db_session)
->>>>>>> dca8fae (fix: switch integration and API test fixtures from SQLite to postgres_test)
-=======
-
-    def test_persist_sessions_resolves_workout_fk_by_notion_id(self, db_session: Session) -> None:
-        svc = NotionPersistenceService(db_session)
->>>>>>> b43b617ba5fa1434151968117d4ebe26b7a282b7
 
         [workout] = svc.persist_workouts([_workout_schema("workout-parent")])
         [tracked] = svc.persist_sessions(

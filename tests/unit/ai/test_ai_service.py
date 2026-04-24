@@ -48,7 +48,10 @@ def test_service_reuses_phase_context_service_and_prompt_builder() -> None:
 
     assert response == _analysis()
     phase_context_service.get_specific_phase_context.assert_called_once_with(phase_id=7)
-    mock_prompt_builder.assert_called_once_with(phase_context, "Prioritize recovery")
+    mock_prompt_builder.assert_called_once_with(
+        context=phase_context,
+        instruction="Prioritize recovery",
+    )
     llm_client.parse_structured.assert_called_once_with(
         messages=[{"role": "system", "content": "prompt"}],
         schema=AnalyzePhaseContextResponse,
@@ -90,7 +93,10 @@ def test_service_handles_sparse_context_without_failing_early() -> None:
         response = service.analyze_phase_context(phase_id=11)
 
     assert response.summary == "Context is sparse but analyzable."
-    mock_prompt_builder.assert_called_once_with(sparse_context, None)
+    mock_prompt_builder.assert_called_once_with(
+        context=sparse_context,
+        instruction=None,
+    )
     llm_client.parse_structured.assert_called_once_with(
         messages=[{"role": "user", "content": "sparse prompt"}],
         schema=AnalyzePhaseContextResponse,
