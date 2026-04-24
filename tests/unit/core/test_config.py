@@ -7,6 +7,7 @@ from pydantic import ValidationError
 
 from ldk_athlete_ai_coach.core.config import Settings, get_settings
 
+pytestmark = pytest.mark.unit
 
 def test_settings_require_database_environment_values(
     monkeypatch: pytest.MonkeyPatch,

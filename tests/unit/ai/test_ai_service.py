@@ -10,6 +10,7 @@ from ldk_athlete_ai_coach.ai.errors import AIProviderError
 from ldk_athlete_ai_coach.ai.services.phase_context_analysis import AnalyzePhaseContextService
 from ldk_athlete_ai_coach.api.v1.schemas.ai import AnalyzePhaseContextResponse
 
+pytestmark = pytest.mark.unit
 
 def _analysis() -> AnalyzePhaseContextResponse:
     return AnalyzePhaseContextResponse(
