@@ -35,6 +35,7 @@ from ldk_athlete_ai_coach.db.models.training import (
 )
 from ldk_athlete_ai_coach.db.repositories.training_base_repository import TrainingBaseRepository
 
+pytestmark = pytest.mark.integration
 
 @pytest.fixture(scope="module")
 def engine():

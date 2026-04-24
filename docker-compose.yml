@@ -17,5 +17,22 @@ services:
       timeout: 5s
       retries: 5
 
+  postgres_test:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: ${TEST_POSTGRES_DB:-ldk_athlete_ai_coach_test}
+      POSTGRES_USER: ${TEST_POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${TEST_POSTGRES_PASSWORD:-postgres}
+    ports:
+      - "${TEST_POSTGRES_PORT:-5433}:5432"
+    volumes:
+      - postgres_test_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${TEST_POSTGRES_USER:-postgres} -d ${TEST_POSTGRES_DB:-ldk_athlete_ai_coach_test}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
 volumes:
   postgres_data:
+  postgres_test_data:

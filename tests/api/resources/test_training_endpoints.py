@@ -16,6 +16,8 @@ from ldk_athlete_ai_coach.db.models.training import Phase, Plan, TrackedSession,
 from ldk_athlete_ai_coach.db.session import get_db_session
 from ldk_athlete_ai_coach.main import app
 
+pytestmark = pytest.mark.api
+
 # ---------------------------------------------------------------------------
 # In-memory SQLite setup
 # ---------------------------------------------------------------------------
