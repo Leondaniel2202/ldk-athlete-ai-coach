@@ -1,7 +1,13 @@
 UV_CACHE_DIR ?= .uv-cache
 UV = uv --cache-dir $(UV_CACHE_DIR)
 
-.PHONY: help install update lock add remove api db-up db-down test test-cov lint lint-fix format-check type-check alembic-up alembic-revision
+.PHONY: help \
+        install update lock add remove \
+        api \
+        db-up db-test-up db-down \
+        test test-unit test-integration test-api test-cov \
+        lint lint-fix format-check type-check \
+        alembic-up alembic-revision
 
 help: ## Show this help message
 	@$(UV) run python -c "import re; [print('  {:<22} {}'.format(*m.groups())) for line in open('Makefile') for m in [re.match(r'^([a-zA-Z_-]+):.*##\s*(.*)', line)] if m]"
@@ -25,7 +31,6 @@ add-dev: ## Add a dev dependency, e.g. make add-dev PKG=pytest
 
 remove: ## Remove a dependency, e.g. make remove PKG=httpx
 	$(UV) remove $(PKG)
-11111111
 ## ── Application ───────────────────────────────────────────────────────────────
 
 api: ## Start the FastAPI development server with auto-reload
@@ -33,8 +38,11 @@ api: ## Start the FastAPI development server with auto-reload
 
 ## ── Database ──────────────────────────────────────────────────────────────────
 
-db-up: ## Start the PostgreSQL Docker container
+db-up: ## Start the development PostgreSQL container
 	docker compose up -d postgres
+
+db-test-up: ## Start the test PostgreSQL container (postgres_test on port 5433)
+	docker compose up -d postgres_test
 
 db-down: ## Stop all Docker Compose services
 	docker compose down
@@ -47,8 +55,17 @@ alembic-revision: ## Generate a new Alembic migration, e.g. make alembic-revisio
 
 ## ── Quality ───────────────────────────────────────────────────────────────────
 
-test: ## Run the test suite
+test: ## Run the full test suite
 	$(UV) run pytest
+
+test-unit: ## Run only unit tests
+	$(UV) run pytest -m unit
+
+test-integration: ## Run only integration tests
+	$(UV) run pytest -m integration
+
+test-api: ## Run only API tests
+	$(UV) run pytest -m api
 
 test-cov: ## Run tests with coverage output
 	$(UV) run pytest --cov=ldk_athlete_ai_coach --cov-report=term-missing

@@ -17,6 +17,8 @@ from ldk_athlete_ai_coach.db.repositories.phase_repository import PhaseRepositor
 from ldk_athlete_ai_coach.db.repositories.session_repository import SessionRepository
 from ldk_athlete_ai_coach.db.repositories.workout_repository import WorkoutRepository
 
+pytestmark = pytest.mark.integration
+
 _SQLITE_URL = "sqlite:///:memory:"
 
 _engine = create_engine(

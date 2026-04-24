@@ -1,8 +1,13 @@
 """API endpoint tests for root and health routes."""
 
+from __future__ import annotations
+
+import pytest
 from fastapi.testclient import TestClient
 
 from ldk_athlete_ai_coach.main import app
+
+pytestmark = pytest.mark.api
 
 client = TestClient(app)
 

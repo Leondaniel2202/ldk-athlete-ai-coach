@@ -1,6 +1,12 @@
 """Metadata registration tests for Sport Manager SQLAlchemy models."""
 
+from __future__ import annotations
+
+import pytest
+
 from ldk_athlete_ai_coach.db.base import Base
+
+pytestmark = pytest.mark.integration
 
 
 def test_sport_manager_models_register_expected_tables() -> None:

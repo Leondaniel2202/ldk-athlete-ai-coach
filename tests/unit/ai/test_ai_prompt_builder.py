@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from datetime import date
 
+import pytest
+
 from ldk_athlete_ai_coach.ai.prompts.phase_context import build_analyze_phase_context_prompt
 from ldk_athlete_ai_coach.api.v1.schemas.adherence import WorkoutAdherenceSummaryResponse
 from ldk_athlete_ai_coach.api.v1.schemas.common import ContextMetadataResponse
@@ -19,6 +21,7 @@ from ldk_athlete_ai_coach.api.v1.schemas.workouts import (
 from ldk_athlete_ai_coach.domain.enums.status import PhaseStatus, WorkoutStatus
 from ldk_athlete_ai_coach.domain.models.training_metrics import TrainingMetrics
 
+pytestmark = pytest.mark.unit
 
 def _context() -> PhaseContextResponse:
     phase = PhaseResponse(
@@ -149,7 +152,6 @@ def _context() -> PhaseContextResponse:
         ],
     )
 
-
 def test_prompt_builder_includes_entity_names_page_content_and_data_gaps() -> None:
     """Prompt builder includes the synced context details that the model must ground on."""
     messages = build_analyze_phase_context_prompt(_context())
@@ -163,7 +165,6 @@ def test_prompt_builder_includes_entity_names_page_content_and_data_gaps() -> No
     assert "Warm up, then 6 x 1km compromised efforts." in user_content
     assert "Brick Session" in user_content
     assert "No active phase matched the current date" in user_content
-
 
 def test_prompt_builder_includes_optional_instruction() -> None:
     """Prompt builder appends the optional user instruction when provided."""

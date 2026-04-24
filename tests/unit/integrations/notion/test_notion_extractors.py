@@ -23,6 +23,9 @@ from ldk_athlete_ai_coach.core.integrations.notion.extractors.workout_extractor 
     extract_workout,
 )
 
+pytestmark = pytest.mark.unit
+
+
 # ---------------------------------------------------------------------------
 # Fixture helpers
 # ---------------------------------------------------------------------------

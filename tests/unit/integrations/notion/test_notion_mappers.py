@@ -34,6 +34,9 @@ from ldk_athlete_ai_coach.db.models.training import (
     Workout,
 )
 
+pytestmark = pytest.mark.unit
+
+
 # ---------------------------------------------------------------------------
 # Shared helpers
 # ---------------------------------------------------------------------------

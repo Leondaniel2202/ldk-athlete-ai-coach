@@ -17,6 +17,9 @@ from ldk_athlete_ai_coach.core.integrations.notion.client import (
     NotionDatabaseNotFoundError,
     NotionRateLimitError,
 )
+from tests.factories.settings import make_settings
+
+pytestmark = pytest.mark.unit
 
 
 def _make_http_response(status: int, body: str = "error") -> httpx.Response:
@@ -49,33 +52,9 @@ def _make_api_error(
     )
 
 
-def _settings(**overrides: Any) -> Settings:
-    """Build a minimal :class:`Settings` object for Notion tests."""
-    defaults: dict[str, Any] = {
-        "postgres_db": "test_db",
-        "postgres_user": "postgres",
-        "postgres_password": "postgres",
-        "postgres_host": "localhost",
-        "postgres_port": 5432,
-        "notion_api_key": "secret_test_key",
-        "notion_plan_data_source_id": "plan-data-source-id",
-        "notion_phase_data_source_id": "phase-data-source-id",
-        "notion_nutrition_guideline_data_source_id": "nutrition-data-source-id",
-        "notion_workout_data_source_id": "workout-data-source-id",
-        "notion_event_data_source_id": "event-data-source-id",
-        "notion_session_data_source_id": "session-data-source-id",
-        "notion_feedback_data_source_id": "feedback-data-source-id",
-        "notion_page_size": 100,
-        "notion_timeout_seconds": 30,
-        "notion_max_retries": 3,
-    }
-    defaults.update(overrides)
-    return Settings(**defaults)  # pyright: ignore[reportCallIssue]
-
-
 def _make_client(**setting_overrides: Any) -> tuple[NotionClient, MagicMock]:
     """Create a NotionClient with a mocked SDK backend."""
-    settings = _settings(**setting_overrides)
+    settings = make_settings(**setting_overrides)
     with patch("ldk_athlete_ai_coach.core.integrations.notion.client.Client") as mock_sdk_cls:
         mock_sdk = MagicMock()
         mock_sdk_cls.return_value = mock_sdk
@@ -356,9 +335,11 @@ class TestRateLimitHandling:
         client, sdk = _make_client(notion_max_retries=2)
         sdk.request.side_effect = _make_http_error(429)
 
-        with patch("ldk_athlete_ai_coach.core.integrations.notion.client.time.sleep"):
-            with pytest.raises(NotionRateLimitError):
-                client.query_data_source("ds-123")
+        with (
+            patch("ldk_athlete_ai_coach.core.integrations.notion.client.time.sleep"),
+            pytest.raises(NotionRateLimitError),
+        ):
+            client.query_data_source("ds-123")
 
     def test_retries_on_api_response_error_429_and_succeeds(self) -> None:
         client, sdk = _make_client(notion_max_retries=3)
@@ -380,9 +361,11 @@ class TestRateLimitHandling:
         client, sdk = _make_client(notion_max_retries=1)
         sdk.request.side_effect = _make_api_error(429, "rate_limited")
 
-        with patch("ldk_athlete_ai_coach.core.integrations.notion.client.time.sleep"):
-            with pytest.raises(NotionRateLimitError):
-                client.query_data_source("ds-123")
+        with (
+            patch("ldk_athlete_ai_coach.core.integrations.notion.client.time.sleep"),
+            pytest.raises(NotionRateLimitError),
+        ):
+            client.query_data_source("ds-123")
 
 
 class TestNotionSettings:
@@ -418,7 +401,7 @@ class TestNotionSettings:
             )
 
     def test_settings_accept_all_notion_fields(self) -> None:
-        settings = _settings()
+        settings = make_settings()
 
         assert settings.notion_api_key == "secret_test_key"
         assert settings.notion_plan_data_source_id == "plan-data-source-id"
