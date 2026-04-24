@@ -2,48 +2,18 @@
 
 from __future__ import annotations
 
-from collections.abc import Generator
 from datetime import UTC, datetime, timedelta
 
 import pytest
-from sqlalchemy import create_engine
-from sqlalchemy.orm import Session, sessionmaker
-from sqlalchemy.pool import StaticPool
+from sqlalchemy.orm import Session
 
 from ldk_athlete_ai_coach.application.services.phase_context_service import PhaseContextService
-from ldk_athlete_ai_coach.db.base import Base
 from ldk_athlete_ai_coach.db.models.training import Phase, Plan, TrackedSession, Workout
 from ldk_athlete_ai_coach.db.repositories.phase_repository import PhaseRepository
 from ldk_athlete_ai_coach.db.repositories.session_repository import SessionRepository
 from ldk_athlete_ai_coach.db.repositories.workout_repository import WorkoutRepository
 
 pytestmark = pytest.mark.integration
-
-_SQLITE_URL = "sqlite:///:memory:"
-
-_engine = create_engine(
-    _SQLITE_URL,
-    connect_args={"check_same_thread": False},
-    poolclass=StaticPool,
-)
-_TestingSessionLocal = sessionmaker(bind=_engine, class_=Session)
-
-
-@pytest.fixture(autouse=True)
-def _create_tables() -> Generator[None, None, None]:
-    """Create all tables before each test and drop them after."""
-    Base.metadata.create_all(bind=_engine)
-    yield  # type: ignore[misc]
-    Base.metadata.drop_all(bind=_engine)
-
-
-@pytest.fixture()
-def db_session() -> Generator[Session, None, None]:
-    """Return a fresh test database session."""
-    session = _TestingSessionLocal()
-    yield session  # type: ignore[misc]
-    session.close()
-
 
 def _make_plan(
     db: Session,

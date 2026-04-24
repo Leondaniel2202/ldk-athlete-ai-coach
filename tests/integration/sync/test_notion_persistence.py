@@ -5,7 +5,7 @@ from __future__ import annotations
 from datetime import UTC, datetime
 
 import pytest
-from sqlalchemy import create_engine, event, select
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from ldk_athlete_ai_coach.core.integrations.notion.persistence_service import (
@@ -22,7 +22,6 @@ from ldk_athlete_ai_coach.core.integrations.notion.schemas.notion_weekly_feedbac
     NotionWeeklyFeedback,
 )
 from ldk_athlete_ai_coach.core.integrations.notion.schemas.notion_workout import NotionWorkout
-from ldk_athlete_ai_coach.db.base import Base
 from ldk_athlete_ai_coach.db.models.training import (
     Event,
     Feedback,
@@ -35,43 +34,6 @@ from ldk_athlete_ai_coach.db.models.training import (
 from ldk_athlete_ai_coach.db.repositories.training_base_repository import TrainingBaseRepository
 
 pytestmark = pytest.mark.integration
-
-@pytest.fixture(scope="module")
-def engine():
-    """Create a shared in-memory SQLite engine with the full schema.
-
-    Yields:
-        SQLAlchemy engine configured with foreign keys and all metadata tables.
-    """
-    _engine = create_engine("sqlite:///:memory:")
-    event.listen(
-        _engine,
-        "connect",
-        lambda conn, _: conn.execute("PRAGMA foreign_keys=ON"),
-    )
-    Base.metadata.create_all(_engine)
-    yield _engine
-    _engine.dispose()
-
-
-@pytest.fixture()
-def session(engine):
-    """Yield a transactional session rolled back after each test.
-
-    Args:
-        engine: Shared test engine fixture.
-
-    Yields:
-        Session bound to a rollback-only transaction.
-    """
-    connection = engine.connect()
-    transaction = connection.begin()
-    _session = Session(bind=connection)
-    yield _session
-    _session.close()
-    transaction.rollback()
-    connection.close()
-
 
 def _nutrition_schema(
     notion_id: str = "nutrition-1",
@@ -200,76 +162,76 @@ def _feedback_entity(notion_id: str, week: str = "2024-W10") -> Feedback:
 
 
 class TestBaseRepositoryWithPhase:
-    def test_get_by_notion_id_returns_none_when_not_found(self, session: Session) -> None:
-        repo = TrainingBaseRepository[Phase](session, Phase)
+    def test_get_by_notion_id_returns_none_when_not_found(self, db_session: Session) -> None:
+        repo = TrainingBaseRepository[Phase](db_session, Phase)
 
         assert repo.get_by_source_page_id("missing") is None
 
-    def test_add_persists_entity(self, session: Session) -> None:
-        repo = TrainingBaseRepository[Phase](session, Phase)
+    def test_add_persists_entity(self, db_session: Session) -> None:
+        repo = TrainingBaseRepository[Phase](db_session, Phase)
         entity = repo.add(_phase_entity("phase-added"))
-        session.flush()
+        db_session.flush()
 
         assert entity.id is not None
         assert repo.get_by_source_page_id("phase-added") is entity
 
 
 class TestBaseRepositoryWithWorkout:
-    def test_get_by_notion_id_returns_none_when_not_found(self, session: Session) -> None:
-        repo = TrainingBaseRepository[Workout](session, Workout)
+    def test_get_by_notion_id_returns_none_when_not_found(self, db_session: Session) -> None:
+        repo = TrainingBaseRepository[Workout](db_session, Workout)
 
         assert repo.get_by_source_page_id("missing") is None
 
-    def test_add_persists_entity(self, session: Session) -> None:
-        repo = TrainingBaseRepository[Workout](session, Workout)
+    def test_add_persists_entity(self, db_session: Session) -> None:
+        repo = TrainingBaseRepository[Workout](db_session, Workout)
         entity = repo.add(_workout_entity("workout-added"))
-        session.flush()
+        db_session.flush()
 
         assert entity.id is not None
         assert repo.get_by_source_page_id("workout-added") is entity
 
 
 class TestBaseRepositoryWithTrackedSession:
-    def test_get_by_notion_id_returns_none_when_not_found(self, session: Session) -> None:
-        repo = TrainingBaseRepository[TrackedSession](session, TrackedSession)
+    def test_get_by_notion_id_returns_none_when_not_found(self, db_session: Session) -> None:
+        repo = TrainingBaseRepository[TrackedSession](db_session, TrackedSession)
 
         assert repo.get_by_source_page_id("missing") is None
 
-    def test_add_persists_entity(self, session: Session) -> None:
-        repo = TrainingBaseRepository[TrackedSession](session, TrackedSession)
+    def test_add_persists_entity(self, db_session: Session) -> None:
+        repo = TrainingBaseRepository[TrackedSession](db_session, TrackedSession)
         entity = repo.add(_session_entity("session-added"))
-        session.flush()
+        db_session.flush()
 
         assert entity.id is not None
         assert repo.get_by_source_page_id("session-added") is entity
 
 
 class TestBaseRepositoryWithFeedback:
-    def test_get_by_notion_id_returns_none_when_not_found(self, session: Session) -> None:
-        repo = TrainingBaseRepository[Feedback](session, Feedback)
+    def test_get_by_notion_id_returns_none_when_not_found(self, db_session: Session) -> None:
+        repo = TrainingBaseRepository[Feedback](db_session, Feedback)
 
         assert repo.get_by_source_page_id("missing") is None
 
-    def test_add_persists_entity(self, session: Session) -> None:
-        repo = TrainingBaseRepository[Feedback](session, Feedback)
+    def test_add_persists_entity(self, db_session: Session) -> None:
+        repo = TrainingBaseRepository[Feedback](db_session, Feedback)
         entity = repo.add(_feedback_entity("feedback-added"))
-        session.flush()
+        db_session.flush()
 
         assert entity.id is not None
         assert repo.get_by_source_page_id("feedback-added") is entity
 
 
 class TestNotionPersistenceService:
-    def test_persist_plans_inserts_new_rows(self, session: Session) -> None:
-        svc = NotionPersistenceService(session)
+    def test_persist_plans_inserts_new_rows(self, db_session: Session) -> None:
+        svc = NotionPersistenceService(db_session)
 
         entities = svc.persist_plans([_plan_schema("pl-1"), _plan_schema("pl-2")])
 
         assert len(entities) == 2
         assert {entity.notion_page_id for entity in entities} == {"pl-1", "pl-2"}
 
-    def test_persist_plans_updates_existing_rows_in_place(self, session: Session) -> None:
-        svc = NotionPersistenceService(session)
+    def test_persist_plans_updates_existing_rows_in_place(self, db_session: Session) -> None:
+        svc = NotionPersistenceService(db_session)
 
         [original] = svc.persist_plans([_plan_schema("pl-upd", name="Original")])
         original_id = original.id
@@ -277,13 +239,15 @@ class TestNotionPersistenceService:
 
         assert updated.id == original_id
         assert updated.name == "Updated"
-        rows = session.execute(select(Plan).where(Plan.notion_page_id == "pl-upd")).scalars().all()
+        rows = (
+            db_session.execute(select(Plan).where(Plan.notion_page_id == "pl-upd")).scalars().all()
+        )
         assert len(rows) == 1
 
     def test_persist_nutrition_guidelines_updates_existing_rows_in_place(
-        self, session: Session
+        self, db_session: Session
     ) -> None:
-        svc = NotionPersistenceService(session)
+        svc = NotionPersistenceService(db_session)
 
         [original] = svc.persist_nutrition_guidelines(
             [_nutrition_schema("nutrition-upd", goal="Performance")]
@@ -296,7 +260,7 @@ class TestNotionPersistenceService:
         assert updated.id == original_id
         assert updated.goal == "Gain"
         rows = (
-            session.execute(
+            db_session.execute(
                 select(NutritionGuideline).where(
                     NutritionGuideline.notion_page_id == "nutrition-upd"
                 )
@@ -307,9 +271,9 @@ class TestNotionPersistenceService:
         assert len(rows) == 1
 
     def test_persist_phases_resolves_nutrition_guideline_fk_by_notion_id(
-        self, session: Session
+        self, db_session: Session
     ) -> None:
-        svc = NotionPersistenceService(session)
+        svc = NotionPersistenceService(db_session)
 
         [guideline] = svc.persist_nutrition_guidelines([_nutrition_schema("nutrition-parent")])
         [phase] = svc.persist_phases(
@@ -319,24 +283,24 @@ class TestNotionPersistenceService:
         assert phase.nutrition_guideline_id == guideline.id
 
 
-    def test_persist_phases_resolves_plan_fk_by_notion_id(self, session: Session) -> None:
-        svc = NotionPersistenceService(session)
+    def test_persist_phases_resolves_plan_fk_by_notion_id(self, db_session: Session) -> None:
+        svc = NotionPersistenceService(db_session)
 
         [plan] = svc.persist_plans([_plan_schema("plan-parent")])
         [phase] = svc.persist_phases([_phase_schema("phase-child", plan_notion_id="plan-parent")])
 
         assert phase.plan_id == plan.id
 
-    def test_persist_phases_inserts_new_rows(self, session: Session) -> None:
-        svc = NotionPersistenceService(session)
+    def test_persist_phases_inserts_new_rows(self, db_session: Session) -> None:
+        svc = NotionPersistenceService(db_session)
 
         entities = svc.persist_phases([_phase_schema("ph-1"), _phase_schema("ph-2")])
 
         assert len(entities) == 2
         assert {entity.notion_page_id for entity in entities} == {"ph-1", "ph-2"}
 
-    def test_persist_phases_updates_existing_rows_in_place(self, session: Session) -> None:
-        svc = NotionPersistenceService(session)
+    def test_persist_phases_updates_existing_rows_in_place(self, db_session: Session) -> None:
+        svc = NotionPersistenceService(db_session)
 
         [original] = svc.persist_phases([_phase_schema("ph-upd", name="Original")])
         original_id = original.id
@@ -345,12 +309,14 @@ class TestNotionPersistenceService:
         assert updated.id == original_id
         assert updated.name == "Updated"
         rows = (
-            session.execute(select(Phase).where(Phase.notion_page_id == "ph-upd")).scalars().all()
+            db_session.execute(
+                select(Phase).where(Phase.notion_page_id == "ph-upd")
+            ).scalars().all()
         )
         assert len(rows) == 1
 
-    def test_persist_workouts_resolves_phase_fk_by_notion_id(self, session: Session) -> None:
-        svc = NotionPersistenceService(session)
+    def test_persist_workouts_resolves_phase_fk_by_notion_id(self, db_session: Session) -> None:
+        svc = NotionPersistenceService(db_session)
 
         [phase] = svc.persist_phases([_phase_schema("phase-parent")])
         [workout] = svc.persist_workouts(
@@ -359,8 +325,8 @@ class TestNotionPersistenceService:
 
         assert workout.phase_id == phase.id
 
-    def test_persist_workouts_stores_current_workout_fields(self, session: Session) -> None:
-        svc = NotionPersistenceService(session)
+    def test_persist_workouts_stores_current_workout_fields(self, db_session: Session) -> None:
+        svc = NotionPersistenceService(db_session)
 
         [workout] = svc.persist_workouts(
             [
@@ -394,8 +360,8 @@ class TestNotionPersistenceService:
         assert workout.status == "Done"
         assert workout.training_load_method == "Weighted HRR"
 
-    def test_persist_workouts_updates_existing_rows_in_place(self, session: Session) -> None:
-        svc = NotionPersistenceService(session)
+    def test_persist_workouts_updates_existing_rows_in_place(self, db_session: Session) -> None:
+        svc = NotionPersistenceService(db_session)
 
         [original] = svc.persist_workouts([_workout_schema("wo-upd", name="Old Name")])
         original_id = original.id
@@ -404,14 +370,14 @@ class TestNotionPersistenceService:
         assert updated.id == original_id
         assert updated.name == "New Name"
         rows = (
-            session.execute(select(Workout).where(Workout.notion_page_id == "wo-upd"))
+            db_session.execute(select(Workout).where(Workout.notion_page_id == "wo-upd"))
             .scalars()
             .all()
         )
         assert len(rows) == 1
 
-    def test_persist_events_resolves_plan_and_workout_fks(self, session: Session) -> None:
-        svc = NotionPersistenceService(session)
+    def test_persist_events_resolves_plan_and_workout_fks(self, db_session: Session) -> None:
+        svc = NotionPersistenceService(db_session)
 
         [plan] = svc.persist_plans([_plan_schema("plan-parent")])
         svc.persist_phases([_phase_schema("phase-parent")])
@@ -431,8 +397,8 @@ class TestNotionPersistenceService:
         assert event_entity.plan_id == plan.id
         assert event_entity.race_workout_id == workout.id
 
-    def test_persist_events_updates_existing_rows_in_place(self, session: Session) -> None:
-        svc = NotionPersistenceService(session)
+    def test_persist_events_updates_existing_rows_in_place(self, db_session: Session) -> None:
+        svc = NotionPersistenceService(db_session)
 
         [original] = svc.persist_events([_event_schema("event-upd", priority="C")])
         original_id = original.id
@@ -441,15 +407,15 @@ class TestNotionPersistenceService:
         assert updated.id == original_id
         assert updated.priority == "A"
         rows = (
-            session.execute(select(Event).where(Event.notion_page_id == "event-upd"))
+            db_session.execute(select(Event).where(Event.notion_page_id == "event-upd"))
             .scalars()
             .all()
         )
         assert len(rows) == 1
 
 
-    def test_persist_sessions_resolves_workout_fk_by_notion_id(self, session: Session) -> None:
-        svc = NotionPersistenceService(session)
+    def test_persist_sessions_resolves_workout_fk_by_notion_id(self, db_session: Session) -> None:
+        svc = NotionPersistenceService(db_session)
 
         [workout] = svc.persist_workouts([_workout_schema("workout-parent")])
         [tracked] = svc.persist_sessions(
@@ -458,8 +424,8 @@ class TestNotionPersistenceService:
 
         assert tracked.workout_id == workout.id
 
-    def test_persist_sessions_updates_existing_rows_in_place(self, session: Session) -> None:
-        svc = NotionPersistenceService(session)
+    def test_persist_sessions_updates_existing_rows_in_place(self, db_session: Session) -> None:
+        svc = NotionPersistenceService(db_session)
 
         [original] = svc.persist_sessions([_session_schema("sess-upd", name="Old")])
         original_id = original.id
@@ -468,7 +434,7 @@ class TestNotionPersistenceService:
         assert updated.id == original_id
         assert updated.name == "New"
         rows = (
-            session.execute(
+            db_session.execute(
                 select(TrackedSession).where(TrackedSession.notion_page_id == "sess-upd")
             )
             .scalars()
@@ -476,8 +442,8 @@ class TestNotionPersistenceService:
         )
         assert len(rows) == 1
 
-    def test_persist_feedback_resolves_phase_fk_by_notion_id(self, session: Session) -> None:
-        svc = NotionPersistenceService(session)
+    def test_persist_feedback_resolves_phase_fk_by_notion_id(self, db_session: Session) -> None:
+        svc = NotionPersistenceService(db_session)
 
         [phase] = svc.persist_phases([_phase_schema("phase-for-feedback")])
         [feedback] = svc.persist_feedback(
@@ -486,8 +452,8 @@ class TestNotionPersistenceService:
 
         assert feedback.phase_id == phase.id
 
-    def test_persist_feedback_updates_existing_rows_in_place(self, session: Session) -> None:
-        svc = NotionPersistenceService(session)
+    def test_persist_feedback_updates_existing_rows_in_place(self, db_session: Session) -> None:
+        svc = NotionPersistenceService(db_session)
 
         [original] = svc.persist_feedback([_feedback_schema("fb-upd", week="2024-W10")])
         original_id = original.id
@@ -496,16 +462,16 @@ class TestNotionPersistenceService:
         assert updated.id == original_id
         assert updated.week == "2024-W11"
         rows = (
-            session.execute(select(Feedback).where(Feedback.notion_page_id == "fb-upd"))
+            db_session.execute(select(Feedback).where(Feedback.notion_page_id == "fb-upd"))
             .scalars()
             .all()
         )
         assert len(rows) == 1
 
     def test_persist_all_persists_all_entity_types_in_dependency_order(
-        self, session: Session
+        self, db_session: Session
     ) -> None:
-        svc = NotionPersistenceService(session)
+        svc = NotionPersistenceService(db_session)
 
         svc.persist_all(
             plan_schemas=[_plan_schema("dep-plan")],
@@ -517,17 +483,19 @@ class TestNotionPersistenceService:
             feedback_schemas=[_feedback_schema("dep-feedback", phase_notion_id="dep-phase")],
         )
 
-        plan = session.execute(select(Plan).where(Plan.notion_page_id == "dep-plan")).scalar_one()
-        phase = session.execute(
+        plan = db_session.execute(
+            select(Plan).where(Plan.notion_page_id == "dep-plan")
+        ).scalar_one()
+        phase = db_session.execute(
             select(Phase).where(Phase.notion_page_id == "dep-phase")
         ).scalar_one()
-        workout = session.execute(
+        workout = db_session.execute(
             select(Workout).where(Workout.notion_page_id == "dep-workout")
         ).scalar_one()
-        tracked = session.execute(
+        tracked = db_session.execute(
             select(TrackedSession).where(TrackedSession.notion_page_id == "dep-session")
         ).scalar_one()
-        feedback = session.execute(
+        feedback = db_session.execute(
             select(Feedback).where(Feedback.notion_page_id == "dep-feedback")
         ).scalar_one()
 
@@ -536,8 +504,8 @@ class TestNotionPersistenceService:
         assert tracked.workout_id == workout.id
         assert feedback.phase_id == phase.id
 
-    def test_persist_all_stores_page_content_across_entities(self, session: Session) -> None:
-        svc = NotionPersistenceService(session)
+    def test_persist_all_stores_page_content_across_entities(self, db_session: Session) -> None:
+        svc = NotionPersistenceService(db_session)
 
         svc.persist_all(
             plan_schemas=[_plan_schema("content-plan", notion_page_content="Plan body")],
@@ -583,27 +551,27 @@ class TestNotionPersistenceService:
             ],
         )
 
-        plan = session.execute(
+        plan = db_session.execute(
             select(Plan).where(Plan.notion_page_id == "content-plan")
         ).scalar_one()
-        nutrition = session.execute(
+        nutrition = db_session.execute(
             select(NutritionGuideline).where(
                 NutritionGuideline.notion_page_id == "content-nutrition"
             )
         ).scalar_one()
-        phase = session.execute(
+        phase = db_session.execute(
             select(Phase).where(Phase.notion_page_id == "content-phase")
         ).scalar_one()
-        workout = session.execute(
+        workout = db_session.execute(
             select(Workout).where(Workout.notion_page_id == "content-workout")
         ).scalar_one()
-        event_entity = session.execute(
+        event_entity = db_session.execute(
             select(Event).where(Event.notion_page_id == "content-event")
         ).scalar_one()
-        tracked = session.execute(
+        tracked = db_session.execute(
             select(TrackedSession).where(TrackedSession.notion_page_id == "content-session")
         ).scalar_one()
-        feedback = session.execute(
+        feedback = db_session.execute(
             select(Feedback).where(Feedback.notion_page_id == "content-feedback")
         ).scalar_one()
 
@@ -615,8 +583,8 @@ class TestNotionPersistenceService:
         assert tracked.notion_page_content == "Session body"
         assert feedback.notion_page_content == "Feedback body"
 
-    def test_persist_all_is_idempotent_across_repeated_runs(self, session: Session) -> None:
-        svc = NotionPersistenceService(session)
+    def test_persist_all_is_idempotent_across_repeated_runs(self, db_session: Session) -> None:
+        svc = NotionPersistenceService(db_session)
 
         svc.persist_all(
             plan_schemas=[_plan_schema("idem-plan", name="Plan v1")],
@@ -638,28 +606,30 @@ class TestNotionPersistenceService:
         )
 
         plan_rows = (
-            session.execute(select(Plan).where(Plan.notion_page_id == "idem-plan")).scalars().all()
+            db_session.execute(
+                select(Plan).where(Plan.notion_page_id == "idem-plan")
+            ).scalars().all()
         )
 
         phase_rows = (
-            session.execute(select(Phase).where(Phase.notion_page_id == "idem-phase"))
+            db_session.execute(select(Phase).where(Phase.notion_page_id == "idem-phase"))
             .scalars()
             .all()
         )
         workout_rows = (
-            session.execute(select(Workout).where(Workout.notion_page_id == "idem-workout"))
+            db_session.execute(select(Workout).where(Workout.notion_page_id == "idem-workout"))
             .scalars()
             .all()
         )
         session_rows = (
-            session.execute(
+            db_session.execute(
                 select(TrackedSession).where(TrackedSession.notion_page_id == "idem-session")
             )
             .scalars()
             .all()
         )
         feedback_rows = (
-            session.execute(select(Feedback).where(Feedback.notion_page_id == "idem-feedback"))
+            db_session.execute(select(Feedback).where(Feedback.notion_page_id == "idem-feedback"))
             .scalars()
             .all()
         )
@@ -675,8 +645,8 @@ class TestNotionPersistenceService:
         assert session_rows[0].name == "Session v2"
         assert feedback_rows[0].week == "2024-W02"
 
-    def test_persist_all_empty_lists_completes_without_error(self, session: Session) -> None:
-        svc = NotionPersistenceService(session)
+    def test_persist_all_empty_lists_completes_without_error(self, db_session: Session) -> None:
+        svc = NotionPersistenceService(db_session)
 
         svc.persist_all(
             plan_schemas=[],
