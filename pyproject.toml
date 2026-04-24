@@ -61,8 +61,8 @@ addopts = "-ra -p no:cacheprovider"
 testpaths = ["tests"]
 markers = [
     "unit: Fast unit tests that do not require a database or external services",
-    "integration: Integration tests that may use an in-memory or test database",
-    "api: API tests using FastAPI TestClient",
+    "integration: Integration tests that use the dedicated postgres_test database (docker compose up -d postgres_test)",
+    "api: API tests using FastAPI TestClient wired to the dedicated postgres_test database",
 ]
 
 [tool.coverage.run]
