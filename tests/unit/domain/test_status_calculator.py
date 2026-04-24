@@ -10,7 +10,7 @@ from ldk_athlete_ai_coach.domain.calculators.status_calculator import (
     StatusCalculator,
     WorkoutStatusContext,
 )
-from ldk_athlete_ai_coach.domain.enums.status import PhaseStatus, WorkoutStatus
+from ldk_athlete_ai_coach.domain.enums.status import PhaseStatus, PlanStatus, WorkoutStatus
 
 pytestmark = pytest.mark.unit
 
@@ -66,6 +66,54 @@ def test_calculate_phase_status_past() -> None:
     )
 
     assert status == PhaseStatus.PAST
+
+
+def test_calculate_plan_status_future() -> None:
+    calculator = StatusCalculator()
+
+    status = calculator.calculate_plan_status(
+        timeframe_start=date(2026, 5, 1),
+        timeframe_end=date(2026, 5, 31),
+        as_of_date=date(2026, 4, 17),
+    )
+
+    assert status == PlanStatus.FUTURE
+
+
+def test_calculate_plan_status_active() -> None:
+    calculator = StatusCalculator()
+
+    status = calculator.calculate_plan_status(
+        timeframe_start=date(2026, 4, 1),
+        timeframe_end=date(2026, 4, 30),
+        as_of_date=date(2026, 4, 17),
+    )
+
+    assert status == PlanStatus.ACTIVE
+
+
+def test_calculate_plan_status_past() -> None:
+    calculator = StatusCalculator()
+
+    status = calculator.calculate_plan_status(
+        timeframe_start=date(2026, 1, 1),
+        timeframe_end=date(2026, 2, 28),
+        as_of_date=date(2026, 4, 17),
+    )
+
+    assert status == PlanStatus.PAST
+
+
+def test_calculate_plan_status_active_when_no_boundaries() -> None:
+    calculator = StatusCalculator()
+
+    status = calculator.calculate_plan_status(
+        timeframe_start=None,
+        timeframe_end=None,
+        as_of_date=date(2026, 4, 17),
+    )
+
+    assert status == PlanStatus.ACTIVE
 
 
 def test_calculate_phase_status_unknown_when_no_boundaries() -> None:
