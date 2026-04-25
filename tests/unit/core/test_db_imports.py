@@ -37,9 +37,7 @@ def _run_in_clean_process(tmp_path: Path, code: str) -> subprocess.CompletedProc
     src_path = Path(__file__).resolve().parents[3] / "src"
     existing_pythonpath = env.get("PYTHONPATH")
     env["PYTHONPATH"] = (
-        f"{src_path}{os.pathsep}{existing_pythonpath}"
-        if existing_pythonpath
-        else str(src_path)
+        f"{src_path}{os.pathsep}{existing_pythonpath}" if existing_pythonpath else str(src_path)
     )
 
     return subprocess.run(
