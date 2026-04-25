@@ -36,6 +36,7 @@ from ldk_athlete_ai_coach.db.repositories.training_base_repository import Traini
 
 pytestmark = pytest.mark.integration
 
+
 def _nutrition_schema(
     notion_id: str = "nutrition-1",
     name: str = "Performance Fueling",
@@ -315,9 +316,9 @@ class TestNotionPersistenceService:
         assert updated.id == original_id
         assert updated.name == "Updated"
         rows = (
-            db_session.execute(
-                select(Phase).where(Phase.notion_page_id == "ph-upd")
-            ).scalars().all()
+            db_session.execute(select(Phase).where(Phase.notion_page_id == "ph-upd"))
+            .scalars()
+            .all()
         )
         assert len(rows) == 1
 
@@ -611,9 +612,9 @@ class TestNotionPersistenceService:
         )
 
         plan_rows = (
-            db_session.execute(
-                select(Plan).where(Plan.notion_page_id == "idem-plan")
-            ).scalars().all()
+            db_session.execute(select(Plan).where(Plan.notion_page_id == "idem-plan"))
+            .scalars()
+            .all()
         )
 
         phase_rows = (

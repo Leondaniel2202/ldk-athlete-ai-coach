@@ -25,7 +25,6 @@ def test_get_specific_workout_context_raises_when_workout_missing() -> None:
         service.get_specific_workout_context(workout_id=999)
 
 
-
 def test_get_specific_workout_context_uses_unknown_status_when_workout_status_missing() -> None:
     workout = make_workout(
         workout_id=3,
@@ -46,7 +45,6 @@ def test_get_specific_workout_context_uses_unknown_status_when_workout_status_mi
     assert context.phase_summary is None
     assert context.workout_status == WorkoutStatus.UNKNOWN
     assert context.workout_details.id == workout.id
-
 
 
 def test_get_specific_workout_context_includes_phase_and_plan_summaries() -> None:

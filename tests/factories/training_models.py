@@ -34,8 +34,8 @@ def make_plan(
 
 def make_phase(
     db: Session,
-    plan: Plan,
     name: str = "Base Phase",
+    plan: Plan | None = None,
     *,
     notion_page_id: str | None = None,
     timeframe_start: datetime | None = None,
@@ -50,7 +50,7 @@ def make_phase(
         timeframe_start=timeframe_start,
         timeframe_end=timeframe_end,
         timeframe_is_datetime=False,
-        plan_id=plan.id,
+        plan_id=plan.id if plan is not None else None,
     )
     db.add(phase)
     db.flush()
@@ -73,6 +73,11 @@ def make_workout(
     planned_training_load: float | None = 360.0,
     actual_training_load: float | None = None,
     actual_rpe: float | None = None,
+    actual_duration_min: float | None = None,
+    actual_distance_km: float | None = None,
+    actual_calories_burned_kcal: float | None = None,
+    weighted_hrr_intensity_sum: float | None = None,
+    actual_hrr_intensity: float | None = None,
 ) -> Workout:
     """Insert a minimal Workout into the database and return it."""
     workout = Workout(
@@ -87,6 +92,11 @@ def make_workout(
         planned_training_load=planned_training_load,
         actual_training_load=actual_training_load,
         actual_rpe=actual_rpe,
+        actual_duration_min=actual_duration_min,
+        actual_distance_km=actual_distance_km,
+        actual_calories_burned_kcal=actual_calories_burned_kcal,
+        weighted_hrr_intensity_sum=weighted_hrr_intensity_sum,
+        actual_hrr_intensity=actual_hrr_intensity,
         date_start=date_start,
         done_date_start=done_date_start,
         status=status,

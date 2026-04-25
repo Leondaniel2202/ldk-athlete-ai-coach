@@ -23,6 +23,7 @@ pytestmark = pytest.mark.api
 
 client = TestClient(app)
 
+
 def _result(
     entity: str,
     *,
@@ -38,6 +39,7 @@ def _result(
         success=success,
         failed=failed,
     )
+
 
 def test_notion_sync_endpoint_returns_summary_on_success() -> None:
     """Endpoint returns 200 with aggregate and per-entity sync counts."""
@@ -76,6 +78,7 @@ def test_notion_sync_endpoint_returns_summary_on_success() -> None:
     mock_client_cls.assert_called_once()
     mock_service_cls.assert_called_once()
 
+
 def test_notion_sync_endpoint_defaults_hard_fail_to_false() -> None:
     """Endpoint constructs the sync service with hard_fail=False by default."""
 
@@ -98,6 +101,7 @@ def test_notion_sync_endpoint_defaults_hard_fail_to_false() -> None:
     assert mock_service_cls.call_args.args[0] is mock_client
     assert mock_service_cls.call_args.kwargs["hard_fail"] is False
 
+
 def test_notion_sync_endpoint_accepts_hard_fail_query_param() -> None:
     """Endpoint forwards hard_fail=true to the sync service constructor."""
 
@@ -119,6 +123,7 @@ def test_notion_sync_endpoint_accepts_hard_fail_query_param() -> None:
     mock_service_cls.assert_called_once()
     assert mock_service_cls.call_args.args[0] is mock_client
     assert mock_service_cls.call_args.kwargs["hard_fail"] is True
+
 
 def test_notion_sync_endpoint_returns_500_summary_on_partial_failure() -> None:
     """Endpoint returns the sync summary with 500 when any entity fails."""
@@ -146,6 +151,7 @@ def test_notion_sync_endpoint_returns_500_summary_on_partial_failure() -> None:
         ],
     }
 
+
 def test_notion_sync_endpoint_translates_rate_limit_errors() -> None:
     """Endpoint returns 503 when the Notion client exhausts rate-limit retries."""
 
@@ -160,6 +166,7 @@ def test_notion_sync_endpoint_translates_rate_limit_errors() -> None:
 
     assert response.status_code == 503
     assert response.json() == {"detail": "rate limited"}
+
 
 def test_notion_sync_endpoint_translates_auth_errors() -> None:
     """Endpoint returns 502 for Notion authentication failures."""
@@ -176,6 +183,7 @@ def test_notion_sync_endpoint_translates_auth_errors() -> None:
     assert response.status_code == 502
     assert response.json() == {"detail": "bad credentials"}
 
+
 def test_notion_sync_endpoint_translates_database_not_found_errors() -> None:
     """Endpoint returns 502 for inaccessible Notion databases."""
 
@@ -190,6 +198,7 @@ def test_notion_sync_endpoint_translates_database_not_found_errors() -> None:
 
     assert response.status_code == 502
     assert response.json() == {"detail": "missing database"}
+
 
 def test_notion_sync_endpoint_translates_generic_notion_api_errors() -> None:
     """Endpoint returns 502 for other Notion API failures."""
@@ -206,6 +215,7 @@ def test_notion_sync_endpoint_translates_generic_notion_api_errors() -> None:
     assert response.status_code == 502
     assert response.json() == {"detail": "unexpected notion error"}
 
+
 def test_notion_sync_endpoint_translates_unexpected_errors() -> None:
     """Endpoint returns 500 for unexpected sync failures."""
 
@@ -220,6 +230,7 @@ def test_notion_sync_endpoint_translates_unexpected_errors() -> None:
 
     assert response.status_code == 500
     assert response.json() == {"detail": "Unexpected error during full Notion sync"}
+
 
 def test_notion_sync_endpoint_translates_hard_fail_sync_error() -> None:
     """Endpoint returns structured details when hard-fail sync raises NotionSyncError."""

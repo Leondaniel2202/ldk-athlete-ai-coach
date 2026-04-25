@@ -139,10 +139,7 @@ def test_get_specific_phase_week_context_builds_week_metadata_and_data_gaps() ->
     assert len(context.workouts) == 1
     assert context.adherence.planned_workouts == 1
     assert "1 workout in this phase week was missed." in context.data_gaps
-    assert (
-        "1 session within the phase timeframe is not linked to any workout."
-        in context.data_gaps
-    )
+    assert "1 session within the phase timeframe is not linked to any workout." in context.data_gaps
 
 
 def test_get_specific_phase_week_context_raises_when_phase_missing() -> None:

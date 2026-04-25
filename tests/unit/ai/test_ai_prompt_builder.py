@@ -25,6 +25,7 @@ from ldk_athlete_ai_coach.domain.models.training_metrics import TrainingMetrics
 
 pytestmark = pytest.mark.unit
 
+
 def _context() -> PhaseContextResponse:
     phase = PhaseResponse(
         id=2,
@@ -154,6 +155,7 @@ def _context() -> PhaseContextResponse:
         ],
     )
 
+
 def test_prompt_builder_includes_entity_names_page_content_and_data_gaps() -> None:
     """Prompt builder includes the synced context details that the model must ground on."""
     messages = build_analyze_phase_context_prompt(_context())
@@ -167,6 +169,7 @@ def test_prompt_builder_includes_entity_names_page_content_and_data_gaps() -> No
     assert "Warm up, then 6 x 1km compromised efforts." in user_content
     assert "Brick Session" in user_content
     assert "No active phase matched the current date" in user_content
+
 
 def test_prompt_builder_includes_optional_instruction() -> None:
     """Prompt builder appends the optional user instruction when provided."""

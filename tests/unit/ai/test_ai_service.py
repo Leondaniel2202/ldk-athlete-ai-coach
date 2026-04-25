@@ -12,6 +12,7 @@ from ldk_athlete_ai_coach.api.v1.schemas.ai import AnalyzePhaseContextResponse
 
 pytestmark = pytest.mark.unit
 
+
 def _analysis() -> AnalyzePhaseContextResponse:
     return AnalyzePhaseContextResponse(
         summary="Context is sparse but analyzable.",
