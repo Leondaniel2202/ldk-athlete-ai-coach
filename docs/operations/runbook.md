@@ -5,7 +5,7 @@ v1 backend in local and development-style environments.
 
 ## Daily Startup
 
-1. Ensure `.env` is populated.
+1. Ensure `backend/.env` is populated.
 2. Start the development database.
 3. Apply migrations.
 4. Start the API.
@@ -15,9 +15,9 @@ v1 backend in local and development-style environments.
 Commands:
 
 ```powershell
-make db-up
-make alembic-up
-make api
+make backend-db-up
+make backend-alembic-up
+make backend-api
 ```
 
 Smoke checks:
@@ -31,7 +31,7 @@ Smoke checks:
 Stop compose services:
 
 ```powershell
-make db-down
+make backend-db-down
 ```
 
 ## Database Operations
@@ -39,25 +39,25 @@ make db-down
 ### Start development database
 
 ```powershell
-make db-up
+make backend-db-up
 ```
 
 ### Start test database
 
 ```powershell
-make db-test-up
+make backend-db-test-up
 ```
 
 ### Apply migrations
 
 ```powershell
-make alembic-up
+make backend-alembic-up
 ```
 
 ### Create migration
 
 ```powershell
-make alembic-revision MSG="describe_change"
+make backend-alembic-revision MSG="describe_change"
 ```
 
 ## Notion Sync Operations
@@ -159,7 +159,7 @@ HTTP client activity will also become more visible in debug mode.
 Checks:
 
 - is `postgres` running?
-- does `.env` point to the correct database host and port?
+- does `backend/.env` point to the correct database host and port?
 - have migrations been applied?
 
 ## Sync returns `502`
@@ -208,14 +208,14 @@ Checks:
 
 Checks:
 
-- run `make db-test-up`
+- run `make backend-db-test-up`
 - ensure test DB env values match the compose service
 
 ## Routine Maintenance
 
 - keep migrations current with model changes
 - rerun sync after Notion schema changes
-- keep `.env.example` aligned with settings
+- keep `backend/.env.example` aligned with settings
 - run lint, format, type-check, and tests before merging significant backend changes
 
 ## Safe Change Order

@@ -8,7 +8,8 @@ It complements, but does not replace, agent-specific integrations such as
 
 ## What this repository is
 
-`ldk-athlete-ai-coach` is a backend-first training platform.
+`ldk-athlete-ai-coach` is a backend-first training platform moving into V2 with a
+monorepo structure.
 
 Current state:
 
@@ -18,6 +19,38 @@ Current state:
 - application services build richer workout and phase context
 - domain logic calculates status and basic adherence metrics
 - the AI layer performs structured analysis on backend-owned context models
+- a React/Next.js frontend scaffold is in place under `frontend/` (V2)
+
+## Repository structure
+
+```text
+ldk-athlete-ai-coach/
+  backend/       Python/FastAPI backend (pyproject.toml, src/, tests/, alembic/, etc.)
+  frontend/      Next.js/React/TypeScript frontend (package.json, app/, etc.)
+  docs/          Shared documentation
+  .github/       GitHub Actions workflows and Copilot instructions
+  AGENTS.md      This file
+  CHANGELOG.md
+  README.md
+  Makefile       Root Makefile — canonical developer entry point for both backend and frontend
+  .gitignore
+```
+
+Backend files (`pyproject.toml`, `uv.lock`, `src/`, `tests/`, `alembic/`,
+`docker-compose.yml`, `.env.example`) live in `backend/`. Frontend files
+(`package.json`, `app/`, etc.) live in `frontend/`. Root contains repo/product-level
+files only.
+
+## Branch policy (V2)
+
+- `main` is the stable release branch
+- `v2` is the active V2 integration branch
+- V2 issue branches should branch from `v2`
+- V2 PRs should target `v2`
+- backend changes should stay in `backend/`
+- frontend changes should stay in `frontend/`
+- frontend and backend changes should not be mixed in one PR unless the issue explicitly
+  requires it
 
 ## Version naming
 
@@ -39,6 +72,7 @@ Do not use `v1` ambiguously in code or docs.
 - Do not add broad abstractions without a clear reason.
 - Do not redesign the system unless explicitly asked.
 - When unclear, make the smallest safe change that satisfies the request.
+- Application code should not be changed as part of structural/workflow tasks.
 
 ## Architecture boundaries
 
@@ -74,7 +108,7 @@ Non-negotiables:
 - Keep ORM changes in `db/models`.
 - Keep query logic in repositories.
 - Add or update Alembic migrations for schema changes when appropriate.
-- Keep `.env.example` aligned with `core/config.py`.
+- Keep `backend/.env.example` aligned with `core/config.py`.
 - Update `docs/domain/model.md` if model meaning changes.
 
 ### API
@@ -113,31 +147,50 @@ Non-negotiables:
 
 ## Development workflow
 
-Use the `Makefile` as the canonical workflow entry point.
+Use the root `Makefile` as the canonical workflow entry point for both backend and
+frontend.
 
-Preferred commands:
+### Backend commands (use `backend-` prefix)
 
 ```bash
-make help
-make install
-make api
-make db-up
-make db-test-up
-make db-down
-make alembic-up
-make alembic-revision MSG="description"
-make lint
-make lint-fix
-make format-check
-make type-check
-make test
-make test-unit
-make test-integration
-make test-api
-make test-cov
+make backend-install
+make backend-api
+make backend-db-up
+make backend-db-test-up
+make backend-db-down
+make backend-alembic-up
+make backend-alembic-revision MSG="description"
+make backend-lint
+make backend-lint-fix
+make backend-format-check
+make backend-type-check
+make backend-test
+make backend-test-unit
+make backend-test-integration
+make backend-test-api
+make backend-test-cov
 ```
 
-Dependencies are managed with `uv`.
+### Frontend commands (use `frontend-` prefix)
+
+```bash
+make frontend-install
+make frontend-dev
+make frontend-build
+make frontend-lint
+make frontend-format-check
+make frontend-type-check
+```
+
+### Aggregate aliases
+
+- `make install` — alias for `make backend-install`
+- `make test` — alias for `make backend-test`
+- `make lint` — alias for `make backend-lint`
+- `make format-check` — alias for `make backend-format-check`
+- `make type-check` — alias for `make backend-type-check`
+
+Backend dependencies are managed with `uv` from within `backend/`.
 
 ## Validation
 
@@ -146,15 +199,15 @@ Run the relevant existing checks before finishing.
 At minimum, use these when relevant:
 
 ```bash
-make lint
-make type-check
-make test
+make backend-lint
+make backend-type-check
+make backend-test
 ```
 
 If formatting matters:
 
 ```bash
-make format-check
+make backend-format-check
 ```
 
 If tests exist for the affected area:
@@ -205,5 +258,3 @@ Content to add:
 - If a PR is meaningful but does not update `CHANGELOG.md`, mention this in the PR description and explain why.
 - For PRs into `v2`, prefer updating `[Unreleased]`.
 - For PRs from `v2` into `main`, finalize the release section only when explicitly requested.
-
-Also add an instruction that application code should not be changed as part of this task.

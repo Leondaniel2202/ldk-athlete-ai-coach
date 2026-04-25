@@ -3,6 +3,9 @@
 The repository uses pytest with a layered test strategy that matches the architecture of
 the backend.
 
+Backend tests live under `backend/tests/`. Backend tooling is configured in
+`backend/pyproject.toml`. All backend make targets use the `backend-` prefix.
+
 ## Goals
 
 The current test suite is designed to give confidence in:
@@ -17,7 +20,7 @@ The current test suite is designed to give confidence in:
 
 ## Tooling
 
-Configured in `pyproject.toml`:
+Configured in `backend/pyproject.toml`:
 
 - `pytest`
 - `pytest-cov`
@@ -47,7 +50,7 @@ Current areas:
 Run:
 
 ```powershell
-make test-unit
+make backend-test-unit
 ```
 
 ## Integration Tests
@@ -66,8 +69,8 @@ Current areas:
 Run:
 
 ```powershell
-make db-test-up
-make test-integration
+make backend-db-test-up
+make backend-test-integration
 ```
 
 ## API Tests
@@ -87,8 +90,8 @@ Current areas:
 Run:
 
 ```powershell
-make db-test-up
-make test-api
+make backend-db-test-up
+make backend-test-api
 ```
 
 ## Full Suite
@@ -96,18 +99,18 @@ make test-api
 Run everything:
 
 ```powershell
-make test
+make backend-test
 ```
 
 Run everything with coverage:
 
 ```powershell
-make test-cov
+make backend-test-cov
 ```
 
 ## Test Support Code
 
-The suite includes shared support code in `tests/factories/` for:
+The suite includes shared support code in `backend/tests/factories/` for:
 
 - database helpers
 - in-memory training models
@@ -122,15 +125,15 @@ assertions.
 
 The preferred structure is the layered one:
 
-- `tests/unit/`
-- `tests/integration/`
-- `tests/api/`
-- `tests/factories/`
+- `backend/tests/unit/`
+- `backend/tests/integration/`
+- `backend/tests/api/`
+- `backend/tests/factories/`
 
-There are also older flat tests at the root of `tests/` covering similar areas. They
-represent earlier iterations of the suite. Going forward, new tests should follow the
-layered structure and the older flat tests should be consolidated over time rather than
-expanded further.
+There are also older flat tests at the root of `backend/tests/` covering similar areas.
+They represent earlier iterations of the suite. Going forward, new tests should follow
+the layered structure and the older flat tests should be consolidated over time rather
+than expanded further.
 
 ## What The Suite Covers Well
 
@@ -158,13 +161,13 @@ During day-to-day development:
 
 1. run focused unit tests while changing logic
 2. run integration or API tests when touching repositories, persistence, or routes
-3. run `make test-cov` before finishing larger backend work
+3. run `make backend-test-cov` before finishing larger backend work
 
 Before merging:
 
-- `make lint`
-- `make format-check`
-- `make type-check`
+- `make backend-lint`
+- `make backend-format-check`
+- `make backend-type-check`
 - relevant test targets, or the full suite for broader changes
 
 ## When To Add Which Test
