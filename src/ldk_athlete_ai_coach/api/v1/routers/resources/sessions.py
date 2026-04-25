@@ -52,7 +52,7 @@ def get_session(
     return SessionResponse.model_validate(session)
 
 
-@router.get("{session_id}/summary", response_model=SessionSummaryResponse)
+@router.get("/{session_id}/summary", response_model=SessionSummaryResponse)
 def get_session_summary(
     session_id: int,
     db: DbSession,

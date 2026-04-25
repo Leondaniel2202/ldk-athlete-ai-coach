@@ -77,15 +77,16 @@ class StatusCalculator:
         timeframe_start = coerce_to_date(timeframe_start)
         timeframe_end = coerce_to_date(timeframe_end)
 
-        if timeframe_start is not None and timeframe_start > as_of_date:
+        if timeframe_start is None or timeframe_end is None:
+            return TemporalStatus.UNKNOWN
+
+        if timeframe_start > as_of_date:
             return TemporalStatus.FUTURE
 
-        if timeframe_end is not None and timeframe_end < as_of_date:
+        if timeframe_end < as_of_date:
             return TemporalStatus.PAST
 
-        if (timeframe_start is None or timeframe_start <= as_of_date) and (
-            timeframe_end is None or timeframe_end >= as_of_date
-        ):
+        if timeframe_start <= as_of_date <= timeframe_end:
             return TemporalStatus.ACTIVE
 
         return TemporalStatus.UNKNOWN

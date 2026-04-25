@@ -7,9 +7,8 @@ Create Date: 2026-04-11 20:45:00.000000
 
 from __future__ import annotations
 
-from alembic import op
 import sqlalchemy as sa
-
+from alembic import op
 
 # revision identifiers, used by Alembic.
 revision = "2f7c5d8aa1b1"
@@ -20,7 +19,9 @@ depends_on = None
 
 def upgrade() -> None:
     op.add_column("plans", sa.Column("notion_page_content", sa.Text(), nullable=True))
-    op.add_column("nutrition_guidelines", sa.Column("notion_page_content", sa.Text(), nullable=True))
+    op.add_column(
+        "nutrition_guidelines", sa.Column("notion_page_content", sa.Text(), nullable=True)
+    )
     op.add_column("phases", sa.Column("notion_page_content", sa.Text(), nullable=True))
     op.add_column("workouts", sa.Column("notion_page_content", sa.Text(), nullable=True))
     op.add_column("events", sa.Column("notion_page_content", sa.Text(), nullable=True))
@@ -34,7 +35,9 @@ def upgrade() -> None:
     op.add_column("workouts", sa.Column("actual_calories_burned_kcal", sa.Float(), nullable=True))
     op.add_column("workouts", sa.Column("weighted_hrr_intensity_sum", sa.Float(), nullable=True))
     op.add_column("workouts", sa.Column("actual_hrr_intensity", sa.Float(), nullable=True))
-    op.add_column("workouts", sa.Column("done_date_start", sa.DateTime(timezone=True), nullable=True))
+    op.add_column(
+        "workouts", sa.Column("done_date_start", sa.DateTime(timezone=True), nullable=True)
+    )
     op.add_column("workouts", sa.Column("done_date_end", sa.DateTime(timezone=True), nullable=True))
     op.add_column(
         "workouts",
@@ -46,7 +49,9 @@ def upgrade() -> None:
         ),
     )
     op.add_column("workouts", sa.Column("status", sa.String(length=64), nullable=True))
-    op.add_column("workouts", sa.Column("training_load_method", sa.String(length=64), nullable=True))
+    op.add_column(
+        "workouts", sa.Column("training_load_method", sa.String(length=64), nullable=True)
+    )
     op.alter_column("workouts", "done_date_is_datetime", server_default=None)
 
 

@@ -1,3 +1,5 @@
+"""Date and time utility helpers."""
+
 from datetime import date, datetime, timedelta
 
 
@@ -44,9 +46,7 @@ def get_week_end_for_date(date: datetime) -> datetime:
 
 
 def get_phase_week_number_for_date(phase_start_date: datetime, date: datetime) -> int:
-    """
-    Returns the relative week number within a phase for a given date.
-    """
+    """Return the relative week number within a phase for a given date."""
     delta_days = (date - phase_start_date).days
     return (delta_days // 7) + 1
 
