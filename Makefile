@@ -12,7 +12,7 @@ UV_CACHE_DIR ?= .uv-cache
         install test lint format-check type-check
 
 help: ## Show this help message
-	@cd backend && uv --cache-dir ../.uv-cache run python -c "import re; [print('  {:<30} {}'.format(*m.groups())) for line in open('../Makefile') for m in [re.match(r'^([a-zA-Z_-]+):.*##\\s*(.*)', line)] if m]"
+	@awk 'BEGIN {FS = ":.*##"} /^[a-zA-Z_-]+:.*##/ {printf "  %-30s %s\n", $$1, $$2}' $(MAKEFILE_LIST)
 
 ## -- Backend: Dependencies ---------------------------------------------------
 
