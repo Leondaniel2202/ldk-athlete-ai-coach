@@ -79,5 +79,8 @@ lint-fix: ## Auto-fix ruff lint violations
 format-check: ## Check formatting with ruff (no writes)
 	$(UV) run ruff format --check .
 
+format: ## Auto-fix formatting with ruff
+	$(UV) run ruff format .
+
 type-check: ## Run mypy static type checking
 	$(UV) run mypy src tests

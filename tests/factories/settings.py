@@ -14,11 +14,11 @@ def make_settings(**overrides: Any) -> Settings:
     Pass keyword arguments to override individual fields.
     """
     defaults: dict[str, Any] = {
-        "postgres_db": "test_db",
+        "postgres_db": "ldk_athlete_ai_coach_test",
         "postgres_user": "postgres",
         "postgres_password": "postgres",
-        "postgres_host": "localhost",
-        "postgres_port": 5432,
+        "postgres_host": "127.0.0.1",
+        "postgres_port": 5433,
         "notion_api_key": "secret_test_key",
         "notion_plan_data_source_id": "plan-data-source-id",
         "notion_phase_data_source_id": "phase-data-source-id",

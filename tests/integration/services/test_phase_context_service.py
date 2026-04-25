@@ -8,109 +8,17 @@ import pytest
 from sqlalchemy.orm import Session
 
 from ldk_athlete_ai_coach.application.services.phase_context_service import PhaseContextService
-from ldk_athlete_ai_coach.db.models.training import Phase, Plan, TrackedSession, Workout
 from ldk_athlete_ai_coach.db.repositories.phase_repository import PhaseRepository
 from ldk_athlete_ai_coach.db.repositories.session_repository import SessionRepository
 from ldk_athlete_ai_coach.db.repositories.workout_repository import WorkoutRepository
+from tests.factories.training_models import (
+    make_phase,
+    make_plan,
+    make_tracked_session,
+    make_workout,
+)
 
 pytestmark = pytest.mark.integration
-
-def _make_plan(
-    db: Session,
-    name: str,
-    *,
-    start_date_start: datetime | None = None,
-    end_date_start: datetime | None = None,
-) -> Plan:
-    plan = Plan(
-        notion_page_id=f"plan-{name}",
-        notion_url=f"https://notion.so/plan-{name}",
-        name=name,
-        start_date_start=start_date_start,
-        end_date_start=end_date_start,
-        start_date_is_datetime=False,
-        end_date_is_datetime=False,
-    )
-    db.add(plan)
-    db.flush()
-    return plan
-
-
-def _make_phase(
-    db: Session,
-    plan: Plan,
-    name: str,
-    *,
-    timeframe_start: datetime | None = None,
-    timeframe_end: datetime | None = None,
-) -> Phase:
-    phase = Phase(
-        notion_page_id=f"phase-{name}",
-        notion_url=f"https://notion.so/phase-{name}",
-        name=name,
-        focus_tags=[],
-        timeframe_start=timeframe_start,
-        timeframe_end=timeframe_end,
-        timeframe_is_datetime=False,
-        plan_id=plan.id,
-    )
-    db.add(phase)
-    db.flush()
-    return phase
-
-
-def _make_workout(
-    db: Session,
-    phase: Phase,
-    name: str,
-    *,
-    date_start: datetime | None = None,
-    done_date_start: datetime | None = None,
-    status: str | None = "Done",
-    skipped: bool = False,
-) -> Workout:
-    workout = Workout(
-        notion_page_id=f"workout-{name}",
-        notion_url=f"https://notion.so/workout-{name}",
-        name=name,
-        notion_page_content=f"Instructions for {name}",
-        equipment=[],
-        metrics_to_record=[],
-        purpose=[],
-        primarily_used_muscle_group=[],
-        date_start=date_start,
-        date_is_datetime=date_start is not None,
-        done_date_start=done_date_start,
-        done_date_is_datetime=done_date_start is not None,
-        status=status,
-        cancelled=False,
-        skipped=skipped,
-        phase_id=phase.id,
-    )
-    db.add(workout)
-    db.flush()
-    return workout
-
-
-def _make_session(
-    db: Session,
-    workout: Workout | None,
-    *,
-    name: str,
-    start_start: datetime,
-) -> TrackedSession:
-    tracked_session = TrackedSession(
-        notion_page_id=f"session-{name}",
-        notion_url=f"https://notion.so/session-{name}",
-        name=name,
-        start_is_datetime=True,
-        end_is_datetime=False,
-        start_start=start_start,
-        workout_id=workout.id if workout is not None else None,
-    )
-    db.add(tracked_session)
-    db.flush()
-    return tracked_session
 
 
 def _make_service(db: Session) -> PhaseContextService:
@@ -126,27 +34,27 @@ def test_service_returns_specific_phase_context_with_grouped_workouts(
 ) -> None:
     """The service returns the requested phase with open and done workouts grouped."""
     now = datetime.now(tz=UTC)
-    plan = _make_plan(
+    plan = make_plan(
         db_session,
         name="Build Plan",
         start_date_start=now - timedelta(days=14),
         end_date_start=now + timedelta(days=14),
     )
-    phase = _make_phase(
+    phase = make_phase(
         db_session,
-        plan,
         name="Specific Build",
+        plan=plan,
         timeframe_start=now - timedelta(days=7),
         timeframe_end=now + timedelta(days=7),
     )
-    open_workout = _make_workout(
+    open_workout = make_workout(
         db_session,
         phase,
         name="Open Workout",
         date_start=now + timedelta(days=1),
         status="Open",
     )
-    done_workout = _make_workout(
+    done_workout = make_workout(
         db_session,
         phase,
         name="Done Workout",
@@ -154,11 +62,11 @@ def test_service_returns_specific_phase_context_with_grouped_workouts(
         done_date_start=now - timedelta(days=1),
         status="Done",
     )
-    _make_session(
+    make_tracked_session(
         db_session,
         done_workout,
         name="Completed Session",
-        start_start=now - timedelta(hours=12),
+        start=now - timedelta(hours=12),
     )
 
     context = _make_service(db_session).get_specific_phase_context(phase.id)
@@ -180,38 +88,38 @@ def test_service_reports_unlinked_sessions_and_status_data_gaps(
 ) -> None:
     """The service surfaces unlinked sessions and problematic workout statuses."""
     now = datetime.now(tz=UTC)
-    plan = _make_plan(
+    plan = make_plan(
         db_session,
         name="Gap Plan",
         start_date_start=now - timedelta(days=14),
         end_date_start=now + timedelta(days=14),
     )
-    phase = _make_phase(
+    phase = make_phase(
         db_session,
-        plan,
         name="Gap Phase",
+        plan=plan,
         timeframe_start=now - timedelta(days=7),
         timeframe_end=now + timedelta(days=7),
     )
-    _make_workout(
+    make_workout(
         db_session,
         phase,
         name="Unknown Workout",
         date_start=now - timedelta(days=2),
         status="Unknown",
     )
-    _make_workout(
+    make_workout(
         db_session,
         phase,
         name="Missed Workout",
         date_start=now - timedelta(days=1),
         status="Missed",
     )
-    _make_session(
+    make_tracked_session(
         db_session,
         None,
         name="Unlinked Session",
-        start_start=now,
+        start=now,
     )
 
     context = _make_service(db_session).get_specific_phase_context(phase.id)

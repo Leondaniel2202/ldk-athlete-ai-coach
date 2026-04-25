@@ -23,6 +23,7 @@ services:
       POSTGRES_DB: ${TEST_POSTGRES_DB:-ldk_athlete_ai_coach_test}
       POSTGRES_USER: ${TEST_POSTGRES_USER:-postgres}
       POSTGRES_PASSWORD: ${TEST_POSTGRES_PASSWORD:-postgres}
+      POSTGRES_HOST_AUTH_METHOD: trust
     ports:
       - "${TEST_POSTGRES_PORT:-5433}:5432"
     volumes:
