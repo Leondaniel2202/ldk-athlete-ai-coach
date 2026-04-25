@@ -1,11 +1,13 @@
 # Local Development
 
-This guide describes the expected local workflow for working on the current v1 backend.
+This guide describes the expected local workflow for working on the backend and the
+frontend.
 
 ## Prerequisites
 
 - Python `3.12`
 - `uv`
+- Node.js `20` or later (for the frontend)
 - Docker Desktop or another Docker runtime that supports `docker compose`
 - A Notion integration token and the required data source IDs if you need to run sync
 - An OpenAI API key if you need to use the AI analysis endpoints
@@ -216,6 +218,92 @@ make type-check
 5. Sync data from Notion if you need a fresh local dataset
 6. Run focused tests while making changes
 7. Run `make lint`, `make format-check`, and `make type-check` before finishing
+
+## Frontend Setup
+
+The frontend lives in the `frontend/` directory and is a Next.js + React + TypeScript
+application.
+
+### Install frontend dependencies
+
+```powershell
+make frontend-install
+```
+
+Or directly with npm:
+
+```powershell
+cd frontend && npm install
+```
+
+### Configure the frontend environment
+
+Copy the frontend environment template:
+
+```powershell
+Copy-Item frontend/.env.local.example frontend/.env.local
+```
+
+The only required variable for local development is:
+
+- `NEXT_PUBLIC_API_BASE_URL` — defaults to `http://localhost:8000`, which is where the
+  FastAPI backend runs.
+
+### Run the frontend
+
+```powershell
+make frontend-dev
+```
+
+The development server starts at `http://localhost:3000`.
+
+The frontend landing page shows the backend connectivity status. Start the backend
+first (`make api`) to see a connected state.
+
+### Run the backend and frontend together
+
+In two separate terminals:
+
+**Terminal 1 — backend:**
+
+```powershell
+make api
+```
+
+**Terminal 2 — frontend:**
+
+```powershell
+make frontend-dev
+```
+
+Visit `http://localhost:3000` to confirm the frontend is running and the backend status
+badge shows **Backend connected**.
+
+### Frontend quality checks
+
+Lint:
+
+```powershell
+make frontend-lint
+```
+
+Check formatting:
+
+```powershell
+make frontend-format-check
+```
+
+Type check:
+
+```powershell
+make frontend-type-check
+```
+
+Build for production (optional, to verify the build passes):
+
+```powershell
+make frontend-build
+```
 
 ## Troubleshooting
 

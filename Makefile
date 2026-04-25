@@ -7,7 +7,9 @@ UV = uv --cache-dir $(UV_CACHE_DIR)
         db-up db-test-up db-down \
         test test-unit test-integration test-api test-cov \
         lint lint-fix format-check type-check \
-        alembic-up alembic-revision
+        alembic-up alembic-revision \
+        frontend-install frontend-dev frontend-build frontend-lint \
+        frontend-format-check frontend-type-check
 
 help: ## Show this help message
 	@$(UV) run python -c "import re; [print('  {:<22} {}'.format(*m.groups())) for line in open('Makefile') for m in [re.match(r'^([a-zA-Z_-]+):.*##\s*(.*)', line)] if m]"
@@ -84,3 +86,23 @@ format: ## Auto-fix formatting with ruff
 
 type-check: ## Run mypy static type checking
 	$(UV) run mypy src tests
+
+## ── Frontend ──────────────────────────────────────────────────────────────────
+
+frontend-install: ## Install frontend dependencies
+	cd frontend && npm install
+
+frontend-dev: ## Start the Next.js development server (port 3000)
+	cd frontend && npm run dev
+
+frontend-build: ## Build the frontend for production
+	cd frontend && npm run build
+
+frontend-lint: ## Lint the frontend with ESLint
+	cd frontend && npm run lint
+
+frontend-format-check: ## Check frontend formatting with Prettier
+	cd frontend && npm run format-check
+
+frontend-type-check: ## Run TypeScript type checking for the frontend
+	cd frontend && npm run type-check
