@@ -103,13 +103,13 @@ jobs:
         run: make db-test-up
 
       - name: Run unit tests
-        run: make test-unit COV=1
+        run: make test-unit
 
       - name: Run integration tests
-        run: make test-integration COV=1
+        run: make test-integration
 
       - name: Run API tests
-        run: make test-api COV=1
+        run: make test-api
 
       - name: Stop Docker services
         if: ${{ always() }}
