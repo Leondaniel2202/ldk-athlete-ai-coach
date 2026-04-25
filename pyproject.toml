@@ -4,8 +4,8 @@ build-backend = "hatchling.build"
 
 [project]
 name = "ldk-athlete-ai-coach"
-version = "0.2.0"
-description = "Backend foundation for the LDK Athlete AI Coach project."
+version = "1.0.0"
+description = "Training management and AI coaching platform for a personal athlete workflow."
 readme = "README.md"
 requires-python = ">=3.12,<3.13"
 dependencies = [
