@@ -1,0 +1,104 @@
+name: AI Advisory Review
+
+on:
+  pull_request:
+
+permissions:
+  contents: read
+  pull-requests: write
+  models: read
+
+jobs:
+  ai-review:
+    name: AI Advisory Review
+    runs-on: ubuntu-latest
+    if: github.actor != 'dependabot[bot]'
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Get PR diff
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh pr diff ${{ github.event.pull_request.number }} | head -n 3000 > /tmp/pr_diff.txt
+
+      - name: Read diff into output
+        id: read-diff
+        run: |
+          {
+            echo 'diff<<DIFF_EOF'
+            cat /tmp/pr_diff.txt
+            echo DIFF_EOF
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Run AI advisory review
+        id: ai-review
+        uses: actions/ai-inference@v1
+        with:
+          model: openai/gpt-4o-mini
+          system-prompt: |
+            You are an expert software architect and code reviewer for a Python backend project.
+
+            Project context:
+            This is a backend-first athlete AI coach system. V1 mirrors Notion data into PostgreSQL,
+            exposes FastAPI resource/context/AI endpoints, and uses context services as the boundary
+            between structured data and AI analysis.
+
+            Review priorities:
+            1. Does the change respect layer boundaries?
+            2. Does business logic stay out of API routers?
+            3. Are Notion-specific concerns isolated from domain logic?
+            4. Are settings, database engines, or external clients initialized at import time?
+            5. Are tests added at the right level: unit, API, or integration?
+            6. Does the change introduce unnecessary coupling or overengineering?
+            7. Are there missing edge cases or data-quality issues?
+
+            Do not nitpick formatting unless CI would fail.
+            Do not suggest broad refactors unless they are directly relevant to this PR.
+
+            Return your response in this format:
+            ## AI Advisory Review
+
+            **Summary**
+            <brief description of the change>
+
+            **Blocking Concerns**
+            <issues that should be addressed before merging, or "None">
+
+            **Non-blocking Suggestions**
+            <optional improvements, or "None">
+
+            **Test Gaps**
+            <missing or weak tests, or "None">
+
+            **Merge Recommendation**
+            <one of: Looks good / Review suggested / Changes needed>
+
+            ---
+            *This is an advisory review only. It is not a required check and does not block merging.*
+          prompt: |
+            Review this pull request.
+
+            PR title: ${{ github.event.pull_request.title }}
+            PR description: ${{ github.event.pull_request.body }}
+
+            Diff:
+            ${{ steps.read-diff.outputs.diff }}
+
+      - name: Post advisory review comment
+        uses: actions/github-script@v7
+        env:
+          AI_REVIEW: ${{ steps.ai-review.outputs.response }}
+        with:
+          script: |
+            const review = process.env.AI_REVIEW;
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: review,
+            });
