@@ -1,4 +1,7 @@
 name: CI
+# This workflow covers backend checks only.
+# Frontend CI (lint, type-check, build) will be added in a follow-up issue
+# once the frontend is ready for automated validation.
 
 on:
   push:
