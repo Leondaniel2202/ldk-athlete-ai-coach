@@ -8,11 +8,15 @@ This project currently uses milestone-based versioning. During early development
 
 ### Added
 
-### Changed
-
-### Fixed
-
-### Removed
+- Added `frontend/` directory with a Next.js 16 + React 19 + TypeScript application scaffold.
+- Added App Router structure, reusable component directory, API integration layer, hooks, types, and feature directories.
+- Added `lib/api/client.ts` base API client configurable via `NEXT_PUBLIC_API_BASE_URL`.
+- Added `hooks/useBackendStatus` hook and `components/ui/StatusBadge` component for backend connectivity display.
+- Added landing page placeholder with live backend status indicator.
+- Added `frontend/.env.local.example` for environment variable documentation.
+- Added ESLint and Prettier configuration for frontend linting and formatting.
+- Added `frontend-install`, `frontend-dev`, `frontend-build`, `frontend-lint`, `frontend-format-check`, and `frontend-type-check` Makefile targets.
+- Documented frontend local development setup in `docs/getting-started/local-dev.md`.
 
 ---
 
