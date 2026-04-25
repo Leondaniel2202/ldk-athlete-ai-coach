@@ -8,7 +8,11 @@ import pytest
 
 from ldk_athlete_ai_coach.application.services.workout_context_service import WorkoutContextService
 from ldk_athlete_ai_coach.domain.enums.status import WorkoutStatus
-from tests.unit.builders import make_phase, make_plan, make_workout
+from tests.factories.in_memory_training_models import (
+    build_phase,
+    build_plan,
+    build_workout,
+)
 
 pytestmark = pytest.mark.unit
 
@@ -26,7 +30,7 @@ def test_get_specific_workout_context_raises_when_workout_missing() -> None:
 
 
 def test_get_specific_workout_context_uses_unknown_status_when_workout_status_missing() -> None:
-    workout = make_workout(
+    workout = build_workout(
         workout_id=3,
         name="Compromised Run",
         status=None,
@@ -48,9 +52,9 @@ def test_get_specific_workout_context_uses_unknown_status_when_workout_status_mi
 
 
 def test_get_specific_workout_context_includes_phase_and_plan_summaries() -> None:
-    plan = make_plan()
-    phase = make_phase(plan=plan)
-    workout = make_workout(
+    plan = build_plan()
+    phase = build_phase(plan=plan)
+    workout = build_workout(
         workout_id=3,
         name="Compromised Run",
         status=WorkoutStatus.DONE,

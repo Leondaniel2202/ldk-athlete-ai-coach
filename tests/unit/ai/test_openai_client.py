@@ -10,6 +10,7 @@ from pydantic import BaseModel
 
 from ldk_athlete_ai_coach.ai.errors import AIConfigurationError, AIProviderError
 from ldk_athlete_ai_coach.ai.llm.openai_client import OpenAIClient
+from ldk_athlete_ai_coach.ai.prompts.context_analysis import PromptMessage
 
 pytestmark = pytest.mark.unit
 
@@ -59,8 +60,8 @@ def test_parse_structured_calls_responses_api_and_returns_parsed(
     _install_fake_openai(monkeypatch, _SuccessfulOpenAI)
     client = OpenAIClient(api_key="test-key", model="gpt-4o-mini", timeout_seconds=30)
 
-    messages = [{"role": "system", "content": "Analyze context."}]
-    result = client.parse_structured(messages=messages, schema=_AnalysisSchema)
+    messages: PromptMessage = PromptMessage({"role": "system", "content": "Analyze context."})
+    result = client.parse_structured(messages=[messages], schema=_AnalysisSchema)
 
     assert result == parsed
 

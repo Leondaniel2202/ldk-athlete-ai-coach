@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import TypeVar
+from typing import Any, TypeVar
 
 from openai.types.responses.parsed_response import ParsedResponse
 from pydantic import BaseModel, ValidationError
@@ -50,7 +50,7 @@ class OpenAIClient:
         return parsed
 
     @staticmethod
-    def validate_or_raise(parsed: TModel, *, schema: type[TModel]) -> TModel:
+    def validate_or_raise(parsed: TModel | dict[str, Any], *, schema: type[TModel]) -> TModel:
         """Normalize parsed output into the requested schema."""
         if isinstance(parsed, schema):
             return parsed

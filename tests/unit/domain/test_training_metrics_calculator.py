@@ -8,7 +8,7 @@ from ldk_athlete_ai_coach.domain.calculators.training_metrics_calculator import 
     TrainingMetricsCalculator,
 )
 from ldk_athlete_ai_coach.domain.enums.status import WorkoutStatus
-from tests.unit.builders import make_workout
+from tests.factories.in_memory_training_models import build_workout
 
 pytestmark = pytest.mark.unit
 
@@ -16,7 +16,7 @@ pytestmark = pytest.mark.unit
 def test_calculate_returns_expected_loads_and_adherence() -> None:
     calculator = TrainingMetricsCalculator()
     workouts = [
-        make_workout(
+        build_workout(
             workout_id=1,
             name="done-1",
             status=WorkoutStatus.DONE,
@@ -24,7 +24,7 @@ def test_calculate_returns_expected_loads_and_adherence() -> None:
             planned_training_load=100.0,
             actual_training_load=80.0,
         ),
-        make_workout(
+        build_workout(
             workout_id=2,
             name="open-1",
             status=WorkoutStatus.OPEN,
@@ -50,7 +50,7 @@ def test_calculate_returns_expected_loads_and_adherence() -> None:
 def test_calculate_ignores_workouts_outside_included_statuses() -> None:
     calculator = TrainingMetricsCalculator()
     workouts = [
-        make_workout(
+        build_workout(
             workout_id=1,
             name="done-1",
             status=WorkoutStatus.DONE,
@@ -58,7 +58,7 @@ def test_calculate_ignores_workouts_outside_included_statuses() -> None:
             planned_training_load=100.0,
             actual_training_load=90.0,
         ),
-        make_workout(
+        build_workout(
             workout_id=2,
             name="missed-1",
             status=WorkoutStatus.MISSED,
@@ -66,7 +66,7 @@ def test_calculate_ignores_workouts_outside_included_statuses() -> None:
             planned_training_load=500.0,
             actual_training_load=500.0,
         ),
-        make_workout(
+        build_workout(
             workout_id=3,
             name="cancelled-1",
             status=WorkoutStatus.CANCELLED,
@@ -86,7 +86,7 @@ def test_calculate_ignores_workouts_outside_included_statuses() -> None:
 def test_calculate_ignores_none_load_values() -> None:
     calculator = TrainingMetricsCalculator()
     workouts = [
-        make_workout(
+        build_workout(
             workout_id=1,
             name="done-none-planned",
             status=WorkoutStatus.DONE,
@@ -94,7 +94,7 @@ def test_calculate_ignores_none_load_values() -> None:
             planned_training_load=None,
             actual_training_load=60.0,
         ),
-        make_workout(
+        build_workout(
             workout_id=2,
             name="open-none-actual",
             status=WorkoutStatus.OPEN,
@@ -114,7 +114,7 @@ def test_calculate_ignores_none_load_values() -> None:
 def test_calculate_returns_none_adherence_when_planned_load_is_zero() -> None:
     calculator = TrainingMetricsCalculator()
     workouts = [
-        make_workout(
+        build_workout(
             workout_id=1,
             name="done-1",
             status=WorkoutStatus.DONE,
@@ -122,7 +122,7 @@ def test_calculate_returns_none_adherence_when_planned_load_is_zero() -> None:
             planned_training_load=None,
             actual_training_load=10.0,
         ),
-        make_workout(
+        build_workout(
             workout_id=2,
             name="open-1",
             status=WorkoutStatus.OPEN,

@@ -17,11 +17,8 @@ from ldk_athlete_ai_coach.core.integrations.notion.sync_service import (
     NotionSyncError,
     SyncResult,
 )
-from ldk_athlete_ai_coach.main import app
 
 pytestmark = pytest.mark.api
-
-client = TestClient(app)
 
 
 def _result(
@@ -41,7 +38,7 @@ def _result(
     )
 
 
-def test_notion_sync_endpoint_returns_summary_on_success() -> None:
+def test_notion_sync_endpoint_returns_summary_on_success(app_client: TestClient) -> None:
     """Endpoint returns 200 with aggregate and per-entity sync counts."""
 
     with (
@@ -61,7 +58,7 @@ def test_notion_sync_endpoint_returns_summary_on_success() -> None:
         ]
         mock_service_cls.return_value = mock_service
 
-        response = client.post("/api/v1/sync/notion")
+        response = app_client.post("/api/v1/sync/notion")
 
     assert response.status_code == 200
     assert response.json() == {
@@ -79,7 +76,7 @@ def test_notion_sync_endpoint_returns_summary_on_success() -> None:
     mock_service_cls.assert_called_once()
 
 
-def test_notion_sync_endpoint_defaults_hard_fail_to_false() -> None:
+def test_notion_sync_endpoint_defaults_hard_fail_to_false(app_client: TestClient) -> None:
     """Endpoint constructs the sync service with hard_fail=False by default."""
 
     with (
@@ -94,7 +91,7 @@ def test_notion_sync_endpoint_defaults_hard_fail_to_false() -> None:
         mock_service.sync_all.return_value = []
         mock_service_cls.return_value = mock_service
 
-        response = client.post("/api/v1/sync/notion")
+        response = app_client.post("/api/v1/sync/notion")
 
     assert response.status_code == 200
     mock_service_cls.assert_called_once()
@@ -102,7 +99,7 @@ def test_notion_sync_endpoint_defaults_hard_fail_to_false() -> None:
     assert mock_service_cls.call_args.kwargs["hard_fail"] is False
 
 
-def test_notion_sync_endpoint_accepts_hard_fail_query_param() -> None:
+def test_notion_sync_endpoint_accepts_hard_fail_query_param(app_client: TestClient) -> None:
     """Endpoint forwards hard_fail=true to the sync service constructor."""
 
     with (
@@ -117,7 +114,7 @@ def test_notion_sync_endpoint_accepts_hard_fail_query_param() -> None:
         mock_service.sync_all.return_value = []
         mock_service_cls.return_value = mock_service
 
-        response = client.post("/api/v1/sync/notion?hard_fail=true")
+        response = app_client.post("/api/v1/sync/notion?hard_fail=true")
 
     assert response.status_code == 200
     mock_service_cls.assert_called_once()
@@ -125,7 +122,9 @@ def test_notion_sync_endpoint_accepts_hard_fail_query_param() -> None:
     assert mock_service_cls.call_args.kwargs["hard_fail"] is True
 
 
-def test_notion_sync_endpoint_returns_500_summary_on_partial_failure() -> None:
+def test_notion_sync_endpoint_returns_500_summary_on_partial_failure(
+    app_client: TestClient,
+) -> None:
     """Endpoint returns the sync summary with 500 when any entity fails."""
 
     with patch(
@@ -138,7 +137,7 @@ def test_notion_sync_endpoint_returns_500_summary_on_partial_failure() -> None:
         ]
         mock_service_cls.return_value = mock_service
 
-        response = client.post("/api/v1/sync/notion")
+        response = app_client.post("/api/v1/sync/notion")
 
     assert response.status_code == 500
     assert response.json() == {
@@ -152,7 +151,7 @@ def test_notion_sync_endpoint_returns_500_summary_on_partial_failure() -> None:
     }
 
 
-def test_notion_sync_endpoint_translates_rate_limit_errors() -> None:
+def test_notion_sync_endpoint_translates_rate_limit_errors(app_client: TestClient) -> None:
     """Endpoint returns 503 when the Notion client exhausts rate-limit retries."""
 
     with patch(
@@ -162,13 +161,13 @@ def test_notion_sync_endpoint_translates_rate_limit_errors() -> None:
         mock_service.sync_all.side_effect = NotionRateLimitError("rate limited")
         mock_service_cls.return_value = mock_service
 
-        response = client.post("/api/v1/sync/notion")
+        response = app_client.post("/api/v1/sync/notion")
 
     assert response.status_code == 503
     assert response.json() == {"detail": "rate limited"}
 
 
-def test_notion_sync_endpoint_translates_auth_errors() -> None:
+def test_notion_sync_endpoint_translates_auth_errors(app_client: TestClient) -> None:
     """Endpoint returns 502 for Notion authentication failures."""
 
     with patch(
@@ -178,13 +177,15 @@ def test_notion_sync_endpoint_translates_auth_errors() -> None:
         mock_service.sync_all.side_effect = NotionAuthError("bad credentials")
         mock_service_cls.return_value = mock_service
 
-        response = client.post("/api/v1/sync/notion")
+        response = app_client.post("/api/v1/sync/notion")
 
     assert response.status_code == 502
     assert response.json() == {"detail": "bad credentials"}
 
 
-def test_notion_sync_endpoint_translates_database_not_found_errors() -> None:
+def test_notion_sync_endpoint_translates_database_not_found_errors(
+    app_client: TestClient,
+) -> None:
     """Endpoint returns 502 for inaccessible Notion databases."""
 
     with patch(
@@ -194,13 +195,15 @@ def test_notion_sync_endpoint_translates_database_not_found_errors() -> None:
         mock_service.sync_all.side_effect = NotionDatabaseNotFoundError("missing database")
         mock_service_cls.return_value = mock_service
 
-        response = client.post("/api/v1/sync/notion")
+        response = app_client.post("/api/v1/sync/notion")
 
     assert response.status_code == 502
     assert response.json() == {"detail": "missing database"}
 
 
-def test_notion_sync_endpoint_translates_generic_notion_api_errors() -> None:
+def test_notion_sync_endpoint_translates_generic_notion_api_errors(
+    app_client: TestClient,
+) -> None:
     """Endpoint returns 502 for other Notion API failures."""
 
     with patch(
@@ -210,13 +213,13 @@ def test_notion_sync_endpoint_translates_generic_notion_api_errors() -> None:
         mock_service.sync_all.side_effect = NotionAPIError("unexpected notion error")
         mock_service_cls.return_value = mock_service
 
-        response = client.post("/api/v1/sync/notion")
+        response = app_client.post("/api/v1/sync/notion")
 
     assert response.status_code == 502
     assert response.json() == {"detail": "unexpected notion error"}
 
 
-def test_notion_sync_endpoint_translates_unexpected_errors() -> None:
+def test_notion_sync_endpoint_translates_unexpected_errors(app_client: TestClient) -> None:
     """Endpoint returns 500 for unexpected sync failures."""
 
     with patch(
@@ -226,13 +229,13 @@ def test_notion_sync_endpoint_translates_unexpected_errors() -> None:
         mock_service.sync_all.side_effect = RuntimeError("boom")
         mock_service_cls.return_value = mock_service
 
-        response = client.post("/api/v1/sync/notion")
+        response = app_client.post("/api/v1/sync/notion")
 
     assert response.status_code == 500
     assert response.json() == {"detail": "Unexpected error during full Notion sync"}
 
 
-def test_notion_sync_endpoint_translates_hard_fail_sync_error() -> None:
+def test_notion_sync_endpoint_translates_hard_fail_sync_error(app_client: TestClient) -> None:
     """Endpoint returns structured details when hard-fail sync raises NotionSyncError."""
 
     with patch(
@@ -248,7 +251,7 @@ def test_notion_sync_endpoint_translates_hard_fail_sync_error() -> None:
         )
         mock_service_cls.return_value = mock_service
 
-        response = client.post("/api/v1/sync/notion?hard_fail=true")
+        response = app_client.post("/api/v1/sync/notion?hard_fail=true")
 
     assert response.status_code == 500
     assert response.json() == {

@@ -9,11 +9,11 @@ import pytest
 
 from ldk_athlete_ai_coach.application.services.phase_context_service import PhaseContextService
 from ldk_athlete_ai_coach.domain.enums.status import WorkoutStatus
-from tests.unit.builders import (
-    make_phase,
-    make_plan,
-    make_session,
-    make_workout,
+from tests.factories.in_memory_training_models import (
+    build_phase,
+    build_plan,
+    build_session,
+    build_workout,
 )
 
 pytestmark = pytest.mark.unit
@@ -34,22 +34,22 @@ def _service() -> tuple[PhaseContextService, MagicMock, MagicMock, MagicMock]:
 def test_get_specific_phase_context_groups_workouts_and_builds_weekly_metrics() -> None:
     service, phase_repository, workout_repository, session_repository = _service()
     now = datetime.now(tz=UTC)
-    plan = make_plan()
-    phase = make_phase(
+    plan = build_plan()
+    phase = build_phase(
         plan=plan,
         timeframe_start=now - timedelta(days=7),
         timeframe_end=now + timedelta(days=7),
     )
     week_1 = datetime(2026, 4, 7, tzinfo=UTC)
     week_2 = datetime(2026, 4, 14, tzinfo=UTC)
-    done_workout = make_workout(
+    done_workout = build_workout(
         workout_id=10,
         name="Done Workout",
         status=WorkoutStatus.DONE,
         phase=phase,
         planned_week_start_date=week_1,
     )
-    open_workout = make_workout(
+    open_workout = build_workout(
         workout_id=11,
         name="Open Workout",
         status=WorkoutStatus.OPEN,
@@ -60,7 +60,7 @@ def test_get_specific_phase_context_groups_workouts_and_builds_weekly_metrics() 
     phase_repository.get_by_id.return_value = phase
     workout_repository.list_by_phase_id.return_value = [done_workout, open_workout]
     session_repository.list_by_workout_ids.return_value = [
-        make_session(session_id=99, workout_id=10)
+        build_session(session_id=99, workout_id=10)
     ]
     session_repository.list_unlinked_within_window.return_value = []
 
@@ -80,9 +80,9 @@ def test_get_specific_phase_context_groups_workouts_and_builds_weekly_metrics() 
 
 def test_get_specific_phase_context_reports_unknown_phase_timeframe_gap() -> None:
     service, phase_repository, workout_repository, session_repository = _service()
-    plan = make_plan()
-    phase = make_phase(plan=plan, timeframe_start=None, timeframe_end=None)
-    workout = make_workout(
+    plan = build_plan()
+    phase = build_phase(plan=plan, timeframe_start=None, timeframe_end=None)
+    workout = build_workout(
         workout_id=12,
         name="Unknown Workout",
         status=WorkoutStatus.UNKNOWN,
@@ -108,15 +108,15 @@ def test_get_specific_phase_context_reports_unknown_phase_timeframe_gap() -> Non
 def test_get_specific_phase_week_context_builds_week_metadata_and_data_gaps() -> None:
     service, phase_repository, workout_repository, session_repository = _service()
     now = datetime.now(tz=UTC)
-    plan = make_plan()
+    plan = build_plan()
     phase_start = datetime(2026, 4, 7, tzinfo=UTC)
-    phase = make_phase(
+    phase = build_phase(
         plan=plan,
         timeframe_start=phase_start,
         timeframe_end=now + timedelta(days=7),
     )
     week_start = datetime(2026, 4, 14, tzinfo=UTC)
-    week_workout = make_workout(
+    week_workout = build_workout(
         workout_id=13,
         name="Missed Workout",
         status=WorkoutStatus.MISSED,
@@ -127,7 +127,7 @@ def test_get_specific_phase_week_context_builds_week_metadata_and_data_gaps() ->
     phase_repository.get_by_id.return_value = phase
     workout_repository.list_within_planned_week.return_value = [week_workout]
     session_repository.list_unlinked_within_window.return_value = [
-        make_session(session_id=100, workout_id=None)
+        build_session(session_id=100, workout_id=None)
     ]
 
     context = service.get_specific_phase_week_context(phase_id=phase.id, week_start_date=week_start)
