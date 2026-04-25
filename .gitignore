@@ -188,6 +188,15 @@ cython_debug/
 #  you could uncomment the following to ignore the entire vscode folder
 # .vscode/
 
+# Frontend (Next.js)
+frontend/node_modules/
+frontend/.next/
+frontend/out/
+frontend/.vercel
+
+# Allow frontend source directories that conflict with Python-generated ignores
+!frontend/lib/
+
 # Ruff stuff:
 .ruff_cache/
 
