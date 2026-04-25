@@ -1,361 +1,183 @@
+# Product Vision
+
+This document captures the product direction and long-term intent for the system.
+It is a strategy document, not the living implementation reference.
+
+For the current implementation, use:
+
+- [Current Architecture](../architecture/current-architecture.md)
+- [System Map](../architecture/system-map.md)
+- [V1 Release Summary](../releases/v1.md)
+
 ## 1. Purpose
 
-This system is a personal training plan management platform designed to structure, track, analyze, and improve training over time.
+The system is a personal training management platform designed to structure, track,
+analyze, and improve training over time.
 
-It is built primarily for direct personal use, with the goal of supporting day-to-day training planning and execution while continuously evolving into a more powerful and independent system.
+It is being built for real day-to-day use, not as a speculative concept. The goal is
+to support current training workflows while steadily evolving toward a more complete
+and independent platform.
 
-The system combines:
-- structured training planning (plans, phases, workouts)
-- real-world execution tracking (sessions, feedback, adherence)
-- analytical insights (metrics, trends, balance)
-- AI-assisted understanding and decision support
+At its core, the system combines:
 
-Unlike typical training tools, this system is designed as a backend-first platform with a strong focus on structured data and extensibility, allowing advanced capabilities such as intelligent analysis, recommendations, and future AI-driven workflows.
+- structured training planning
+- execution tracking
+- analysis and feedback
+- AI-assisted interpretation and support
 
-A key goal is to build a system that remains usable throughout its development, starting from a Notion-based workflow and gradually evolving into a fully independent platform.
+The backend-first approach is intentional. Reliable structure, explicit domain logic,
+and clean system boundaries come before advanced frontend or AI behavior.
 
+## 2. Long-Term Direction
 
-## 2. Long-Term Vision
+The long-term goal is an independent training platform in which the backend owns the
+core data model, business logic, analysis, and integrations.
 
-The long-term vision of this system is to evolve into a fully independent training platform that provides complete control over planning, tracking, and analyzing training.
+That future platform should provide:
 
-The system will transition from a Notion-based workflow into a standalone application where the backend serves as the single source of truth and a custom frontend provides a seamless user experience across web and mobile.
+- full control over plans, phases, workouts, sessions, and feedback
+- a custom user experience for planning, tracking, and review
+- direct ingestion of external training data
+- richer analysis of performance, load, consistency, and progression
+- AI features grounded in structured history and clear system rules
 
-At its core, the platform aims to become a personal training operating system that:
-
-- centralizes all training data and history
-- provides deep insights into performance and progression
-- supports structured and flexible planning
-- enables intelligent adaptation of training over time
-
-A key aspect of this vision is independence from external tools as core infrastructure. While integrations with systems such as Apple Health or Strava remain important, they should function purely as data sources, not as dependencies for core functionality. The system should be capable of directly ingesting, storing, and processing external data without relying on intermediary platforms.
-
-Another central aspect of this vision is the integration of advanced AI capabilities. The system will incorporate AI not only for analysis and recommendations, but also for more advanced use cases such as:
-
-- retrieving and learning from historical training data (RAG)
-- assisting with structured plan and workout generation
-- supporting intelligent coaching workflows
-- enabling agentic AI systems that can autonomously analyze training and decide how to interact with the system
-
-Despite this long-term ambition, the system is designed to evolve gradually. It will remain usable throughout its development, with existing tools such as Notion being replaced step by step as the platform matures.
-
+External systems such as Notion, Apple Health, Strava, or other tools may remain
+useful, but they should behave as integrations and data sources rather than core
+dependencies.
 
 ## 3. Core Product Pillars
 
-The system is built around a set of core capabilities that define its functionality and long-term value.
+### Planning and organization
 
-### 3.1 Planning & Organization
+The system should support clear training structure through plans, phases, workouts,
+events, and supporting guidance. It needs enough flexibility to reflect real coaching
+and athlete workflows without collapsing into unstructured notes.
 
-The system enables structured creation and organization of training:
+### Execution and tracking
 
-- Plans, phases, and workouts as core building blocks
-- Week-based planning as the primary organizational unit
-- Structured workout definitions (e.g., warm-up, main set, cool-down)
-- Metadata such as category, purpose, and intensity
+The system should capture what actually happened in training, link execution back to
+planning, and make it easy to compare intended work against real outcomes.
 
-The goal is to provide both structure and flexibility, allowing training to be planned even when exact execution details are not yet known.
+### Analysis and insight
 
----
+The system should turn stored training data into useful context, metrics, and trends.
+That includes both deterministic calculations and higher-level interpretation.
 
-### 3.2 Execution & Tracking
+### Adaptation and coaching support
 
-The system captures what actually happens during training:
+The system should eventually help adjust training based on missed work, fatigue,
+progression, recovery, and constraints. In early stages this may be descriptive and
+advisory; later it can become more proactive.
 
-- Linking planned workouts to tracked sessions
-- Recording completion, modification, or skipping of workouts
-- Capturing performance data such as duration, distance, and effort
-- Storing weekly feedback and qualitative input
+### AI-assisted intelligence
 
-This enables a clear comparison between planned and actual training.
-
----
-
-### 3.3 Analysis & Insight
-
-The system provides structured analysis of training data:
-
-- Weekly (phase week) and phase-level analysis
-- Calculation of training load, adherence, and balance
-- Identification of patterns, inconsistencies, and potential issues
-- Visualization of trends over time (future)
-
-Analysis is based on a combination of deterministic logic (metrics, rules) and AI-assisted interpretation.
-
----
-
-### 3.4 Adaptation & Coaching
-
-The system supports improving training decisions over time:
-
-- Suggesting adjustments to upcoming training
-- Reacting to missed workouts, fatigue, or changing conditions
-- Supporting structured progression, deloads, and tapering
-- Assisting in aligning training with goals and constraints
-
-This capability evolves from rule-based suggestions toward more advanced AI-supported coaching.
-
----
-
-### 3.5 AI-Assisted Intelligence
-
-AI is a core capability that enhances the system across multiple areas:
-
-- Interpreting free-text feedback and workout content
-- Explaining training outcomes and patterns
-- Supporting analysis and recommendations
-- Retrieving relevant historical context (RAG)
-- Assisting with plan, phase, and workout generation (future)
-- Enabling agentic AI workflows that can autonomously interact with the system
-
-AI is designed to augment structured logic, not replace it, and is integrated progressively as the system matures.
-
+AI should help explain, synthesize, retrieve, and eventually generate useful training
+information, but only on top of structured system-owned context.
 
 ## 4. Role of AI
 
-AI is a core capability of the system, but it is intentionally built on top of a structured and well-defined foundation.
+AI is an important capability, but it is not the foundation of the product. The
+foundation is structured data, explicit domain logic, and stable interfaces.
 
-The system follows the principle that AI should augment and enhance structured data and deterministic logic, not replace it. Core functionality such as data modeling, metrics calculation, and system constraints are handled explicitly within the backend, ensuring reliability and consistency.
+AI is most valuable in areas such as:
 
-AI is used in areas where interpretation, reasoning, and flexibility provide clear value, including:
+- interpreting free-text notes and feedback
+- explaining workout or phase outcomes
+- summarizing patterns across training history
+- retrieving relevant historical context
+- supporting future recommendation and generation workflows
 
-- analyzing training at workout, week, and phase level
-- interpreting qualitative feedback and notes
-- explaining performance trends and outcomes
-- suggesting improvements and adjustments to training
-
-The system is designed to progressively incorporate more advanced AI capabilities over time. This includes:
-
-- Retrieval-Augmented Generation (RAG), enabling the system to access and learn from historical training data, workouts, and feedback
-- structured generation of training content such as workouts, phases, and plans
-- intelligent coaching workflows that combine multiple data sources and reasoning steps
-
-A key long-term goal is the introduction of agentic AI systems. These systems act as “coaches” that are capable of:
-
-- analyzing training context
-- deciding which actions to take
-- interacting with the system through defined tools and APIs
-- orchestrating multi-step reasoning processes
-
-To support this, the system is designed with clear interfaces and structured context outputs, allowing AI components to reliably consume and act upon system data.
-
-AI capabilities are introduced gradually, ensuring that each layer is supported by a strong underlying system and provides real value before adding further complexity.
-
+Over time, the system may grow into more advanced AI workflows, including tool-using
+or agentic behavior. That should only happen when the surrounding system is reliable
+enough to support it safely.
 
 ## 5. Guiding Principles
 
-The system is developed according to a set of guiding principles that ensure long-term quality, usability, and maintainability.
+### Stay usable during development
 
-### Usability Throughout Development
+The system should remain useful while it evolves. Transitional states are acceptable
+if they support real training use rather than forcing a premature rewrite.
 
-The system must remain usable at all stages of its evolution. Decisions should prioritize maintaining or improving the ability to use the system for real training workflows, even if this requires temporary compromises such as parallel use of external tools like Notion.
+### Structured data first
 
----
+Core concepts such as plans, phases, workouts, sessions, and feedback should be modeled
+explicitly. The system should prefer clear entities and rules over hidden spreadsheet
+or document logic.
 
-### Structured Data First
+### Backend ownership grows over time
 
-A strong and well-defined data model is the foundation of the system. All core concepts such as plans, phases, workouts, sessions, and metrics are explicitly modeled and stored in the backend.
+The backend should increasingly own validation, status logic, metrics, context
+building, and integration behavior. Temporary dependence on external tools is
+acceptable, but it should shrink over time.
 
-This ensures consistency, reliability, and enables advanced capabilities such as analysis and AI integration.
+### Separation of concerns matters
 
----
+Persistence, integration, domain rules, API transport, and AI behavior should remain
+separate enough to evolve independently.
 
-### AI as Augmentation
+### Build for evolution, not novelty
 
-AI is used to enhance the system, not to replace core logic. Deterministic processes such as data validation, metric calculation, and system constraints are implemented explicitly in the backend.
+New capabilities should deepen the system rather than replacing it with a different
+stack or concept every few months.
 
-AI is applied where interpretation, reasoning, and flexibility provide clear value.
+### Engineering quality is part of the product
 
----
-
-### Gradual Migration and Independence
-
-The system evolves from a Notion-based workflow to an independent platform in a gradual and controlled way.
-
-External tools may be used temporarily, but the long-term goal is to make the system self-sufficient, with integrations acting only as optional data sources.
-
----
-
-### Separation of Concerns
-
-The system is structured into clear layers with well-defined responsibilities, including data storage, domain logic, application services, API, and AI components.
-
-This separation enables maintainability, testability, and extensibility.
-
----
-
-### Build for Evolution
-
-The system is designed to support continuous growth and increasing complexity over time. New capabilities such as advanced analytics, AI features, and frontend components should be added in a way that builds on existing structure rather than replacing it.
-
----
-
-### Engineering Quality and Best Practices
-
-The system should follow modern engineering best practices, including:
-
-- clean and maintainable code
-- proper testing and validation
-- clear interfaces and contracts
-- type safety and documentation
-
-This ensures that the system remains robust and scalable as it evolves.
-
+Testing, clear contracts, reproducible setup, migrations, and documentation are part
+of the product quality bar, not optional cleanup.
 
 ## 6. Evolution Strategy
 
-The system is designed to evolve incrementally, ensuring continuous usability while gradually increasing capabilities and independence.
+The system is intentionally evolving in stages instead of attempting an immediate full
+replacement of the current workflow.
 
-### Parallel System Approach
+### Stage 1: backend-first mirror
 
-During early stages, the system operates in parallel with existing tools such as Notion. Notion continues to serve as a practical interface for planning and tracking, while the backend system mirrors, structures, and analyzes the data.
+The current stage mirrors operational training data from Notion into PostgreSQL,
+exposes structured APIs, calculates selected backend-owned metrics and statuses, and
+adds initial AI analysis on top of structured context.
 
-This parallel approach avoids disrupting existing workflows while enabling the gradual transition to a fully independent platform.
+### Stage 2: increasing backend ownership
 
----
+More business logic moves into the backend. Validation, calculations, and system rules
+become explicit and testable, reducing dependence on Notion formulas and operational
+workarounds.
 
-### Gradual Replacement of Notion
+### Stage 3: custom workflow surfaces
 
-The transition away from Notion is not a single step but a phased process.
+A custom frontend can gradually take over key workflows such as planning, review, and
+interaction with analysis features.
 
-- Initial stages focus on replicating and improving core functionality in the backend
-- A minimal custom frontend is introduced to cover key planning workflows
-- Over time, more functionality is migrated from Notion into the system
-- Notion is eventually removed once the custom platform fully supports required workflows
+### Stage 4: direct integrations and richer intelligence
 
----
-
-### Early Introduction of Frontend
-
-A custom frontend is introduced early in the evolution of the system, with a focus on minimal but practical functionality.
-
-The initial frontend prioritizes:
-
-- planning and organization of training
-- usability for day-to-day workflows
-- clean structure and best practices
-
-Advanced features such as analytics and AI-driven interactions are added later, once the core functionality is stable.
-
----
-
-### Progressive AI Integration
-
-AI capabilities are introduced in stages, aligned with the maturity of the system:
-
-1. Structured context and basic analysis
-2. Enhanced analysis and interpretation
-3. Retrieval-Augmented Generation (RAG) for accessing historical data
-4. Structured generation of training content
-5. Agentic AI systems capable of autonomous decision-making and tool usage
-
-Each stage builds on a stable foundation, ensuring that AI features provide real value and remain reliable.
-
----
-
-### Backend Ownership of Logic
-
-Over time, all business logic is moved from external tools into the backend system.
-
-This includes:
-
-- status calculations
-- training metrics and load calculations
-- aggregation and analysis logic
-
-This transition ensures consistency, transparency, and full control over system behavior.
-
----
-
-### Direct Data Integration
-
-External data sources such as Apple Health are gradually integrated directly into the system.
-
-Instead of relying on intermediary tools, the system will:
-
-- ingest data directly
-- store raw and processed data
-- enable more advanced analysis through richer datasets
-
----
-
-### Continuous Refinement
-
-The system is continuously improved through iteration, including:
-
-- refining data models and constraints
-- improving architecture and separation of concerns
-- enhancing performance and reliability
-- expanding capabilities based on real usage
-
-This iterative approach ensures that the system grows in a controlled and sustainable way.
-
+The platform can ingest more data directly, maintain richer history, and support more
+advanced analysis, retrieval, and AI-assisted workflows without routing everything
+through Notion first.
 
 ## 7. Scope
 
-### Current Scope (V1)
+### Current Scope (Product V1)
 
-The current version of the system is a backend-first foundation that operates alongside a fully functional Notion-based training workflow.
+The current product milestone is a backend-first foundation.
 
-Key characteristics of the current scope include:
+In v1:
 
-- Notion serves as the primary interface for planning, tracking, and basic analysis
-- A structured backend system mirrors core data entities such as plans, phases, workouts, sessions, and feedback
-- Data is synchronized from Notion into a PostgreSQL database
-- Initial domain logic is implemented in the backend, while significant business logic (e.g., metrics and status calculations) עדיין resides in Notion
-- Context services provide structured representations of workouts, phase weeks, and phases
-- Basic AI capabilities are available for analyzing workout and phase contexts
-- The API layer exposes resources, context, and analysis endpoints
-- The system is designed for single-user, personal use
+- Notion remains the operational source of truth for day-to-day planning and tracking
+- the backend mirrors core training entities into PostgreSQL
+- selected status and adherence logic is owned by the backend
+- FastAPI exposes resource, context, sync, AI, and system endpoints
+- AI is limited to structured analysis of backend context
+- the system is designed for single-user personal use
 
----
+### Beyond V1
 
-### Future Scope
+Beyond v1, the system should move toward:
 
-The system will expand to become a fully independent platform with significantly broader capabilities, including:
+- backend-owned write workflows
+- a custom frontend for daily use
+- direct ingestion from external training sources
+- richer analytics and visualization
+- AI-assisted recommendations, retrieval, and generation
+- broader system ownership with less dependency on Notion
 
-- A custom frontend for planning, tracking, and interaction (web and later mobile)
-- Full ownership of data and logic within the backend, removing dependency on Notion
-- Direct integration with external data sources such as Apple Health, without intermediary tools
-- More advanced and consistent data models with stricter constraints
-- Expanded analytical capabilities, including trends, visualizations, and alerts
-- AI-assisted analysis, recommendations, and structured generation of training content
-- Retrieval-Augmented Generation (RAG) for leveraging historical data and feedback
-- Agentic AI systems capable of autonomous reasoning and interaction with system tools
-- Support for importing external training plans and transforming them into structured data
-- Additional context layers such as athlete profiles, templates, and domain knowledge
-
-The transition from the current scope to the future scope is handled incrementally, ensuring that the system remains usable throughout its evolution.## 7. Scope
-
-### Current Scope (V1)
-
-The current version of the system is a backend-first foundation that operates alongside a fully functional Notion-based training workflow.
-
-Key characteristics of the current scope include:
-
-- Notion serves as the primary interface for planning, tracking, and basic analysis
-- A structured backend system mirrors core data entities such as plans, phases, workouts, sessions, and feedback
-- Data is synchronized from Notion into a PostgreSQL database
-- Initial domain logic is implemented in the backend, while significant business logic (e.g., metrics and status calculations) עדיין resides in Notion
-- Context services provide structured representations of workouts, phase weeks, and phases
-- Basic AI capabilities are available for analyzing workout and phase contexts
-- The API layer exposes resources, context, and analysis endpoints
-- The system is designed for single-user, personal use
-
----
-
-### Future Scope
-
-The system will expand to become a fully independent platform with significantly broader capabilities, including:
-
-- A custom frontend for planning, tracking, and interaction (web and later mobile)
-- Full ownership of data and logic within the backend, removing dependency on Notion
-- Direct integration with external data sources such as Apple Health, without intermediary tools
-- More advanced and consistent data models with stricter constraints
-- Expanded analytical capabilities, including trends, visualizations, and alerts
-- AI-assisted analysis, recommendations, and structured generation of training content
-- Retrieval-Augmented Generation (RAG) for leveraging historical data and feedback
-- Agentic AI systems capable of autonomous reasoning and interaction with system tools
-- Support for importing external training plans and transforming them into structured data
-- Additional context layers such as athlete profiles, templates, and domain knowledge
-
-The transition from the current scope to the future scope is handled incrementally, ensuring that the system remains usable throughout its evolution.
+The key constraint is that each step should leave the system more coherent, more
+trustworthy, and more useful than before.
