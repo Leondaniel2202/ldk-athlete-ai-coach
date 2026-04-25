@@ -69,6 +69,9 @@ class SyncDefinition[TSchema: NotionBaseSchema, TEntity: TrainingEntityMixin]:
     persister: Callable[[NotionPersistenceService, list[TSchema]], list[TEntity]]
 
 
+type AnySyncDefinition = SyncDefinition[Any, Any]
+
+
 # ---------------------------------------------------------------------------
 # Sync result
 # ---------------------------------------------------------------------------
@@ -184,7 +187,7 @@ class NotionSyncService:
         self._hard_fail = hard_fail
         self._definitions = self._build_definitions()
 
-    def _build_definitions(self) -> dict[str, SyncDefinition]:
+    def _build_definitions(self) -> dict[str, AnySyncDefinition]:
         """Build the sync definitions for all supported entities.
 
         Returns:

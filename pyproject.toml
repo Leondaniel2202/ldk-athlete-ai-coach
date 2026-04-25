@@ -59,6 +59,11 @@ quote-style = "double"
 [tool.pytest.ini_options]
 addopts = "-ra -p no:cacheprovider"
 testpaths = ["tests"]
+markers = [
+    "unit: Fast unit tests that do not require a database or external services",
+    "integration: Integration tests that use the dedicated postgres_test database (docker compose up -d postgres_test)",
+    "api: API tests using FastAPI TestClient wired to the dedicated postgres_test database",
+]
 
 [tool.coverage.run]
 source = ["src/ldk_athlete_ai_coach"]
@@ -70,7 +75,15 @@ skip_covered = true
 
 [tool.mypy]
 python_version = "3.12"
+strict = true
 strict_equality = true
 warn_redundant_casts = true
 warn_unused_configs = true
 warn_unused_ignores = true
+
+[[tool.mypy.overrides]]
+module = ["tests.*"]
+disallow_untyped_defs = false
+check_untyped_defs = false
+disallow_untyped_calls = false
+disallow_incomplete_defs = false
