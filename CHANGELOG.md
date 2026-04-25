@@ -1,21 +1,46 @@
 # Changelog
 
-All notable changes to this project will be documented in this file.
+All notable changes to this project are documented here.
 
-The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
-and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+This project currently uses milestone-based versioning. During early development, changelog entries focus on meaningful system, architecture, API, data model, AI, and workflow changes rather than every individual commit.
 
 ## [Unreleased]
 
-## [0.1.0] - 2026-03-14
+### Added
+
+### Changed
+
+### Fixed
+
+### Removed
+
+---
+
+## [1.0.0] - 2026-04-25
 
 ### Added
 
-- Added Sport Manager SQLAlchemy models from the approved Notion schema, including foreign keys, tracked session-to-workout links, and metadata tests.
-- Bootstrapped the Python backend project with `uv`, dependency/tooling configuration, environment defaults, and initial repository documentation.
-- Scaffolded the FastAPI application with a `src` layout, root endpoint, versioned API router, and health endpoint.
-- Centralized runtime configuration with `pydantic-settings` and added a minimal logging utility for application startup.
-- Added the database foundation with PostgreSQL Docker Compose setup, SQLAlchemy base, engine, and session management.
-- Introduced Alembic migration infrastructure wired to the application's SQLAlchemy metadata and settings-based database URL.
-- Added basic tests covering the root endpoint, health endpoint, and configuration defaults and overrides.
-- Added developer workflow commands via `Makefile` and expanded the README with setup, run, quality, and migration instructions.
+- Established the backend-first V1 foundation for the Athlete AI Coach system.
+- Added PostgreSQL-backed persistence for structured training data.
+- Added Notion sync as the initial ingestion path into the backend.
+- Added core domain entities for plans, phases, workouts, tracked sessions, events, feedback, and nutrition guidelines.
+- Added repository-based data access.
+- Added FastAPI resource endpoints for core training entities.
+- Added structured context services for workout, phase-week, and phase context.
+- Added initial domain logic for lifecycle status and training-load adherence calculations.
+- Added initial AI analysis layer for workout and phase context.
+- Added unit, integration, and API test structure.
+- Added V1 project documentation and operational guides.
+
+### Changed
+
+- Shifted the project from an initial backend skeleton into a usable backend foundation that mirrors and analyzes the Notion-based training workflow.
+
+### Known Limitations
+
+- Notion remains the operational source of truth.
+- Sync is one-way from Notion into the backend.
+- API functionality is primarily read-oriented.
+- AI functionality is limited to analysis.
+- External training data still reaches the backend indirectly through Notion.
+- The system is still single-user and personal-use focused.

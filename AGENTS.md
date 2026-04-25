@@ -172,3 +172,38 @@ If tests exist for the affected area:
 - CI/CD changes
 - infra or deployment changes
 - unrelated code or docs cleanup
+
+## Changelog Policy
+
+Content to add:
+
+- This repository uses `CHANGELOG.md` as a milestone-based changelog.
+- V1 is the first baseline release.
+- During V2, meaningful PRs into `v2` should update the `[Unreleased]` section.
+- Do not add changelog entries for every tiny internal change.
+- Add a changelog entry when the PR includes:
+  - new API endpoints
+  - new frontend functionality
+  - data model or migration changes
+  - AI behavior changes
+  - Notion sync behavior changes
+  - important bug fixes
+  - operational, CI, deployment, or developer workflow changes
+  - architecture-significant refactors
+- No changelog entry is needed for:
+  - typo fixes
+  - formatting-only changes
+  - small internal refactors with no behavior change
+  - test-only cleanup with no user/developer-facing impact
+  - routine dependency bumps unless security-relevant or behavior-changing
+- Changelog entries should be concise and written under the correct heading:
+  - Added
+  - Changed
+  - Fixed
+  - Removed
+  - Known Limitations, only for release sections, not every PR
+- If a PR is meaningful but does not update `CHANGELOG.md`, mention this in the PR description and explain why.
+- For PRs into `v2`, prefer updating `[Unreleased]`.
+- For PRs from `v2` into `main`, finalize the release section only when explicitly requested.
+
+Also add an instruction that application code should not be changed as part of this task.
