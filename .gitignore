@@ -205,3 +205,12 @@ cython_debug/
 marimo/_static/
 marimo/_lsp/
 __marimo__/
+
+# Local virtual environment
+.venv/
+
+# Visual Studio local settings, including virtual environments created by Visual Studio
+.vscode/
+.uv-cache/
+.uv-python/
+.pytest_tmp/

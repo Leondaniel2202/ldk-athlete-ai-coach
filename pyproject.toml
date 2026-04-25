@@ -1,0 +1,89 @@
+[build-system]
+requires = ["hatchling>=1.27.0"]
+build-backend = "hatchling.build"
+
+[project]
+name = "ldk-athlete-ai-coach"
+version = "0.2.0"
+description = "Backend foundation for the LDK Athlete AI Coach project."
+readme = "README.md"
+requires-python = ">=3.12,<3.13"
+dependencies = [
+    "alembic>=1.14,<2.0",
+    "fastapi>=0.115,<1.0",
+    "notion-client>=2.2,<2.6",
+    "openai>=1.75,<2.0",
+    "psycopg[binary]>=3.2,<4.0",
+    "pydantic-settings>=2.8,<3.0",
+    "sqlalchemy>=2.0,<3.0",
+    "uvicorn[standard]>=0.34,<1.0",
+]
+
+[dependency-groups]
+dev = [
+    "httpx>=0.28,<1.0",
+    "mypy>=1.15,<2.0",
+    "pytest>=8.3,<9.0",
+    "pytest-cov>=5.0,<7.0",
+    "ruff>=0.11,<1.0",
+]
+
+[tool.uv]
+package = true
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/ldk_athlete_ai_coach"]
+
+[tool.ruff]
+line-length = 100
+src = ["src", "tests"]
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP"]
+extend-select = ["C4", "SIM", "RET", "RUF", "ARG"]
+ignore = ["RET504"]
+
+[tool.ruff.lint.per-file-ignores]
+"alembic/versions/*.py" = ["E501"]
+"tests/**/*.py" = ["ARG001", "ARG002"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["ldk_athlete_ai_coach"]
+combine-as-imports = true
+
+[tool.ruff.format]
+indent-style = "space"
+quote-style = "double"
+
+[tool.pytest.ini_options]
+addopts = "-ra -p no:cacheprovider"
+testpaths = ["tests"]
+markers = [
+    "unit: Fast unit tests that do not require a database or external services",
+    "integration: Integration tests that use the dedicated postgres_test database (docker compose up -d postgres_test)",
+    "api: API tests using FastAPI TestClient wired to the dedicated postgres_test database",
+]
+
+[tool.coverage.run]
+source = ["src/ldk_athlete_ai_coach"]
+branch = true
+
+[tool.coverage.report]
+show_missing = true
+skip_covered = true
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+strict_equality = true
+warn_redundant_casts = true
+warn_unused_configs = true
+warn_unused_ignores = true
+
+[[tool.mypy.overrides]]
+module = ["tests.*"]
+disallow_untyped_defs = false
+check_untyped_defs = false
+disallow_untyped_calls = false
+disallow_incomplete_defs = false
