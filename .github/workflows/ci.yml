@@ -32,6 +32,14 @@ jobs:
       - name: Set up uv
         uses: astral-sh/setup-uv@v6
 
+      - name: Restore uv cache
+        uses: actions/cache@v4
+        with:
+          path: .uv-cache
+          key: uv-${{ runner.os }}-${{ hashFiles('uv.lock') }}
+          restore-keys: |
+            uv-${{ runner.os }}-
+
       - name: Install dependencies
         run: make install
 
@@ -44,9 +52,29 @@ jobs:
       - name: Run type checks
         run: make type-check
 
+      - name: Minimize uv cache
+        if: ${{ always() }}
+        run: uv cache prune --ci
+
   test:
     name: Test
     runs-on: ubuntu-latest
+
+    env:
+      POSTGRES_DB: ldk_athlete_ai_coach_test
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_HOST: localhost
+      POSTGRES_PORT: "5433"
+      NOTION_API_KEY: dummy
+      NOTION_PLAN_DATA_SOURCE_ID: dummy
+      NOTION_PHASE_DATA_SOURCE_ID: dummy
+      NOTION_NUTRITION_GUIDELINE_DATA_SOURCE_ID: dummy
+      NOTION_WORKOUT_DATA_SOURCE_ID: dummy
+      NOTION_EVENT_DATA_SOURCE_ID: dummy
+      NOTION_SESSION_DATA_SOURCE_ID: dummy
+      NOTION_FEEDBACK_DATA_SOURCE_ID: dummy
+      OPENAI_API_KEY: dummy
 
     steps:
       - name: Check out repository
@@ -60,6 +88,14 @@ jobs:
       - name: Set up uv
         uses: astral-sh/setup-uv@v6
 
+      - name: Restore uv cache
+        uses: actions/cache@v4
+        with:
+          path: .uv-cache
+          key: uv-${{ runner.os }}-${{ hashFiles('uv.lock') }}
+          restore-keys: |
+            uv-${{ runner.os }}-
+
       - name: Install dependencies
         run: make install
 
@@ -72,3 +108,7 @@ jobs:
       - name: Stop Docker services
         if: ${{ always() }}
         run: make db-down
+
+      - name: Minimize uv cache
+        if: ${{ always() }}
+        run: uv cache prune --ci
