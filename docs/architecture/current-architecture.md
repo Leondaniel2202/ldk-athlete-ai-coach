@@ -1,3 +1,11 @@
+# Current Architecture
+
+This document is the living architecture narrative for the current backend. Unlike the
+release docs, it should be updated in place as the implementation evolves.
+
+For product milestone scope, use [../releases/v1.md](../releases/v1.md). For the
+implementation-oriented layer map, use [system-map.md](system-map.md).
+
 ## 1. Overview
 
 The current system is a backend-first personal training management platform that operates alongside a fully functional Notion-based workflow.
