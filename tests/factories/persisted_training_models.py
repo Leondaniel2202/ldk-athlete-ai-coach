@@ -1,4 +1,4 @@
-"""Factory helpers for building SQLAlchemy training model instances in tests."""
+"""Database-backed factories for training model tests."""
 
 from __future__ import annotations
 
@@ -9,7 +9,7 @@ from sqlalchemy.orm import Session
 from ldk_athlete_ai_coach.db.models.training import Phase, Plan, TrackedSession, Workout
 
 
-def make_plan(
+def create_plan(
     db: Session,
     name: str = "Base Plan",
     *,
@@ -32,7 +32,7 @@ def make_plan(
     return plan
 
 
-def make_phase(
+def create_phase(
     db: Session,
     name: str = "Base Phase",
     plan: Plan | None = None,
@@ -57,9 +57,9 @@ def make_phase(
     return phase
 
 
-def make_workout(
+def create_workout(
     db: Session,
-    phase: Phase,
+    phase: Phase | None,
     name: str = "Long Run",
     *,
     notion_page_id: str | None = None,
@@ -70,6 +70,7 @@ def make_workout(
     skipped: bool = False,
     cancelled: bool = False,
     planned_week_number: float | None = None,
+    planned_week_start_date: datetime | None = None,
     planned_training_load: float | None = 360.0,
     actual_training_load: float | None = None,
     actual_rpe: float | None = None,
@@ -102,18 +103,19 @@ def make_workout(
         status=status,
         training_load_method="Weighted HRR",
         planned_week_number=planned_week_number,
+        planned_week_start_date=planned_week_start_date,
         date_is_datetime=date_start is not None,
         cancelled=cancelled,
         skipped=skipped,
         done_date_is_datetime=done_date_start is not None,
-        phase_id=phase.id,
+        phase_id=phase.id if phase is not None else None,
     )
     db.add(workout)
     db.flush()
     return workout
 
 
-def make_tracked_session(
+def create_tracked_session(
     db: Session,
     workout: Workout | None = None,
     name: str = "Morning Run",

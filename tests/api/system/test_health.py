@@ -5,24 +5,20 @@ from __future__ import annotations
 import pytest
 from fastapi.testclient import TestClient
 
-from ldk_athlete_ai_coach.main import app
-
 pytestmark = pytest.mark.api
 
-client = TestClient(app)
 
-
-def test_root_endpoint_returns_backend_message() -> None:
+def test_root_endpoint_returns_backend_message(app_client: TestClient) -> None:
     """Validate the root endpoint returns the expected backend message."""
-    response = client.get("/")
+    response = app_client.get("/")
 
     assert response.status_code == 200
     assert response.json() == {"message": "ldk-athlete-ai-coach backend"}
 
 
-def test_health_endpoint_returns_ok_status() -> None:
+def test_health_endpoint_returns_ok_status(app_client: TestClient) -> None:
     """Validate the health endpoint returns an ok status payload."""
-    response = client.get("/api/v1/system/health")
+    response = app_client.get("/api/v1/system/health")
 
     assert response.status_code == 200
     assert response.json() == {"status": "ok"}

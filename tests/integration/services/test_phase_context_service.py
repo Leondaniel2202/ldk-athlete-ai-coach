@@ -11,11 +11,11 @@ from ldk_athlete_ai_coach.application.services.phase_context_service import Phas
 from ldk_athlete_ai_coach.db.repositories.phase_repository import PhaseRepository
 from ldk_athlete_ai_coach.db.repositories.session_repository import SessionRepository
 from ldk_athlete_ai_coach.db.repositories.workout_repository import WorkoutRepository
-from tests.factories.training_models import (
-    make_phase,
-    make_plan,
-    make_tracked_session,
-    make_workout,
+from tests.factories.persisted_training_models import (
+    create_phase,
+    create_plan,
+    create_tracked_session,
+    create_workout,
 )
 
 pytestmark = pytest.mark.integration
@@ -34,27 +34,27 @@ def test_service_returns_specific_phase_context_with_grouped_workouts(
 ) -> None:
     """The service returns the requested phase with open and done workouts grouped."""
     now = datetime.now(tz=UTC)
-    plan = make_plan(
+    plan = create_plan(
         db_session,
         name="Build Plan",
         start_date_start=now - timedelta(days=14),
         end_date_start=now + timedelta(days=14),
     )
-    phase = make_phase(
+    phase = create_phase(
         db_session,
         name="Specific Build",
         plan=plan,
         timeframe_start=now - timedelta(days=7),
         timeframe_end=now + timedelta(days=7),
     )
-    open_workout = make_workout(
+    open_workout = create_workout(
         db_session,
         phase,
         name="Open Workout",
         date_start=now + timedelta(days=1),
         status="Open",
     )
-    done_workout = make_workout(
+    done_workout = create_workout(
         db_session,
         phase,
         name="Done Workout",
@@ -62,7 +62,7 @@ def test_service_returns_specific_phase_context_with_grouped_workouts(
         done_date_start=now - timedelta(days=1),
         status="Done",
     )
-    make_tracked_session(
+    create_tracked_session(
         db_session,
         done_workout,
         name="Completed Session",
@@ -88,34 +88,34 @@ def test_service_reports_unlinked_sessions_and_status_data_gaps(
 ) -> None:
     """The service surfaces unlinked sessions and problematic workout statuses."""
     now = datetime.now(tz=UTC)
-    plan = make_plan(
+    plan = create_plan(
         db_session,
         name="Gap Plan",
         start_date_start=now - timedelta(days=14),
         end_date_start=now + timedelta(days=14),
     )
-    phase = make_phase(
+    phase = create_phase(
         db_session,
         name="Gap Phase",
         plan=plan,
         timeframe_start=now - timedelta(days=7),
         timeframe_end=now + timedelta(days=7),
     )
-    make_workout(
+    create_workout(
         db_session,
         phase,
         name="Unknown Workout",
         date_start=now - timedelta(days=2),
         status="Unknown",
     )
-    make_workout(
+    create_workout(
         db_session,
         phase,
         name="Missed Workout",
         date_start=now - timedelta(days=1),
         status="Missed",
     )
-    make_tracked_session(
+    create_tracked_session(
         db_session,
         None,
         name="Unlinked Session",

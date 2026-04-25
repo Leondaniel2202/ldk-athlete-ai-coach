@@ -9,6 +9,11 @@ from pathlib import Path
 from uuid import uuid4
 
 import pytest
+from sqlalchemy import create_engine
+from sqlalchemy.orm import Session
+
+from ldk_athlete_ai_coach.db.base import Base
+from tests.factories.database import test_db_url
 
 # Ensure required settings are present during test collection so that modules
 # importing get_settings() at the module level do not fail with a
@@ -54,3 +59,27 @@ def tmp_path() -> Generator[Path, None, None]:
         yield path
     finally:
         shutil.rmtree(path, ignore_errors=True)
+
+
+@pytest.fixture(scope="session")
+def pg_engine():
+    """Session-scoped engine targeting the postgres_test database."""
+    engine = create_engine(test_db_url())
+    Base.metadata.create_all(engine)
+    yield engine
+    Base.metadata.drop_all(engine)
+    engine.dispose()
+
+
+@pytest.fixture()
+def db_session(pg_engine) -> Generator[Session, None, None]:
+    """Per-test transactional session that rolls back after each test."""
+    connection = pg_engine.connect()
+    transaction = connection.begin()
+    session = Session(bind=connection, join_transaction_mode="create_savepoint")
+    try:
+        yield session
+    finally:
+        session.close()
+        transaction.rollback()
+        connection.close()

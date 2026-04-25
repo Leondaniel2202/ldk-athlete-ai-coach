@@ -13,6 +13,7 @@ from ldk_athlete_ai_coach.core.integrations.notion.extractors.nutrition_guidelin
     extract_nutrition_guideline,
 )
 from ldk_athlete_ai_coach.core.integrations.notion.extractors.phase_extractor import extract_phase
+from ldk_athlete_ai_coach.core.integrations.notion.extractors.plan_extractor import extract_plan
 from ldk_athlete_ai_coach.core.integrations.notion.extractors.session_extractor import (
     extract_session,
 )
@@ -129,6 +130,23 @@ def _empty_prop(type_: str) -> dict[str, Any]:
 # ---------------------------------------------------------------------------
 # Sample raw Notion pages
 # ---------------------------------------------------------------------------
+
+_PLAN_PAGE: dict[str, Any] = {
+    "id": "plan-page-id",
+    "object": "page",
+    "created_time": "2024-01-05T07:30:00.000Z",
+    "last_edited_time": "2024-01-06T08:45:00.000Z",
+    "archived": False,
+    "url": "https://www.notion.so/plan-page-id",
+    "properties": {
+        "Name": _title_prop("Race Build Plan"),
+        "Plan goal": _rich_text_prop("Build toward the target race."),
+        "Constraints": _rich_text_prop("No double threshold days."),
+        "Rules / weekly rhythm": _rich_text_prop("Long run Sunday."),
+        "Start date": _date_prop("2024-02-01"),
+        "End date": _date_prop("2024-05-01"),
+    },
+}
 
 _PHASE_PAGE: dict[str, Any] = {
     "id": "phase-page-id",
@@ -286,6 +304,46 @@ _FEEDBACK_PAGE: dict[str, Any] = {
 
 
 # ===========================================================================
+# extract_plan
+# ===========================================================================
+
+
+class TestExtractPlan:
+    def test_full_payload_extracts_correctly(self) -> None:
+        plan = extract_plan(_PLAN_PAGE)
+
+        assert plan.notion_id == "plan-page-id"
+        assert plan.name == "Race Build Plan"
+        assert plan.plan_goal == "Build toward the target race."
+        assert plan.constraints == "No double threshold days."
+        assert plan.rules_weekly_rhythm == "Long run Sunday."
+        assert plan.start_date_start == datetime(2024, 2, 1, 0, 0)
+        assert plan.end_date_start == datetime(2024, 5, 1, 0, 0)
+        assert plan.created_time == datetime(2024, 1, 5, 7, 30, tzinfo=UTC)
+        assert plan.last_edited_time == datetime(2024, 1, 6, 8, 45, tzinfo=UTC)
+        assert plan.archived is False
+        assert plan.url == "https://www.notion.so/plan-page-id"
+
+    def test_missing_name_raises_extraction_error(self) -> None:
+        page: dict[str, Any] = {**_PLAN_PAGE, "properties": {"Name": _empty_prop("title")}}
+
+        with pytest.raises(NotionExtractionError, match="missing required 'Name'"):
+            extract_plan(page)
+
+    def test_malformed_payload_raises_extraction_error(self) -> None:
+        page: dict[str, Any] = {**_PLAN_PAGE, "properties": None}
+
+        with pytest.raises(NotionExtractionError, match="Failed to extract Plan"):
+            extract_plan(page)
+
+    def test_archived_page_propagated(self) -> None:
+        page = {**_PLAN_PAGE, "archived": True}
+
+        plan = extract_plan(page)
+
+        assert plan.archived is True
+
+
 # extract_phase
 # ===========================================================================
 

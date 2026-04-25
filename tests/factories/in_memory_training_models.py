@@ -1,4 +1,4 @@
-"""Shared object builders for application-layer unit tests."""
+"""In-memory builders for training model unit tests."""
 
 from __future__ import annotations
 
@@ -8,7 +8,7 @@ from ldk_athlete_ai_coach.db.models.training import Phase, Plan, TrackedSession,
 from ldk_athlete_ai_coach.domain.enums.status import WorkoutStatus
 
 
-def make_plan(*, plan_id: int = 1, name: str = "Build Plan") -> Plan:
+def build_plan(*, plan_id: int = 1, name: str = "Build Plan") -> Plan:
     return Plan(
         id=plan_id,
         notion_page_id=f"plan-{plan_id}",
@@ -26,7 +26,7 @@ def make_plan(*, plan_id: int = 1, name: str = "Build Plan") -> Plan:
     )
 
 
-def make_phase(
+def build_phase(
     *,
     phase_id: int = 2,
     plan: Plan | None,
@@ -51,13 +51,15 @@ def make_phase(
     )
 
 
-def make_workout(
+def build_workout(
     *,
     workout_id: int,
     name: str,
     status: WorkoutStatus | None,
     phase: Phase | None,
     planned_week_start_date: datetime | None = None,
+    planned_training_load: float | None = 100.0,
+    actual_training_load: float | None = 50.0,
 ) -> Workout:
     return Workout(
         id=workout_id,
@@ -78,12 +80,12 @@ def make_workout(
         planned_distance_km=None,
         planned_duration_min=None,
         planned_rpe=None,
-        planned_training_load=100.0,
+        planned_training_load=planned_training_load,
         planned_week_number=None,
         planned_week_start_date=planned_week_start_date,
         actual_duration_min=None,
         actual_distance_km=None,
-        actual_training_load=50.0,
+        actual_training_load=actual_training_load,
         actual_calories_burned_kcal=None,
         weighted_hrr_intensity_sum=None,
         actual_hrr_intensity=None,
@@ -102,7 +104,7 @@ def make_workout(
     )
 
 
-def make_session(
+def build_session(
     *,
     session_id: int,
     workout_id: int | None,
