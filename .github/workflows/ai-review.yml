@@ -29,10 +29,16 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          # Truncate to 3000 lines to stay within model token limits.
+          # Truncate to 600 lines then cap at 24000 bytes to stay within the
+          # model's 8000-token request limit. Line count alone is insufficient
+          # because long lines and the surrounding prompt (system instructions,
+          # PR title, and PR body) also consume tokens.
           # This is intentionally best-effort: large PRs will have their diff
-          # clipped, but the review is advisory only and never blocks merging.
-          gh pr diff ${{ github.event.pull_request.number }} | head -n 3000 > /tmp/pr_diff.txt
+          # clipped. The review is partial / advisory only and never blocks merging.
+          gh pr diff ${{ github.event.pull_request.number }} \
+            | head -n 600 \
+            | head -c 24000 \
+            > /tmp/pr_diff.txt
 
       - name: Read diff into output
         id: read-diff
