@@ -30,7 +30,7 @@ _TEST_ENV_DEFAULTS: dict[str, str] = {
     "NOTION_EVENT_DATA_SOURCE_ID": "test-event-data-source-id",
     "NOTION_SESSION_DATA_SOURCE_ID": "test-session-data-source-id",
     "NOTION_FEEDBACK_DATA_SOURCE_ID": "test-feedback-data-source-id",
-    # Database (required by db/session.py at import time)
+    # Database defaults used by tests that construct real settings/session objects.
     "POSTGRES_DB": "test_db",
     "POSTGRES_USER": "test_user",
     "POSTGRES_PASSWORD": "test_password",

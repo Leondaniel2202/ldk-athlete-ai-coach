@@ -49,9 +49,14 @@ from ldk_athlete_ai_coach.core.integrations.notion.persistence_service import (
 )
 from ldk_athlete_ai_coach.core.integrations.notion.schemas.notion_base import NotionBaseSchema
 from ldk_athlete_ai_coach.db.models.training import TrainingEntityMixin
-from ldk_athlete_ai_coach.db.session import SessionLocal
+from ldk_athlete_ai_coach.db.session import get_session_factory
 
 logger = logging.getLogger(__name__)
+
+
+def _default_session_factory() -> Session:
+    """Create a database session using the lazily configured session factory."""
+    return get_session_factory()()
 
 
 # ---------------------------------------------------------------------------
@@ -169,7 +174,7 @@ class NotionSyncService:
         self,
         client: NotionClient,
         settings: Settings,
-        session_factory: Callable[[], Session] = SessionLocal,
+        session_factory: Callable[[], Session] = _default_session_factory,
         hard_fail: bool = False,
     ) -> None:
         """Initialize sync orchestration dependencies and runtime mode.
