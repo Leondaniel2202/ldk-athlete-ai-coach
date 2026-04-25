@@ -102,8 +102,14 @@ jobs:
       - name: Start test database
         run: make db-test-up
 
-      - name: Run tests
-        run: make test
+      - name: Run unit tests
+        run: make test-unit COV=1
+
+      - name: Run integration tests
+        run: make test-integration COV=1
+
+      - name: Run API tests
+        run: make test-api COV=1
 
       - name: Stop Docker services
         if: ${{ always() }}
