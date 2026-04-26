@@ -18,6 +18,14 @@ This project currently uses milestone-based versioning. During early development
 - Added `frontend-install`, `frontend-dev`, `frontend-build`, `frontend-lint`, `frontend-format-check`, and `frontend-type-check` Makefile targets.
 - Documented frontend local development setup in `docs/getting-started/local-dev.md`.
 
+### Changed
+
+- Reorganized repository into a backend/frontend monorepo structure. Python/FastAPI backend moved from the repository root into `backend/`. Frontend scaffold remains under `frontend/`. Root now contains only repo/product-level files and the shared `Makefile`.
+- Backend `Makefile` commands renamed with `backend-` prefix (`backend-install`, `backend-api`, `backend-test`, `backend-lint`, `backend-format-check`, `backend-type-check`, `backend-db-up`, `backend-db-test-up`, `backend-db-down`, `backend-alembic-up`, `backend-alembic-revision`). Aggregate aliases (`install`, `test`, `lint`, `format-check`, `type-check`) delegate to their backend counterparts.
+- CI workflow updated to use `backend-` prefixed make commands, updated `uv.lock` cache key to `backend/uv.lock`, and extended triggers to include the `v2` branch.
+- `AGENTS.md` updated to document the V2 monorepo structure, branch policy, and new command names.
+- `docs/getting-started/local-dev.md`, `docs/testing.md`, and `docs/operations/runbook.md` updated to reflect the new directory layout and command names.
+
 ---
 
 ## [1.0.0] - 2026-04-25
