@@ -1,7 +1,7 @@
 # System Map
 
-This document explains how the current v1 backend is organized at the code level and
-how data moves through the main subsystems.
+This document explains how the current backend and initial frontend are organized at
+the code level and how data moves through the main subsystems.
 
 For the broader architectural narrative, see
 [current-architecture.md](current-architecture.md). This file focuses on the
@@ -22,6 +22,7 @@ flowchart TD
     I[FastAPI Routers]
     J[OpenAIClient]
     K[AI Analysis Services]
+    L[Next.js Frontend]
 
     A --> B
     B --> C
@@ -34,6 +35,7 @@ flowchart TD
     G --> K
     J --> K
     K --> I
+    L --> I
 ```
 
 ## Layer Map
@@ -42,6 +44,20 @@ flowchart TD
 
 Creates the FastAPI app, configures logging from settings, mounts the v1 router under
 `/api`, and exposes a minimal root endpoint.
+
+### `frontend/`
+
+The Next.js frontend contains the initial V2 app shell and read-only dashboard shape.
+
+- `app/`: App Router entry points, including the root redirect and the Dashboard,
+  Planner, Analyzer, and Coach routes
+- `components/app-shell/`: shared navigation and placeholder page structure
+- `components/dashboard/`: reusable dashboard sections
+- `lib/api/`: frontend API client and health check call
+- `lib/mock-data/`: isolated placeholder data used until dashboard-specific backend
+  contracts exist
+- `hooks/`: client-side backend connectivity hook
+- `types/`: shared frontend TypeScript contracts
 
 ### `api/`
 
