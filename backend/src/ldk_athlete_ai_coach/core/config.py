@@ -1,17 +1,21 @@
 """Application settings management using pydantic-settings."""
 
 from functools import lru_cache
+from pathlib import Path
 from urllib.parse import quote_plus
 
 from pydantic import AliasChoices, Field, computed_field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+_BACKEND_ROOT = Path(__file__).resolve().parents[3]
+_ENV_FILE = _BACKEND_ROOT / ".env"
 
 
 class Settings(BaseSettings):
     """Application settings loaded from environment variables and defaults."""
 
     model_config = SettingsConfigDict(
-        env_file=".env",
+        env_file=str(_ENV_FILE),
         env_file_encoding="utf-8",
         extra="ignore",
         populate_by_name=True,
@@ -62,6 +66,7 @@ class Settings(BaseSettings):
     notion_page_size: int = 100
     notion_timeout_seconds: int = 30
     notion_max_retries: int = 3
+    cors_allowed_origins: str = "http://localhost:3000"
     openai_api_key: str | None = None
     openai_model: str = "gpt-4.1-mini"
     openai_timeout_seconds: int = 30
@@ -94,6 +99,11 @@ class Settings(BaseSettings):
             f"{quote_plus(self.postgres_user)}:{quote_plus(self.postgres_password)}"
             f"@{self.postgres_host}:{self.postgres_port}/{self.postgres_db}"
         )
+
+    @property
+    def cors_allowed_origin_list(self) -> list[str]:
+        """Return the configured CORS origins as a normalized list."""
+        return [origin.strip() for origin in self.cors_allowed_origins.split(",") if origin.strip()]
 
 
 @lru_cache

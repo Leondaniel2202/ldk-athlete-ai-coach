@@ -1,6 +1,7 @@
 """Application entrypoint for the FastAPI backend."""
 
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 
 from ldk_athlete_ai_coach.api.v1.routers.router import api_router
 from ldk_athlete_ai_coach.core.config import get_settings
@@ -20,6 +21,13 @@ def create_application() -> FastAPI:
     app = FastAPI(
         debug=settings.debug,
         title=settings.app_name,
+    )
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=settings.cors_allowed_origin_list,
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
     )
     app.include_router(api_router, prefix="/api")
 
