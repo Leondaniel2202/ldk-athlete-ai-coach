@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from datetime import UTC, datetime
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -17,6 +18,29 @@ from ldk_athlete_ai_coach.db.session import get_db_session
 router = APIRouter(prefix="/phases", tags=["phases"])
 
 DbSession = Annotated[Session, Depends(get_db_session)]
+
+
+@router.get("/current", response_model=PhaseResponse)
+def get_current_phase(
+    db: DbSession,
+) -> PhaseResponse:
+    """Retrieve the currently active phase.
+
+    Args:
+        db: Injected database session.
+
+    Returns:
+        PhaseResponse: The phase data.
+
+    Raises:
+        HTTPException: 404 if the phase does not exist.
+
+    """
+    repo = PhaseRepository(db)
+    phase = repo.get_active(now=datetime.now(tz=UTC))
+    if phase is None:
+        raise HTTPException(status_code=404, detail="Phase not found")
+    return PhaseResponse.model_validate(phase)
 
 
 @router.get("/{phase_id}", response_model=PhaseResponse)

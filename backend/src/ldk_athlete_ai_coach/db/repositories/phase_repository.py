@@ -18,16 +18,15 @@ class PhaseRepository(TrainingBaseRepository[Phase]):
         """Initialise with an active database session."""
         super().__init__(session, Phase)
 
-    def get_active_by_plan_id(self, plan_id: int, now: datetime) -> Phase | None:
-        """Return the active phase for the given plan at *now*."""
+    def get_active(self, now: datetime) -> Phase | None:
+        """Return the active phase at *now*."""
         stmt = (
             select(Phase)
             .where(
                 and_(
-                    Phase.plan_id == plan_id,
-                    or_(Phase.timeframe_start.is_not(None), Phase.timeframe_end.is_not(None)),
-                    or_(Phase.timeframe_start.is_(None), Phase.timeframe_start <= now),
-                    or_(Phase.timeframe_end.is_(None), Phase.timeframe_end >= now),
+                    and_(Phase.timeframe_start.is_not(None), Phase.timeframe_end.is_not(None)),
+                    Phase.timeframe_start <= now,
+                    Phase.timeframe_end >= now,
                 )
             )
             .order_by(
