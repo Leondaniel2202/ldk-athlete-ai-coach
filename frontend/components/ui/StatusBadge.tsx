@@ -5,7 +5,7 @@ interface StatusBadgeProps {
 }
 
 const labels: Record<BackendStatus, string> = {
-  loading: "Checking backend…",
+  loading: "Checking backend...",
   connected: "Backend connected",
   error: "Backend unreachable",
 };
@@ -16,9 +16,6 @@ const colors: Record<BackendStatus, string> = {
   error: "bg-red-100 text-red-700",
 };
 
-/**
- * Displays the current backend connectivity status as a small badge.
- */
 export default function StatusBadge({ status }: StatusBadgeProps) {
   return (
     <span

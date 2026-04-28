@@ -171,7 +171,7 @@ def test_plan_repository_get_latest_falls_back_to_primary_key_order_when_dates_m
     assert latest.id != first.id
 
 
-def test_phase_repository_get_active_by_plan_id_returns_latest_active_phase(
+def test_phase_repository_get_active_returns_latest_active_phase(
     db_session: Session,
 ) -> None:
     now = datetime(2026, 4, 20, 9, 0, tzinfo=UTC)
@@ -203,7 +203,7 @@ def test_phase_repository_get_active_by_plan_id_returns_latest_active_phase(
         timeframe_end=datetime(2026, 4, 25, tzinfo=UTC),
     )
 
-    active = PhaseRepository(db_session).get_active_by_plan_id(plan.id, now)
+    active = PhaseRepository(db_session).get_active(now)
 
     assert active is not None
     assert active.id == later_active.id

@@ -76,6 +76,22 @@ These APIs are currently used for development and analysis purposes and are desi
 
 ---
 
+### Frontend
+
+The repository now includes an initial Next.js frontend under `frontend/`.
+
+The frontend provides:
+
+- a shared app shell and navigation for Dashboard, Planner, Analyzer, and Coach
+- a dashboard start page with isolated mock data for the current training overview
+- placeholder pages for future planning, analysis, and AI coaching workflows
+- a small backend connectivity indicator that calls the system health endpoint
+
+The frontend is intentionally read-only at this stage. It does not replace Notion,
+introduce authentication, or implement planning write flows.
+
+---
+
 ### Overall Interaction
 
 The system currently follows this flow:
@@ -92,6 +108,7 @@ flowchart TD
     G[Domain Logic]
     H[FastAPI API<br/>Resources, Context, AI Analysis]
     I[AI Layer<br/>Analysis Services]
+    J[Next.js Frontend<br/>Dashboard and App Shell]
 
     A --> B
     B --> C
@@ -103,6 +120,7 @@ flowchart TD
     F --> H
     F --> I
     I --> H
+    J --> H
 
 ```
 
@@ -506,13 +524,14 @@ Although the backend mirrors and structures data, it does not yet fully own:
 
 ### Limited Frontend Capabilities
 
-There is currently no custom frontend. All user interaction is handled through Notion.
+The custom frontend is now only an initial app shell and dashboard start page. Day-to-day
+planning and tracking still happen in Notion.
 
 This limits:
 
-- user experience and flexibility
-- control over workflows
-- ability to integrate advanced features such as interactive analysis and AI-driven interactions
+- user experience and workflow control beyond the initial dashboard
+- real plan, phase, and workout write interactions
+- integrated analysis and AI-driven interactions
 
 ---
 
