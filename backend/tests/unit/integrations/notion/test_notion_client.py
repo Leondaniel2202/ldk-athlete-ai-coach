@@ -394,6 +394,7 @@ class TestNotionSettings:
         monkeypatch.delenv("NOTION_FEEDBACK_DB_ID", raising=False)
         with pytest.raises(ValidationError):
             Settings(  # type: ignore[call-arg]  # pyright: ignore[reportCallIssue]
+                _env_file=None,
                 postgres_db="db",
                 postgres_user="u",
                 postgres_password="p",
@@ -435,7 +436,7 @@ class TestNotionSettings:
         monkeypatch.setenv("NOTION_SESSION_DB_ID", "legacy-session")
         monkeypatch.setenv("NOTION_FEEDBACK_DB_ID", "legacy-feedback")
 
-        settings = Settings()  # type: ignore[call-arg]  # pyright: ignore[reportCallIssue]
+        settings = Settings(_env_file=None)  # type: ignore[call-arg]  # pyright: ignore[reportCallIssue]
 
         assert settings.notion_plan_data_source_id == "legacy-plan"
         assert settings.notion_phase_data_source_id == "legacy-phase"

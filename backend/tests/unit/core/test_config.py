@@ -26,7 +26,7 @@ def test_settings_require_database_environment_values(
     monkeypatch.delenv("POSTGRES_PORT", raising=False)
 
     with pytest.raises(ValidationError):
-        Settings()  # type: ignore[call-arg] # pyright: ignore[reportCallIssue]
+        Settings(_env_file=None)  # type: ignore[call-arg] # pyright: ignore[reportCallIssue]
 
 
 def test_settings_builds_database_url_from_component_values(
@@ -41,7 +41,7 @@ def test_settings_builds_database_url_from_component_values(
     monkeypatch.setenv("POSTGRES_HOST", "localhost")
     monkeypatch.delenv("POSTGRES_PORT", raising=False)
 
-    settings = Settings()  # type: ignore[call-arg] # pyright: ignore[reportCallIssue]
+    settings = Settings(_env_file=None)  # type: ignore[call-arg] # pyright: ignore[reportCallIssue]
 
     assert (
         settings.database_url
@@ -97,11 +97,45 @@ def test_settings_default_openai_values_are_exposed(
     monkeypatch.delenv("OPENAI_MODEL", raising=False)
     monkeypatch.delenv("OPENAI_TIMEOUT_SECONDS", raising=False)
 
-    settings = Settings()  # type: ignore[call-arg] # pyright: ignore[reportCallIssue]
+    settings = Settings(_env_file=None)  # type: ignore[call-arg] # pyright: ignore[reportCallIssue]
 
     assert settings.openai_api_key is None
     assert settings.openai_model == "gpt-4.1-mini"
     assert settings.openai_timeout_seconds == 30
+    assert settings.cors_allowed_origins == "http://localhost:3000"
+    assert settings.cors_allowed_origin_list == ["http://localhost:3000"]
+
+
+def test_settings_parse_comma_separated_cors_origins(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    """Ensure CORS origins can be provided as a comma-separated env var."""
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setenv("POSTGRES_DB", "ldk_athlete_ai_coach")
+    monkeypatch.setenv("POSTGRES_USER", "postgres")
+    monkeypatch.setenv("POSTGRES_PASSWORD", "postgres")
+    monkeypatch.setenv("POSTGRES_HOST", "localhost")
+    monkeypatch.setenv("NOTION_API_KEY", "secret")
+    monkeypatch.setenv("NOTION_PLAN_DATA_SOURCE_ID", "plan-ds")
+    monkeypatch.setenv("NOTION_PHASE_DATA_SOURCE_ID", "phase-ds")
+    monkeypatch.setenv("NOTION_NUTRITION_GUIDELINE_DATA_SOURCE_ID", "nutrition-ds")
+    monkeypatch.setenv("NOTION_WORKOUT_DATA_SOURCE_ID", "workout-ds")
+    monkeypatch.setenv("NOTION_EVENT_DATA_SOURCE_ID", "event-ds")
+    monkeypatch.setenv("NOTION_SESSION_DATA_SOURCE_ID", "session-ds")
+    monkeypatch.setenv("NOTION_FEEDBACK_DATA_SOURCE_ID", "feedback-ds")
+    monkeypatch.setenv(
+        "CORS_ALLOWED_ORIGINS",
+        "http://localhost:3000, https://app.example.com",
+    )
+
+    settings = Settings(_env_file=None)  # type: ignore[call-arg] # pyright: ignore[reportCallIssue]
+
+    assert settings.cors_allowed_origins == "http://localhost:3000, https://app.example.com"
+    assert settings.cors_allowed_origin_list == [
+        "http://localhost:3000",
+        "https://app.example.com",
+    ]
 
 
 def test_settings_read_openai_overrides(
@@ -126,7 +160,7 @@ def test_settings_read_openai_overrides(
     monkeypatch.setenv("OPENAI_MODEL", "gpt-4.1")
     monkeypatch.setenv("OPENAI_TIMEOUT_SECONDS", "45")
 
-    settings = Settings()  # type: ignore[call-arg] # pyright: ignore[reportCallIssue]
+    settings = Settings(_env_file=None)  # type: ignore[call-arg] # pyright: ignore[reportCallIssue]
 
     assert settings.openai_api_key == "sk-test"
     assert settings.openai_model == "gpt-4.1"
