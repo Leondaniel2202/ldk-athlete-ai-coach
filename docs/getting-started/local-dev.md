@@ -268,8 +268,8 @@ make frontend-dev
 
 The development server starts at `http://localhost:3000`.
 
-The frontend landing page shows the backend connectivity status. Start the backend
-first (`make backend-api`) to see a connected state.
+The frontend root redirects to the dashboard app shell. Start the backend first
+(`make backend-api`) to see a connected backend status in the shell.
 
 ### Run the backend and frontend together
 
@@ -287,8 +287,8 @@ make backend-api
 make frontend-dev
 ```
 
-Visit `http://localhost:3000` to confirm the frontend is running and the backend status
-badge shows **Backend connected**.
+Visit `http://localhost:3000` to confirm the frontend redirects to `/dashboard`, the
+main navigation renders, and the backend status badge shows **Backend connected**.
 
 ### Frontend quality checks
 
