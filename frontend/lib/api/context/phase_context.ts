@@ -1,6 +1,6 @@
-import type { Phase } from "@/types/api";
+import type { PhaseWeekContextResponse } from "@/types/api/phase-context";
 import { apiClient } from "../client";
 
-export async function getCurrentPhaseWeekContext(): Promise<Phase> {
-  return apiClient.get<Phase>("/api/v1/context/phase/week/current");
+export async function getCurrentPhaseWeekContext(): Promise<PhaseWeekContextResponse> {
+  return apiClient.get<PhaseWeekContextResponse>("/api/v1/context/phase/week/current");
 }
