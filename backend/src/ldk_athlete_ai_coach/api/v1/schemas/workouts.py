@@ -2,11 +2,13 @@
 
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import date, datetime
 
 from pydantic import BaseModel, ConfigDict
 
 from ldk_athlete_ai_coach.api.v1.schemas.sessions import SessionResponse
+from ldk_athlete_ai_coach.domain.enums.status import WorkoutStatus
+from ldk_athlete_ai_coach.domain.enums.workout import WorkoutCategory
 
 
 class WorkoutResponse(BaseModel):
@@ -72,5 +74,7 @@ class WorkoutSummaryResponse(BaseModel):
 
     id: int
     name: str
+    category: WorkoutCategory | None
     date_start: datetime | None
-    date_end: datetime | None
+    done_date_start: datetime | None
+    status: WorkoutStatus
