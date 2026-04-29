@@ -4,10 +4,10 @@ import { PlanCard } from "@/components/dashboard/PlanCard";
 import { TrainingOverview } from "@/components/dashboard/TrainingOverview";
 import { WeeklyOutlook } from "@/components/dashboard/WeeklyOutlook";
 import { dashboardData } from "@/lib/mock-data/dashboard";
-import { getCurrentPhase } from "@/lib/api/phase";
+import { getCurrentPhaseWeekContext } from "@/lib/api/context/phase_context";
 
 export default async function DashboardPage() {
-  const phase = await getCurrentPhase().catch(() => null);
+  const phase = await getCurrentPhaseWeekContext().catch(() => null);
 
   return (
     <div className="space-y-6">
