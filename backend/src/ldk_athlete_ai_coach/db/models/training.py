@@ -9,7 +9,9 @@ from sqlalchemy.ext.mutable import MutableList
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from ldk_athlete_ai_coach.db.base import Base
+from ldk_athlete_ai_coach.domain.enums.phase import PhaseType
 from ldk_athlete_ai_coach.domain.enums.status import WorkoutStatus
+from ldk_athlete_ai_coach.domain.enums.workout import WorkoutCategory
 
 
 class TrainingEntityMixin:
@@ -110,7 +112,7 @@ class Phase(TrainingEntityMixin, Base):
 
     name: Mapped[str] = mapped_column(String(255), nullable=False)
     notes: Mapped[str | None] = mapped_column(Text)
-    phase_type: Mapped[str | None] = mapped_column(String(64))
+    phase_type: Mapped[PhaseType | None] = mapped_column(String(64))
     focus_tags: Mapped[list[str]] = mapped_column(
         MutableList.as_mutable(JSON), default=list, nullable=False
     )
@@ -144,7 +146,7 @@ class Workout(TrainingEntityMixin, Base):
     date_start: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     date_end: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     date_is_datetime: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
-    category: Mapped[str | None] = mapped_column(String(64))
+    category: Mapped[WorkoutCategory | None] = mapped_column(String(64))
     difficulty: Mapped[str | None] = mapped_column(String(64))
     equipment: Mapped[list[str]] = mapped_column(
         MutableList.as_mutable(JSON), default=list, nullable=False

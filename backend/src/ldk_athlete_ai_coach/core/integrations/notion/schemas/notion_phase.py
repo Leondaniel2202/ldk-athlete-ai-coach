@@ -7,6 +7,7 @@ from datetime import datetime
 from pydantic import Field
 
 from ldk_athlete_ai_coach.core.integrations.notion.schemas.notion_base import NotionBaseSchema
+from ldk_athlete_ai_coach.domain.enums.phase import PhaseType
 
 
 class NotionPhase(NotionBaseSchema):
@@ -20,7 +21,7 @@ class NotionPhase(NotionBaseSchema):
     """
 
     notes: str | None = None
-    phase_type: str | None = None
+    phase_type: PhaseType | None = None
     focus_tags: list[str] = Field(default_factory=list)
     weekly_structure: str | None = None
     timeframe_start: datetime | None = None
