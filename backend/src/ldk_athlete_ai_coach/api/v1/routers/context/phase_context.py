@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, Query
@@ -44,10 +44,9 @@ def get_specific_phase_context(db: DbSession, phase_id: int) -> PhaseContextResp
         raise _phase_context_http_error(exc) from exc
 
 
-@router.get("/{phase_id}/weeks", response_model=PhaseWeekContextResponse)
-def get_phase_week_context(
+@router.get("/week", response_model=PhaseWeekContextResponse)
+def get_specific_phase_week_context(
     db: DbSession,
-    phase_id: int,
     week_start_date: Annotated[
         datetime,
         Query(description="Start date of the week to retrieve, in ISO format (YYYY-MM-DD)"),
@@ -60,8 +59,22 @@ def get_phase_week_context(
         session_repository=SessionRepository(db),
     )
     try:
-        return service.get_specific_phase_week_context(
-            phase_id=phase_id, week_start_date=week_start_date
-        )
+        return service.get_specific_phase_week_context(week_start_date=week_start_date)
+    except ValueError as exc:
+        raise _phase_context_http_error(exc) from exc
+
+
+@router.get("/week/current", response_model=PhaseWeekContextResponse)
+def get_current_phase_week_context(
+    db: DbSession,
+) -> PhaseWeekContextResponse:
+    """Return the current workout-centric training context snapshot."""
+    service = PhaseContextService(
+        phase_repository=PhaseRepository(db),
+        workout_repository=WorkoutRepository(db),
+        session_repository=SessionRepository(db),
+    )
+    try:
+        return service.get_specific_phase_week_context(week_start_date=datetime.now(tz=UTC))
     except ValueError as exc:
         raise _phase_context_http_error(exc) from exc
