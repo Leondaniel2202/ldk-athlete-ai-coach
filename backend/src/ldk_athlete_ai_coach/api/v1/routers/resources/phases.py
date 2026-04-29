@@ -37,7 +37,7 @@ def get_current_phase(
 
     """
     repo = PhaseRepository(db)
-    phase = repo.get_active(now=datetime.now(tz=UTC))
+    phase = repo.get_active_for_datetime(now=datetime.now(tz=UTC))
     if phase is None:
         raise HTTPException(status_code=404, detail="Phase not found")
     return PhaseResponse.model_validate(phase)

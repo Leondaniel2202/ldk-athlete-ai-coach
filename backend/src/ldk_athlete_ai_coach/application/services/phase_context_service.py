@@ -369,7 +369,7 @@ class PhaseContextService:
         )
 
         all_workouts: list[Workout] = self._workout_repository.list_within_planned_week(
-            phase_id=phase.id, week_start_date=week_start_date
+            week_start_date=week_start_date, phase_filter="with_phase"
         )
 
         counts: dict[WorkoutStatus, int] = self._count_workouts_by_status(all_workouts)

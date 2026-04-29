@@ -44,4 +44,4 @@ class PlanSummaryResponse(BaseModel):
     name: str
     plan_goal: str | None
     start_date_start: datetime | None
-    end_date_end: datetime | None
+    end_date_start: datetime | None
