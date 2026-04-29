@@ -1,4 +1,4 @@
-import type { CurrentPlan } from "@/types/dashboard";
+import type { CurrentPlan } from "@/types/api/dashboard";
 
 interface PlanCardProps {
   plan: CurrentPlan;
