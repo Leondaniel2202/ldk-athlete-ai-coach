@@ -18,7 +18,7 @@ class PhaseRepository(TrainingBaseRepository[Phase]):
         """Initialise with an active database session."""
         super().__init__(session, Phase)
 
-    def get_active(self, now: datetime) -> Phase | None:
+    def get_active_for_datetime(self, now: datetime) -> Phase | None:
         """Return the active phase at *now*."""
         stmt = (
             select(Phase)

@@ -5,8 +5,6 @@ export * from "./metrics";
 export * from "./phase-context";
 export * from "./phases";
 export * from "./plans";
-export * from "./sessions";
-export * from "./sync";
 export * from "./system";
 export * from "./workout-context";
 export * from "./workouts";

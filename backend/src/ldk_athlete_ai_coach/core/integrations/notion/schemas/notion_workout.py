@@ -8,6 +8,7 @@ from pydantic import Field
 
 from ldk_athlete_ai_coach.core.integrations.notion.schemas.notion_base import NotionBaseSchema
 from ldk_athlete_ai_coach.domain.enums.status import WorkoutStatus
+from ldk_athlete_ai_coach.domain.enums.workout import WorkoutCategory
 
 
 class NotionWorkout(NotionBaseSchema):
@@ -21,7 +22,7 @@ class NotionWorkout(NotionBaseSchema):
     date_start: datetime | None = None
     date_end: datetime | None = None
     date_is_datetime: bool = False
-    category: str | None = None
+    category: WorkoutCategory | None = None
     difficulty: str | None = None
     equipment: list[str] = Field(default_factory=list)
     impact: str | None = None

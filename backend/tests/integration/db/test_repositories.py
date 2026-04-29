@@ -203,7 +203,7 @@ def test_phase_repository_get_active_returns_latest_active_phase(
         timeframe_end=datetime(2026, 4, 25, tzinfo=UTC),
     )
 
-    active = PhaseRepository(db_session).get_active(now)
+    active = PhaseRepository(db_session).get_active_for_datetime(now)
 
     assert active is not None
     assert active.id == later_active.id
