@@ -46,13 +46,47 @@ def get_week_end_for_date(date: datetime) -> datetime:
 
 
 def get_phase_week_number_for_date(phase_start_date: datetime, date: datetime) -> int:
-    """Return the relative week number within a phase for a given date."""
+    """Return the relative week number within a phase for a given date.
+
+    Week 1 begins on ``phase_start_date``. Each subsequent week starts every
+    7 days after that.
+
+    Args:
+        phase_start_date: The first day of the phase.
+        date: The date for which to determine the week number.
+
+    Returns:
+        A 1-based week number relative to the phase start.
+    """
     delta_days = (date - phase_start_date).days
     return (delta_days // 7) + 1
 
 
+def get_date_for_phase_week_number(phase_start_date: datetime, week_number: int) -> datetime:
+    """Return the start date of the given week number within a phase.
+
+    This is the inverse of :func:`get_phase_week_number_for_date`. Week 1
+    returns ``phase_start_date`` unchanged.
+
+    Args:
+        phase_start_date: The first day of the phase.
+        week_number: A 1-based week number relative to the phase start.
+
+    Returns:
+        The datetime at the start of the given week within the phase.
+    """
+    return phase_start_date + timedelta(weeks=week_number - 1)
+
+
 def coerce_to_date(value: datetime | date | None) -> date | None:
-    """Coerce a datetime or date value to a date, or return None if the value is None."""
+    """Coerce a datetime or date value to a plain date.
+
+    Args:
+        value: A :class:`datetime`, :class:`date`, or ``None``.
+
+    Returns:
+        The date portion of the value, or ``None`` if the input is ``None``.
+    """
     if value is None:
         return None
     if isinstance(value, datetime):
