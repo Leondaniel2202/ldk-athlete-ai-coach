@@ -1,4 +1,4 @@
-import type { WeeklyWorkout } from "@/types/dashboard";
+import type { WeeklyWorkout } from "@/types/api/dashboard";
 
 interface WeeklyOutlookProps {
   workouts: WeeklyWorkout[];

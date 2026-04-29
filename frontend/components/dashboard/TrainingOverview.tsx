@@ -1,4 +1,4 @@
-import type { TrainingOverviewData } from "@/types/dashboard";
+import type { TrainingOverviewData } from "@/types/api/dashboard";
 
 interface TrainingOverviewProps {
   overview: TrainingOverviewData;
