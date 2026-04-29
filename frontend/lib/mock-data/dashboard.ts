@@ -1,4 +1,4 @@
-import type { DashboardData } from "@/types/dashboard";
+import type { DashboardData } from "@/types/api/dashboard";
 
 export const dashboardData: DashboardData = {
   athleteName: "Leon",
