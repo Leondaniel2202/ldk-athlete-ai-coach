@@ -2,20 +2,20 @@ import { PhaseSummaryResponse } from "./phases";
 import { PlanSummaryResponse } from "./plans";
 import { WorkoutSummaryResponse } from "./workouts";
 
-export interface OverviewItem {
+export interface OverviewItemResponse {
   label: string;
   value: string | null;
   detail: string | null;
 }
 
-export type TrainingOverviewData = OverviewItem[];
+export type TrainingOverviewData = OverviewItemResponse[];
 
-export interface DashboardData {
-  athleteName: string;
+export interface DashboardDataResponse {
+  athlete_name: string;
   summary: string;
-  nextAction: string;
+  next_action: string;
   overview: TrainingOverviewData;
-  currentPlan: PlanSummaryResponse | null;
-  currentPhase: PhaseSummaryResponse | null;
-  weeklyOutlook: WorkoutSummaryResponse[];
+  current_plan: PlanSummaryResponse | null;
+  current_phase: PhaseSummaryResponse | null;
+  weekly_outlook: WorkoutSummaryResponse[];
 }
