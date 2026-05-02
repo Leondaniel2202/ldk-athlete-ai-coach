@@ -33,6 +33,7 @@ from ldk_athlete_ai_coach.db.models.training import (
     TrackedSession,
     Workout,
 )
+from ldk_athlete_ai_coach.domain.enums.workout import WorkoutCategory
 
 pytestmark = pytest.mark.unit
 
@@ -315,7 +316,7 @@ class TestMapWorkout:
     def test_update_existing_entity(self) -> None:
         existing = Workout()
         existing.name = "Old Workout"
-        existing.category = "Bike"
+        existing.category = WorkoutCategory.BOXING
 
         source = _make_notion_workout(name="Updated Workout", category="Run")
         result = map_workout(source, existing)
