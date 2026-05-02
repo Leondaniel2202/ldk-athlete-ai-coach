@@ -6,15 +6,15 @@ from datetime import UTC, datetime, timedelta
 from unittest.mock import MagicMock
 
 import pytest
-
-from ldk_athlete_ai_coach.application.services.phase_context_service import PhaseContextService
-from ldk_athlete_ai_coach.domain.enums.status import WorkoutStatus
 from tests.factories.in_memory_training_models import (
     build_phase,
     build_plan,
     build_session,
     build_workout,
 )
+
+from ldk_athlete_ai_coach.application.services.phase_context_service import PhaseContextService
+from ldk_athlete_ai_coach.domain.enums.status import WorkoutStatus
 
 pytestmark = pytest.mark.unit
 

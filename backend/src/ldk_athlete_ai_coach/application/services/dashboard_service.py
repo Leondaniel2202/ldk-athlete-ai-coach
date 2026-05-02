@@ -1,20 +1,18 @@
-"""Aggregate current workout context from the local database."""
+"""This module contains the DashboardService class, which is responsible
+for fetching and aggregating data for the dashboard overview."""
 
 from __future__ import annotations
 
 from datetime import UTC, datetime
 from typing import Literal
 
-from ldk_athlete_ai_coach.api.v1.schemas.common import ContextMetadataResponse
 from ldk_athlete_ai_coach.api.v1.schemas.dashboard import (
     DashboardDataResponse,
     OverviewItemResponse,
 )
 from ldk_athlete_ai_coach.api.v1.schemas.phases import PhaseSummaryResponse
 from ldk_athlete_ai_coach.api.v1.schemas.plans import PlanSummaryResponse
-from ldk_athlete_ai_coach.api.v1.schemas.workout_context import WorkoutContextResponse
 from ldk_athlete_ai_coach.api.v1.schemas.workouts import (
-    WorkoutDetailResponse,
     WorkoutSummaryResponse,
 )
 from ldk_athlete_ai_coach.db.models.training import Phase, Plan, Workout

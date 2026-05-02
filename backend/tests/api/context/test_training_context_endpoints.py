@@ -7,7 +7,6 @@ from datetime import UTC, datetime, timedelta
 import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session
-
 from tests.factories.persisted_training_models import (
     create_phase,
     create_plan,

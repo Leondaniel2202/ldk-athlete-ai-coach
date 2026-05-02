@@ -12,7 +12,9 @@ export function WeeklyOutlook({ workouts }: WeeklyOutlookProps) {
           <p className="text-sm font-semibold text-violet-700">Weekly outlook</p>
           <h3 className="mt-1 text-xl font-semibold text-zinc-950">Upcoming workouts</h3>
         </div>
-        <p className="text-sm text-zinc-500">{workouts.length} workout{workouts.length !== 1 ? "s" : ""}</p>
+        <p className="text-sm text-zinc-500">
+          {workouts.length} workout{workouts.length !== 1 ? "s" : ""}
+        </p>
       </div>
 
       <div className="mt-5 grid gap-3">
