@@ -16,6 +16,7 @@ from ldk_athlete_ai_coach.core.integrations.notion.extractors._helpers import (
     get_title,
 )
 from ldk_athlete_ai_coach.core.integrations.notion.schemas.notion_phase import NotionPhase
+from ldk_athlete_ai_coach.domain.enums.phase import PhaseType
 
 
 def extract_phase(raw_page: dict[str, Any]) -> NotionPhase:
@@ -44,6 +45,11 @@ def extract_phase(raw_page: dict[str, Any]) -> NotionPhase:
 
         timeframe_start, timeframe_end, timeframe_is_datetime = get_date(props.get("Timeframe", {}))
         phase_type_prop = get_property_by_alias(props, "Phase type", "Phase Type")
+        phase_type = (
+            PhaseType(phase_type_value)
+            if (phase_type_value := get_select(phase_type_prop))
+            else None
+        )
         focus_tags_prop = get_property_by_alias(props, "Focus tags", "Focus Tags")
         weekly_structure_prop = get_property_by_alias(props, "Weekly structure", "Weekly Structure")
         nutrition_guideline_prop = get_property_by_alias(
@@ -54,7 +60,7 @@ def extract_phase(raw_page: dict[str, Any]) -> NotionPhase:
             notion_id=notion_id,
             name=name,
             notes=get_rich_text(props.get("Notes", {})),
-            phase_type=get_select(phase_type_prop),
+            phase_type=phase_type,
             focus_tags=get_multi_select(focus_tags_prop),
             weekly_structure=get_rich_text(weekly_structure_prop),
             timeframe_start=timeframe_start,

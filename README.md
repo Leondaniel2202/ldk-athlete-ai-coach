@@ -49,6 +49,7 @@ the backend, and AI is limited to analysis rather than generation or automation.
 ```text
 ldk-athlete-ai-coach/
   backend/
+    Makefile
     pyproject.toml
     uv.lock
     alembic/
@@ -58,6 +59,7 @@ ldk-athlete-ai-coach/
     .env.example
 
   frontend/
+    Makefile
     package.json
     next.config.ts
     tsconfig.json
