@@ -25,8 +25,8 @@ Current state:
 
 ```text
 ldk-athlete-ai-coach/
-  backend/       Python/FastAPI backend (pyproject.toml, src/, tests/, alembic/, etc.)
-  frontend/      Next.js/React/TypeScript frontend (package.json, app/, etc.)
+  backend/       Python/FastAPI backend (Makefile, pyproject.toml, src/, tests/, alembic/, etc.)
+  frontend/      Next.js/React/TypeScript frontend (Makefile, package.json, app/, etc.)
   docs/          Shared documentation
   .github/       GitHub Actions workflows and Copilot instructions
   AGENTS.md      This file
@@ -36,10 +36,10 @@ ldk-athlete-ai-coach/
   .gitignore
 ```
 
-Backend files (`pyproject.toml`, `uv.lock`, `src/`, `tests/`, `alembic/`,
+Backend files (`Makefile`, `pyproject.toml`, `uv.lock`, `src/`, `tests/`, `alembic/`,
 `docker-compose.yml`, `.env.example`) live in `backend/`. Frontend files
-(`package.json`, `app/`, etc.) live in `frontend/`. Root contains repo/product-level
-files only.
+(`Makefile`, `package.json`, `app/`, etc.) live in `frontend/`. Root contains
+repo/product-level files and the delegating `Makefile`.
 
 ## Branch policy (V2)
 
@@ -148,7 +148,8 @@ Non-negotiables:
 ## Development workflow
 
 Use the root `Makefile` as the canonical workflow entry point for both backend and
-frontend.
+frontend. It includes `backend/Makefile` and `frontend/Makefile`, so commands can also
+be run from the matching subdirectory when useful.
 
 ### Backend commands (use `backend-` prefix)
 

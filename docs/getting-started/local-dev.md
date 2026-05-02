@@ -4,7 +4,8 @@ This guide describes the expected local workflow for working on the backend and 
 frontend.
 
 The repository uses a monorepo structure with separate `backend/` and `frontend/`
-directories. The root `Makefile` is the canonical developer entry point for both.
+directories. The root `Makefile` is the canonical developer entry point for both and
+includes the sub-Makefiles in `backend/` and `frontend/`.
 
 ## Prerequisites
 

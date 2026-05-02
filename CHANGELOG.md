@@ -23,6 +23,7 @@ This project currently uses milestone-based versioning. During early development
 ### Changed
 
 - Reorganized repository into a backend/frontend monorepo structure. Python/FastAPI backend moved from the repository root into `backend/`. Frontend scaffold remains under `frontend/`. Root now contains only repo/product-level files and the shared `Makefile`.
+- Split Makefile command definitions into `backend/Makefile` and `frontend/Makefile`, with the root `Makefile` including both sub-Makefiles, delegating `backend` and `frontend` targets, and providing central/subdirectory help output.
 - Backend `Makefile` commands renamed with `backend-` prefix (`backend-install`, `backend-api`, `backend-test`, `backend-lint`, `backend-format-check`, `backend-type-check`, `backend-db-up`, `backend-db-test-up`, `backend-db-down`, `backend-alembic-up`, `backend-alembic-revision`). Aggregate aliases (`install`, `test`, `lint`, `format-check`, `type-check`) delegate to their backend counterparts.
 - CI workflow updated to use `backend-` prefixed make commands, updated `uv.lock` cache key to `backend/uv.lock`, and extended triggers to include the `v2` branch.
 - `AGENTS.md` updated to document the V2 monorepo structure, branch policy, and new command names.
