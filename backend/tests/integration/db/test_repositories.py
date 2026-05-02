@@ -6,6 +6,12 @@ from datetime import UTC, datetime, timedelta
 
 import pytest
 from sqlalchemy.orm import Session
+from tests.factories.persisted_training_models import (
+    create_phase,
+    create_plan,
+    create_tracked_session,
+    create_workout,
+)
 
 from ldk_athlete_ai_coach.db.models.training import Plan
 from ldk_athlete_ai_coach.db.repositories.phase_repository import PhaseRepository
@@ -15,12 +21,6 @@ from ldk_athlete_ai_coach.db.repositories.training_base_repository import Traini
 from ldk_athlete_ai_coach.db.repositories.workout_repository import WorkoutRepository
 from ldk_athlete_ai_coach.domain.enums.status import WorkoutStatus
 from ldk_athlete_ai_coach.utils.date_utils import get_week_start_for_date
-from tests.factories.persisted_training_models import (
-    create_phase,
-    create_plan,
-    create_tracked_session,
-    create_workout,
-)
 
 pytestmark = pytest.mark.integration
 
