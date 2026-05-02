@@ -122,7 +122,7 @@ def _context() -> PhaseContextResponse:
             name="Race Build",
             plan_goal="Prepare for race day.",
             start_date_start=None,
-            end_date_end=None,
+            end_date_start=None,
         ),
         phase_status=PhaseStatus.ACTIVE,
         phase=phase,

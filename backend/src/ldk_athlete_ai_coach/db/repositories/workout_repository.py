@@ -64,6 +64,28 @@ class WorkoutRepository(TrainingBaseRepository[Workout]):
         stmt = select(Workout).where(*conditions).order_by(Workout.id.desc())
         return list(self._session.execute(stmt).scalars().all())
 
+    def list_within_effective_date_window(
+        self,
+        window_start: datetime,
+        window_end: datetime,
+        phase_filter: Literal["with_phase", "without_phase", "all"] = "all",
+    ) -> list[Workout]:
+        """Return workouts whose effective date falls within [window_start, window_end].
+
+        The effective date is the done_date_start if set, otherwise date_start.
+        """
+        effective_date = func.coalesce(Workout.done_date_start, Workout.date_start)
+        conditions = [
+            effective_date >= window_start,
+            effective_date <= window_end,
+        ]
+        if phase_filter == "with_phase":
+            conditions.append(Workout.phase_id.is_not(None))
+        elif phase_filter == "without_phase":
+            conditions.append(Workout.phase_id.is_(None))
+        stmt = select(Workout).where(*conditions).order_by(effective_date.desc())
+        return list(self._session.execute(stmt).scalars().all())
+
     def count_unscheduled_by_phase_id(self, phase_id: int) -> int:
         """Return how many workouts in the phase do not have a planned date."""
         stmt = (

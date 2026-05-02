@@ -400,7 +400,7 @@ def test_workout_repository_list_within_planned_week_returns_matching_workouts(
         status="Open",
     )
 
-    workouts = WorkoutRepository(db_session).list_within_planned_week(phase.id, week_start)
+    workouts = WorkoutRepository(db_session).list_within_planned_week(week_start)
 
     assert [workout.id for workout in workouts] == [matching.id]
 
