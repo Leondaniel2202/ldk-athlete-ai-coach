@@ -6,6 +6,7 @@ from typing import Any, cast
 from unittest.mock import MagicMock, patch
 
 import pytest
+from tests.factories.settings import make_settings
 
 from ldk_athlete_ai_coach.core.integrations.notion.client import NotionClient
 from ldk_athlete_ai_coach.core.integrations.notion.sync_service import (
@@ -23,7 +24,6 @@ from ldk_athlete_ai_coach.db.models.training import (
     TrainingEntityMixin,
     Workout,
 )
-from tests.factories.settings import make_settings
 
 pytestmark = pytest.mark.unit
 

@@ -11,9 +11,9 @@ from uuid import uuid4
 import pytest
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
+from tests.factories.database import test_db_url
 
 from ldk_athlete_ai_coach.db.base import Base
-from tests.factories.database import test_db_url
 
 # Ensure required settings are present during test collection so that modules
 # importing get_settings() at the module level do not fail with a

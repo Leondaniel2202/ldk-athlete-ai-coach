@@ -3,12 +3,12 @@
 from __future__ import annotations
 
 import pytest
+from tests.factories.in_memory_training_models import build_workout
 
 from ldk_athlete_ai_coach.domain.calculators.training_metrics_calculator import (
     TrainingMetricsCalculator,
 )
 from ldk_athlete_ai_coach.domain.enums.status import WorkoutStatus
-from tests.factories.in_memory_training_models import build_workout
 
 pytestmark = pytest.mark.unit
 

@@ -105,6 +105,9 @@ frontend-lint: ## Lint the frontend with ESLint
 frontend-format-check: ## Check frontend formatting with Prettier
 	cd frontend && npm run format-check
 
+frontend-format: ## Auto-fix frontend formatting with Prettier
+	cd frontend && npm run format
+
 frontend-type-check: ## Run TypeScript type checking for the frontend
 	cd frontend && npm run type-check
 

@@ -1,7 +1,8 @@
-from sqlalchemy.orm import Session
+from typing import Annotated
 
 from fastapi import APIRouter, Depends
-from typing import Annotated
+from sqlalchemy.orm import Session
+
 from ldk_athlete_ai_coach.api.v1.schemas.dashboard import DashboardDataResponse
 from ldk_athlete_ai_coach.application.services.dashboard_service import DashboardService
 from ldk_athlete_ai_coach.db.repositories.phase_repository import PhaseRepository

@@ -6,6 +6,5 @@ export interface WorkoutSummaryResponse {
   category: string | null;
   date_start: ApiDateTimeString | null;
   done_date_start: ApiDateTimeString | null;
-  status : WorkoutStatus;
-  
+  status: WorkoutStatus;
 }
