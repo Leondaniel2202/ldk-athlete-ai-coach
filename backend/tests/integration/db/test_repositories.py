@@ -6,6 +6,12 @@ from datetime import UTC, datetime, timedelta
 
 import pytest
 from sqlalchemy.orm import Session
+from tests.factories.persisted_training_models import (
+    create_phase,
+    create_plan,
+    create_tracked_session,
+    create_workout,
+)
 
 from ldk_athlete_ai_coach.db.models.training import Plan
 from ldk_athlete_ai_coach.db.repositories.phase_repository import PhaseRepository
@@ -15,12 +21,6 @@ from ldk_athlete_ai_coach.db.repositories.training_base_repository import Traini
 from ldk_athlete_ai_coach.db.repositories.workout_repository import WorkoutRepository
 from ldk_athlete_ai_coach.domain.enums.status import WorkoutStatus
 from ldk_athlete_ai_coach.utils.date_utils import get_week_start_for_date
-from tests.factories.persisted_training_models import (
-    create_phase,
-    create_plan,
-    create_tracked_session,
-    create_workout,
-)
 
 pytestmark = pytest.mark.integration
 
@@ -171,7 +171,7 @@ def test_plan_repository_get_latest_falls_back_to_primary_key_order_when_dates_m
     assert latest.id != first.id
 
 
-def test_phase_repository_get_active_by_plan_id_returns_latest_active_phase(
+def test_phase_repository_get_active_returns_latest_active_phase(
     db_session: Session,
 ) -> None:
     now = datetime(2026, 4, 20, 9, 0, tzinfo=UTC)
@@ -203,7 +203,7 @@ def test_phase_repository_get_active_by_plan_id_returns_latest_active_phase(
         timeframe_end=datetime(2026, 4, 25, tzinfo=UTC),
     )
 
-    active = PhaseRepository(db_session).get_active_by_plan_id(plan.id, now)
+    active = PhaseRepository(db_session).get_active_for_datetime(now)
 
     assert active is not None
     assert active.id == later_active.id
@@ -400,7 +400,7 @@ def test_workout_repository_list_within_planned_week_returns_matching_workouts(
         status="Open",
     )
 
-    workouts = WorkoutRepository(db_session).list_within_planned_week(phase.id, week_start)
+    workouts = WorkoutRepository(db_session).list_within_planned_week(week_start)
 
     assert [workout.id for workout in workouts] == [matching.id]
 

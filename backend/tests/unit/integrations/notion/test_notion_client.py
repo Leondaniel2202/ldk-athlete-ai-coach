@@ -8,6 +8,7 @@ from unittest.mock import MagicMock, patch
 import httpx
 import pytest
 from notion_client.errors import APIResponseError, HTTPResponseError
+from tests.factories.settings import make_settings
 
 from ldk_athlete_ai_coach.core.config import Settings
 from ldk_athlete_ai_coach.core.integrations.notion.client import (
@@ -17,7 +18,6 @@ from ldk_athlete_ai_coach.core.integrations.notion.client import (
     NotionDatabaseNotFoundError,
     NotionRateLimitError,
 )
-from tests.factories.settings import make_settings
 
 pytestmark = pytest.mark.unit
 

@@ -6,15 +6,15 @@ from datetime import UTC, datetime, timedelta
 from unittest.mock import MagicMock
 
 import pytest
-
-from ldk_athlete_ai_coach.application.services.phase_context_service import PhaseContextService
-from ldk_athlete_ai_coach.domain.enums.status import WorkoutStatus
 from tests.factories.in_memory_training_models import (
     build_phase,
     build_plan,
     build_session,
     build_workout,
 )
+
+from ldk_athlete_ai_coach.application.services.phase_context_service import PhaseContextService
+from ldk_athlete_ai_coach.domain.enums.status import WorkoutStatus
 
 pytestmark = pytest.mark.unit
 
@@ -130,7 +130,9 @@ def test_get_specific_phase_week_context_builds_week_metadata_and_data_gaps() ->
         build_session(session_id=100, workout_id=None)
     ]
 
-    context = service.get_specific_phase_week_context(phase_id=phase.id, week_start_date=week_start)
+    phase_repository.get_by_date.return_value = phase
+
+    context = service.get_specific_phase_week_context(week_start_date=week_start)
 
     assert context.plan_summary.id == plan.id
     assert context.phase_summary.id == phase.id
@@ -144,10 +146,9 @@ def test_get_specific_phase_week_context_builds_week_metadata_and_data_gaps() ->
 
 def test_get_specific_phase_week_context_raises_when_phase_missing() -> None:
     service, phase_repository, _, _ = _service()
-    phase_repository.get_by_id.return_value = None
+    phase_repository.get_by_date.return_value = None
 
-    with pytest.raises(ValueError, match="Phase not found"):
+    with pytest.raises(ValueError, match="No phase found for the given week start date"):
         service.get_specific_phase_week_context(
-            phase_id=999,
             week_start_date=datetime(2026, 4, 14, tzinfo=UTC),
         )

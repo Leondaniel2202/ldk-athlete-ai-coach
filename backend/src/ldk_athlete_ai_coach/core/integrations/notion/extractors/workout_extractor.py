@@ -25,6 +25,7 @@ from ldk_athlete_ai_coach.core.integrations.notion.extractors._helpers import (
 )
 from ldk_athlete_ai_coach.core.integrations.notion.schemas.notion_workout import NotionWorkout
 from ldk_athlete_ai_coach.domain.enums.status import WorkoutStatus
+from ldk_athlete_ai_coach.domain.enums.workout import WorkoutCategory
 
 
 def extract_workout(raw_page: dict[str, Any]) -> NotionWorkout:
@@ -56,6 +57,11 @@ def extract_workout(raw_page: dict[str, Any]) -> NotionWorkout:
             props.get("Done Date", {})
         )
         additional_info_prop = get_property_by_alias(props, "Additional Info")
+        category = (
+            WorkoutCategory(category_value)
+            if (category_value := get_select(props.get("Category", {})))
+            else None
+        )
 
         return NotionWorkout(
             notion_id=notion_id,
@@ -63,7 +69,7 @@ def extract_workout(raw_page: dict[str, Any]) -> NotionWorkout:
             date_start=date_start,
             date_end=date_end,
             date_is_datetime=date_is_datetime,
-            category=get_select(props.get("Category", {})),
+            category=category,
             difficulty=get_select(props.get("Difficulty", {})),
             equipment=get_multi_select(props.get("Equipment", {})),
             impact=get_select(props.get("Impact", {})),

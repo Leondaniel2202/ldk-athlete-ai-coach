@@ -48,36 +48,42 @@ class WorkoutRepository(TrainingBaseRepository[Workout]):
         )
         return list(self._session.execute(stmt).scalars().all())
 
-    def list_within_effective_date_window(
+    def list_within_planned_week(
         self,
-        start: datetime,
-        end: datetime,
+        week_start_date: datetime,
         phase_filter: Literal["with_phase", "without_phase", "all"] = "all",
     ) -> list[Workout]:
-        """Return workouts whose effective date falls within the given window."""
+        """Return workouts in the given phase with the given planned_week_start_date."""
+        # Normalise to midnight so the equality matches dates stored from Notion.
+        normalised = week_start_date.replace(hour=0, minute=0, second=0, microsecond=0)
+        conditions = [Workout.planned_week_start_date == normalised]
+        if phase_filter == "with_phase":
+            conditions.append(Workout.phase_id.is_not(None))
+        elif phase_filter == "without_phase":
+            conditions.append(Workout.phase_id.is_(None))
+        stmt = select(Workout).where(*conditions).order_by(Workout.id.desc())
+        return list(self._session.execute(stmt).scalars().all())
+
+    def list_within_effective_date_window(
+        self,
+        window_start: datetime,
+        window_end: datetime,
+        phase_filter: Literal["with_phase", "without_phase", "all"] = "all",
+    ) -> list[Workout]:
+        """Return workouts whose effective date falls within [window_start, window_end].
+
+        The effective date is the done_date_start if set, otherwise date_start.
+        """
         effective_date = func.coalesce(Workout.done_date_start, Workout.date_start)
         conditions = [
-            effective_date.is_not(None),
-            effective_date >= start,
-            effective_date <= end,
+            effective_date >= window_start,
+            effective_date <= window_end,
         ]
         if phase_filter == "with_phase":
             conditions.append(Workout.phase_id.is_not(None))
         elif phase_filter == "without_phase":
             conditions.append(Workout.phase_id.is_(None))
-        stmt = select(Workout).where(*conditions).order_by(effective_date.desc(), Workout.id.desc())
-        return list(self._session.execute(stmt).scalars().all())
-
-    def list_within_planned_week(self, phase_id: int, week_start_date: datetime) -> list[Workout]:
-        """Return workouts in the given phase with the given planned_week_start_date."""
-        stmt = (
-            select(Workout)
-            .where(
-                Workout.phase_id == phase_id,
-                Workout.planned_week_start_date == week_start_date,
-            )
-            .order_by(Workout.id.desc())
-        )
+        stmt = select(Workout).where(*conditions).order_by(effective_date.desc())
         return list(self._session.execute(stmt).scalars().all())
 
     def count_unscheduled_by_phase_id(self, phase_id: int) -> int:

@@ -49,6 +49,7 @@ the backend, and AI is limited to analysis rather than generation or automation.
 ```text
 ldk-athlete-ai-coach/
   backend/
+    Makefile
     pyproject.toml
     uv.lock
     alembic/
@@ -58,6 +59,7 @@ ldk-athlete-ai-coach/
     .env.example
 
   frontend/
+    Makefile
     package.json
     next.config.ts
     tsconfig.json
@@ -140,8 +142,8 @@ Copy-Item frontend/.env.local.example frontend/.env.local
 make frontend-dev
 ```
 
-The frontend runs at `http://localhost:3000`. Start the backend first to see a connected
-state.
+The frontend runs at `http://localhost:3000` and redirects to the dashboard app shell.
+Start the backend first to see a connected backend status in the shell.
 
 ## Common Commands
 

@@ -5,14 +5,14 @@ from __future__ import annotations
 from unittest.mock import MagicMock
 
 import pytest
-
-from ldk_athlete_ai_coach.application.services.workout_context_service import WorkoutContextService
-from ldk_athlete_ai_coach.domain.enums.status import WorkoutStatus
 from tests.factories.in_memory_training_models import (
     build_phase,
     build_plan,
     build_workout,
 )
+
+from ldk_athlete_ai_coach.application.services.workout_context_service import WorkoutContextService
+from ldk_athlete_ai_coach.domain.enums.status import WorkoutStatus
 
 pytestmark = pytest.mark.unit
 

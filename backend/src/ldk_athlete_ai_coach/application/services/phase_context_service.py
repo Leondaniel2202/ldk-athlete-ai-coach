@@ -341,7 +341,7 @@ class PhaseContextService:
         )
 
     def get_specific_phase_week_context(
-        self, phase_id: int, week_start_date: datetime
+        self, week_start_date: datetime
     ) -> PhaseWeekContextResponse:
         """Build and return the context snapshot for a specific training phase week.
 
@@ -358,9 +358,9 @@ class PhaseContextService:
         """
         as_of = datetime.now(tz=UTC)
 
-        phase: Phase | None = self._phase_repository.get_by_id(phase_id)
+        phase: Phase | None = self._phase_repository.get_by_date(week_start_date)
         if phase is None:
-            raise ValueError("Phase not found")
+            raise ValueError("No phase found for the given week start date.")
 
         phase_status: PhaseStatus = self._status_calculator.calculate_phase_status(
             timeframe_start=phase.timeframe_start,
@@ -369,7 +369,7 @@ class PhaseContextService:
         )
 
         all_workouts: list[Workout] = self._workout_repository.list_within_planned_week(
-            phase_id=phase_id, week_start_date=week_start_date
+            week_start_date=week_start_date, phase_filter="with_phase"
         )
 
         counts: dict[WorkoutStatus, int] = self._count_workouts_by_status(all_workouts)

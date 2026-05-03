@@ -7,6 +7,15 @@ from datetime import UTC, datetime
 import pytest
 from sqlalchemy import select
 from sqlalchemy.orm import Session
+from tests.factories.notion_schemas import (
+    make_notion_event,
+    make_notion_nutrition_guideline,
+    make_notion_phase,
+    make_notion_plan,
+    make_notion_session,
+    make_notion_weekly_feedback,
+    make_notion_workout,
+)
 
 from ldk_athlete_ai_coach.core.integrations.notion.persistence_service import (
     NotionPersistenceService,
@@ -21,15 +30,6 @@ from ldk_athlete_ai_coach.db.models.training import (
     Workout,
 )
 from ldk_athlete_ai_coach.db.repositories.training_base_repository import TrainingBaseRepository
-from tests.factories.notion_schemas import (
-    make_notion_event,
-    make_notion_nutrition_guideline,
-    make_notion_phase,
-    make_notion_plan,
-    make_notion_session,
-    make_notion_weekly_feedback,
-    make_notion_workout,
-)
 
 pytestmark = pytest.mark.integration
 
