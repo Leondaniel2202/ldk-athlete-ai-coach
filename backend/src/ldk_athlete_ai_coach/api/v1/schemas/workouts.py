@@ -74,7 +74,5 @@ class WorkoutSummaryResponse(BaseModel):
 
     id: int
     name: str
-    category: WorkoutCategory | None
     date_start: datetime | None
-    done_date_start: datetime | None
-    status: WorkoutStatus
+    date_end: datetime | None

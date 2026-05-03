@@ -1,10 +1,14 @@
 # Testing Guide
 
 The repository uses pytest with a layered test strategy that matches the architecture of
-the backend.
+the backend, plus a minimal frontend testing foundation for the V2 Next.js app.
 
 Backend tests live under `backend/tests/`. Backend tooling is configured in
 `backend/pyproject.toml`. All backend make targets use the `backend-` prefix.
+
+Frontend tests live under `frontend/tests/` and future end-to-end tests live under
+`frontend/e2e/`. Frontend tooling is configured in `frontend/vitest.config.ts` and
+`frontend/playwright.config.ts`. Frontend make targets use the `frontend-` prefix.
 
 ## Goals
 
@@ -17,16 +21,30 @@ The current test suite is designed to give confidence in:
 - application-level context construction
 - API route behavior
 - AI prompt and service behavior without relying on live provider calls
+- frontend React component rendering
+- simple frontend component integration and user-flow checks
+- future browser-level frontend journeys through Playwright
 
 ## Tooling
 
-Configured in `backend/pyproject.toml`:
+Backend tooling is configured in `backend/pyproject.toml`:
 
 - `pytest`
 - `pytest-cov`
 - markers: `unit`, `integration`, `api`
 
 Coverage is configured for `src/ldk_athlete_ai_coach`.
+
+Frontend tooling is configured in `frontend/vitest.config.ts` and
+`frontend/playwright.config.ts`:
+
+- `vitest`
+- `@testing-library/react`
+- `@testing-library/jest-dom`
+- `@testing-library/user-event`
+- `@playwright/test`
+
+Frontend unit and integration coverage is written to `frontend/coverage/`.
 
 ## Test Layers
 
@@ -36,7 +54,7 @@ Purpose:
 
 - validate pure logic and narrow components without external services
 
-Current areas:
+Backend current areas:
 
 - config
 - db import safety
@@ -53,13 +71,22 @@ Run:
 make backend-test-unit
 ```
 
+Frontend unit tests live under `frontend/tests/unit/`.
+
+Run:
+
+```powershell
+make frontend-test
+```
+
 ## Integration Tests
 
 Purpose:
 
-- validate real interactions against the dedicated test database
+- validate real interactions across a boundary without turning the check into a full
+  end-to-end test
 
-Current areas:
+Backend current areas:
 
 - model metadata
 - repositories
@@ -71,6 +98,15 @@ Run:
 ```powershell
 make backend-db-test-up
 make backend-test-integration
+```
+
+Frontend integration tests live under `frontend/tests/integration/` and use React
+Testing Library for simple component/user-flow checks.
+
+Run:
+
+```powershell
+make frontend-test
 ```
 
 ## API Tests
@@ -94,18 +130,40 @@ make backend-db-test-up
 make backend-test-api
 ```
 
+## E2E Tests
+
+Purpose:
+
+- validate full browser behavior through the running frontend app
+
+Frontend E2E tests live under `frontend/e2e/` and use Playwright.
+
+Run:
+
+```powershell
+make frontend-test-e2e
+```
+
+If the Playwright browser runtime is not installed yet, run this from `frontend/` once:
+
+```powershell
+npx playwright install chromium
+```
+
 ## Full Suite
 
 Run everything:
 
 ```powershell
 make backend-test
+make frontend-test
 ```
 
 Run everything with coverage:
 
 ```powershell
 make backend-test-cov
+make frontend-test-coverage
 ```
 
 ## Test Support Code
@@ -129,6 +187,13 @@ The preferred structure is the layered one:
 - `backend/tests/integration/`
 - `backend/tests/api/`
 - `backend/tests/factories/`
+- `frontend/tests/unit/components/`
+- `frontend/tests/unit/components/dashboard/`
+- `frontend/tests/unit/hooks/`
+- `frontend/tests/unit/lib/api/`
+- `frontend/tests/integration/`
+- `frontend/tests/integration/dashboard/`
+- `frontend/e2e/`
 
 There are also older flat tests at the root of `backend/tests/` covering similar areas.
 They represent earlier iterations of the suite. Going forward, new tests should follow
@@ -168,6 +233,9 @@ Before merging:
 - `make backend-lint`
 - `make backend-format-check`
 - `make backend-type-check`
+- `make frontend-lint`
+- `make frontend-format-check`
+- `make frontend-type-check`
 - relevant test targets, or the full suite for broader changes
 
 ## When To Add Which Test
@@ -175,6 +243,9 @@ Before merging:
 - add a unit test when the behavior is mostly pure logic or a narrow class contract
 - add an integration test when a repository or persistence boundary changes
 - add an API test when a route, schema, or HTTP-level error mapping changes
+- add a frontend unit test for narrow React component behavior
+- add a frontend integration test for simple component composition or user interaction
+- add an E2E test when browser navigation, routing, or a full user journey matters
 
 This keeps the suite aligned with the layered architecture instead of turning every test
 into an expensive end-to-end case.
