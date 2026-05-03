@@ -1,7 +1,4 @@
-name: CI
-# This workflow covers backend checks only.
-# Frontend CI (lint, type-check, build) will be added in a follow-up issue
-# once the frontend is ready for automated validation.
+name: Backend CI
 
 on:
   push:
@@ -21,8 +18,8 @@ env:
   UV_CACHE_DIR: .uv-cache
 
 jobs:
-  quality:
-    name: Quality
+  backend-quality:
+    name: Backend Quality
     runs-on: ubuntu-latest
 
     steps:
@@ -61,8 +58,8 @@ jobs:
         if: ${{ always() }}
         run: uv cache prune --ci
 
-  test:
-    name: Test
+  backend-test:
+    name: Backend Test
     runs-on: ubuntu-latest
 
     env:
