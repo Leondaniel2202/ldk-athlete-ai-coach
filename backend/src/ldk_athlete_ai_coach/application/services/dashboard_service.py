@@ -90,7 +90,7 @@ class DashboardService:
                 value=f"{len(workouts)} Workout{'s' if len(workouts) != 1 else ''}",
                 detail=", ".join(
                     f"{count} {category} {'workout' if count == 1 else 'workouts'}"
-                    for category, count in category_counts.items()
+                    for category, count in sorted(category_counts.items())
                 ),
             ),
             OverviewItemResponse(
