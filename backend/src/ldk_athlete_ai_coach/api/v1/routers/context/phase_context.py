@@ -44,17 +44,21 @@ def get_specific_phase_context(db: DbSession, phase_id: int) -> PhaseContextResp
         raise _phase_context_http_error(exc) from exc
 
 
-@router.get("/week", response_model=PhaseWeekContextResponse)
+@router.get("/{phase_id}/weeks", response_model=PhaseWeekContextResponse)
 def get_specific_phase_week_context(
     db: DbSession,
+    phase_id: int,
     week_start_date: Annotated[
         datetime,
         Query(description="Start date of the week to retrieve, in ISO format (YYYY-MM-DD)"),
     ],
 ) -> PhaseWeekContextResponse:
     """Return the current workout-centric training context snapshot."""
+    phase_repository = PhaseRepository(db)
+    if phase_repository.get_by_id(phase_id) is None:
+        raise HTTPException(status_code=404, detail="Phase not found")
     service = PhaseContextService(
-        phase_repository=PhaseRepository(db),
+        phase_repository=phase_repository,
         workout_repository=WorkoutRepository(db),
         session_repository=SessionRepository(db),
     )

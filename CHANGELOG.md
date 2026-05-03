@@ -18,6 +18,7 @@ This project currently uses milestone-based versioning. During early development
 - Added `frontend/.env.local.example` for environment variable documentation.
 - Added ESLint and Prettier configuration for frontend linting and formatting.
 - Added `frontend-install`, `frontend-dev`, `frontend-build`, `frontend-lint`, `frontend-format-check`, and `frontend-type-check` Makefile targets.
+- Added minimal frontend unit, integration, and E2E test structure with Vitest, React Testing Library, coverage, and Playwright wiring.
 - Documented frontend local development setup in `docs/getting-started/local-dev.md`.
 
 ### Changed
@@ -25,7 +26,7 @@ This project currently uses milestone-based versioning. During early development
 - Reorganized repository into a backend/frontend monorepo structure. Python/FastAPI backend moved from the repository root into `backend/`. Frontend scaffold remains under `frontend/`. Root now contains only repo/product-level files and the shared `Makefile`.
 - Split Makefile command definitions into `backend/Makefile` and `frontend/Makefile`, with the root `Makefile` including both sub-Makefiles, delegating `backend` and `frontend` targets, and providing central/subdirectory help output.
 - Backend `Makefile` commands renamed with `backend-` prefix (`backend-install`, `backend-api`, `backend-test`, `backend-lint`, `backend-format-check`, `backend-type-check`, `backend-db-up`, `backend-db-test-up`, `backend-db-down`, `backend-alembic-up`, `backend-alembic-revision`). Aggregate aliases (`install`, `test`, `lint`, `format-check`, `type-check`) delegate to their backend counterparts.
-- CI workflow updated to use `backend-` prefixed make commands, updated `uv.lock` cache key to `backend/uv.lock`, and extended triggers to include the `v2` branch.
+- CI workflows split into backend and frontend workflows. Backend CI uses `backend-` prefixed make commands and the `backend/uv.lock` cache key; frontend CI runs quality, unit, integration, and E2E checks.
 - `AGENTS.md` updated to document the V2 monorepo structure, branch policy, and new command names.
 - `docs/getting-started/local-dev.md`, `docs/testing.md`, and `docs/operations/runbook.md` updated to reflect the new directory layout and command names.
 
