@@ -7,8 +7,6 @@ from datetime import datetime
 from pydantic import BaseModel, ConfigDict
 
 from ldk_athlete_ai_coach.api.v1.schemas.sessions import SessionResponse
-from ldk_athlete_ai_coach.domain.enums.status import WorkoutStatus
-from ldk_athlete_ai_coach.domain.enums.workout import WorkoutCategory
 
 
 class WorkoutResponse(BaseModel):
