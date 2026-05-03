@@ -65,19 +65,19 @@ backend-alembic-revision: ## Generate a new Alembic migration, e.g. make backend
 ## -- Backend: Quality --------------------------------------------------------
 
 backend-test: ## Run the full backend test suite
-	cd $(BACKEND_DIR) && uv --cache-dir $(UV_CACHE_DIR) run pytest
+	cd $(BACKEND_DIR) && uv --cache-dir $(UV_CACHE_DIR) run python -m pytest
 
 backend-test-unit: ## Run only backend unit tests (COV=1 to enable coverage)
-	cd $(BACKEND_DIR) && uv --cache-dir $(UV_CACHE_DIR) run pytest -m unit $(if $(COV),--cov=ldk_athlete_ai_coach --cov-report=term-missing)
+	cd $(BACKEND_DIR) && uv --cache-dir $(UV_CACHE_DIR) run python -m pytest -m unit $(if $(COV),--cov=ldk_athlete_ai_coach --cov-report=term-missing)
 
 backend-test-integration: ## Run only backend integration tests (COV=1 to enable coverage)
-	cd $(BACKEND_DIR) && uv --cache-dir $(UV_CACHE_DIR) run pytest -m integration $(if $(COV),--cov=ldk_athlete_ai_coach --cov-report=term-missing)
+	cd $(BACKEND_DIR) && uv --cache-dir $(UV_CACHE_DIR) run python -m pytest -m integration $(if $(COV),--cov=ldk_athlete_ai_coach --cov-report=term-missing)
 
 backend-test-api: ## Run only backend API tests (COV=1 to enable coverage)
-	cd $(BACKEND_DIR) && uv --cache-dir $(UV_CACHE_DIR) run pytest -m api $(if $(COV),--cov=ldk_athlete_ai_coach --cov-report=term-missing)
+	cd $(BACKEND_DIR) && uv --cache-dir $(UV_CACHE_DIR) run python -m pytest -m api $(if $(COV),--cov=ldk_athlete_ai_coach --cov-report=term-missing)
 
 backend-test-cov: ## Run backend tests with coverage output
-	cd $(BACKEND_DIR) && uv --cache-dir $(UV_CACHE_DIR) run pytest --cov=ldk_athlete_ai_coach --cov-report=term-missing
+	cd $(BACKEND_DIR) && uv --cache-dir $(UV_CACHE_DIR) run python -m pytest --cov=ldk_athlete_ai_coach --cov-report=term-missing
 
 backend-lint: ## Check backend code with ruff
 	cd $(BACKEND_DIR) && uv --cache-dir $(UV_CACHE_DIR) run ruff check .

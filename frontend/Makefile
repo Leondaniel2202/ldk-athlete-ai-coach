@@ -4,7 +4,8 @@ FRONTEND_MAKEFILE := $(lastword $(MAKEFILE_LIST))
 
 .PHONY: frontend-help \
         frontend-install frontend-dev frontend-build frontend-lint \
-        frontend-format-check frontend-format frontend-type-check
+        frontend-format-check frontend-format frontend-type-check \
+        frontend-test frontend-test-watch frontend-test-coverage frontend-test-e2e
 
 ifneq ($(wildcard package.json),)
 .DEFAULT_GOAL := help
@@ -37,3 +38,15 @@ frontend-format: ## Auto-fix frontend formatting with Prettier
 
 frontend-type-check: ## Run TypeScript type checking for the frontend
 	cd $(FRONTEND_DIR) && npm run type-check
+
+frontend-test: ## Run frontend unit and integration tests
+	cd $(FRONTEND_DIR) && npm run test
+
+frontend-test-watch: ## Run frontend unit and integration tests in watch mode
+	cd $(FRONTEND_DIR) && npm run test:watch
+
+frontend-test-coverage: ## Run frontend unit and integration tests with coverage
+	cd $(FRONTEND_DIR) && npm run test:coverage
+
+frontend-test-e2e: ## Run frontend end-to-end tests
+	cd $(FRONTEND_DIR) && npm run test:e2e
