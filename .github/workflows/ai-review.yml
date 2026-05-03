@@ -40,14 +40,14 @@ jobs:
             | head -c 24000 \
             > /tmp/pr_diff.txt
 
-      - name: Read diff into output
-        id: read-diff
+      - name: Read diff into env
         run: |
+          DELIM="$(uuidgen)"
           {
-            echo 'diff<<DIFF_EOF'
+            echo "PR_DIFF<<${DELIM}"
             cat /tmp/pr_diff.txt
-            echo DIFF_EOF
-          } >> "$GITHUB_OUTPUT"
+            echo "${DELIM}"
+          } >> "$GITHUB_ENV"
 
       - name: Run AI advisory review
         id: ai-review
@@ -126,7 +126,7 @@ jobs:
             PR description: ${{ github.event.pull_request.body }}
 
             Diff:
-            ${{ steps.read-diff.outputs.diff }}
+            ${{ env.PR_DIFF }}
 
       - name: Post advisory review comment
         uses: actions/github-script@v7
