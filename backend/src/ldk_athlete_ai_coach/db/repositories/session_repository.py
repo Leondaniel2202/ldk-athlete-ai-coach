@@ -31,8 +31,8 @@ class SessionRepository(TrainingBaseRepository[TrackedSession]):
         cutoff = datetime.now(tz=UTC) - timedelta(days=days)
         stmt = (
             select(TrackedSession)
-            .where(TrackedSession.start_start >= cutoff)
-            .order_by(TrackedSession.start_start.desc())
+            .where(TrackedSession.start_at >= cutoff)
+            .order_by(TrackedSession.start_at.desc())
         )
         return list(self._session.execute(stmt).scalars().all())
 
@@ -42,11 +42,10 @@ class SessionRepository(TrainingBaseRepository[TrackedSession]):
             select(TrackedSession)
             .where(
                 TrackedSession.workout_id.is_(None),
-                TrackedSession.start_start.is_not(None),
-                TrackedSession.start_start >= start,
-                TrackedSession.start_start <= end,
+                TrackedSession.start_at >= start,
+                TrackedSession.start_at <= end,
             )
-            .order_by(TrackedSession.start_start.desc(), TrackedSession.id.desc())
+            .order_by(TrackedSession.start_at.desc(), TrackedSession.id.desc())
         )
         return list(self._session.execute(stmt).scalars().all())
 
@@ -72,7 +71,7 @@ class SessionRepository(TrainingBaseRepository[TrackedSession]):
             .where(TrackedSession.workout_id.in_(workout_ids))
             .order_by(
                 TrackedSession.workout_id.asc(),
-                TrackedSession.start_start.desc(),
+                TrackedSession.start_at.desc(),
                 TrackedSession.id.desc(),
             )
         )

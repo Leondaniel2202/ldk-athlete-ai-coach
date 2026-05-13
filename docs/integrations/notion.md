@@ -130,6 +130,8 @@ Important characteristics:
 - existing rows are updated in place through the mapper layer
 - foreign keys are resolved by looking up related entities using their Notion page IDs
 - each entity type flushes before the next dependent type is persisted
+- date-range planning entities are normalised into backend-owned `date` fields (`Plan`, `Phase`, and planned `Workout` dates)
+- workout execution rollups are stored on the optional `WorkoutMetrics` row attached during workout persistence
 
 This is what makes one-way sync idempotent at the entity identity level.
 

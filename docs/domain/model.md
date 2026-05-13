@@ -23,15 +23,14 @@ Represents the highest-level training block.
 Key fields:
 
 - `name`
-- `plan_goal`
-- `constraints`
-- `rules_weekly_rhythm`
-- start and end date ranges
+- `description`
+- `start_date`
+- `end_date`
 
 Relationships:
 
 - has many `Phase`
-- optionally has one primary `Event`
+- has many `Event`
 
 ## Phase
 
@@ -43,8 +42,8 @@ Key fields:
 - `phase_type`
 - `notes`
 - `focus_tags`
-- `weekly_structure`
-- timeframe start/end
+- `start_date`
+- `end_date`
 
 Relationships:
 
@@ -59,19 +58,33 @@ Represents the primary planning unit.
 
 Key fields:
 
-- planned timeframe (`date_start`, `date_end`, `date_is_datetime`)
+- planned scheduling fields (`planned_date`, `planned_week_number`, `planned_week_start_date`)
 - training descriptors such as `category`, `difficulty`, `equipment`, `impact`
-- intention fields such as `purpose` and `metrics_to_record`
-- planned metrics such as distance, duration, RPE, and planned training load
-- actual metrics such as duration, distance, RPE, and actual training load
-- lifecycle fields such as `status`, `cancelled`, and `skipped`
-- `planned_week_number` and `planned_week_start_date`
+- intention fields such as `purpose`, `metrics_to_record`, and `primary_muscle_groups`
+- planned metrics such as distance, duration, and RPE
+- lifecycle flags `cancelled` and `skipped`
 
 Relationships:
 
 - belongs to a `Phase`
 - has many `TrackedSession`
 - may be referenced by one or more `Event` rows as a race workout
+- may have one `WorkoutMetrics` execution summary row
+
+## WorkoutMetrics
+
+Represents the cached workout-level execution summary derived from sync data.
+
+Key fields:
+
+- `session_count`
+- `calculated_at`
+- `calculation_version`
+- actual duration, distance, training load, calories, intensity, and RPE fields
+
+Relationships:
+
+- belongs to one `Workout`
 
 ## TrackedSession
 
@@ -83,7 +96,9 @@ Key fields:
 - `source`
 - `session_type`
 - `external_id`
-- start and end date ranges
+- `start_at`
+- `end_at`
+- `actual_rpe`
 - duration, distance, calories, heart-rate, cadence, elevation, and steps metrics
 
 Relationships:
@@ -115,11 +130,16 @@ workout.
 Key fields:
 
 - `event_type`
+- `sport`
+- `status`
 - `target`
 - `event_format`
+- `role_in_plan`
+- optional target metrics such as time or distance
 - `priority`
-- start and end date ranges
-- place information
+- `start_at`
+- `end_at`
+- `location`
 
 Relationships:
 

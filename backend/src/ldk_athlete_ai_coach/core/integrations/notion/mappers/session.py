@@ -38,12 +38,9 @@ def map_session(
     entity.source = source.source
     entity.session_type = source.session_type
     entity.external_id = source.external_id
-    entity.start_start = source.start_start
-    entity.start_end = source.start_end
-    entity.start_is_datetime = source.start_is_datetime
-    entity.end_start = source.end_start
-    entity.end_end = source.end_end
-    entity.end_is_datetime = source.end_is_datetime
+    entity.start_at = source.start_at
+    entity.end_at = source.end_at
+    entity.actual_rpe = source.actual_rpe
     entity.active_energy_kj = source.active_energy_kj
     entity.active_energy_burned_kj = source.active_energy_burned_kj
     entity.avg_hr = source.avg_hr

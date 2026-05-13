@@ -55,15 +55,9 @@ def _make_notion_plan(**overrides: object) -> NotionPlan:
     defaults: dict[str, object] = {
         "notion_id": "plan-abc",
         "name": "Base Plan",
-        "plan_goal": "Finish strong",
-        "constraints": "No double days",
-        "rules_weekly_rhythm": "Long run Saturday",
-        "start_date_start": _DT,
-        "start_date_end": None,
-        "start_date_is_datetime": False,
-        "end_date_start": _DT2,
-        "end_date_end": None,
-        "end_date_is_datetime": False,
+        "description": "Finish strong",
+        "start_date": _DT.date(),
+        "end_date": _DT2.date(),
         "notion_page_content": "Plan context",
         "url": "https://notion.so/plan-abc",
         "archived": False,
@@ -82,7 +76,7 @@ class TestMapPlan:
         assert entity.notion_url == "https://notion.so/plan-abc"
         assert entity.notion_page_content == "Plan context"
         assert entity.name == "Base Plan"
-        assert entity.plan_goal == "Finish strong"
+        assert entity.description == "Finish strong"
 
     def test_update_existing_entity(self) -> None:
         existing = Plan()
@@ -106,10 +100,8 @@ def _make_notion_phase(**overrides: object) -> NotionPhase:
         "notes": "Focus on aerobic base",
         "phase_type": "Base",
         "focus_tags": ["Endurance", "Aerobic"],
-        "weekly_structure": "Mon: Run, Wed: Bike",
-        "timeframe_start": _DT,
-        "timeframe_end": _DT2,
-        "timeframe_is_datetime": False,
+        "start_date": _DT.date(),
+        "end_date": _DT2.date(),
         "plan_notion_id": "plan-xyz",
         "nutrition_guideline_notion_id": "nutrition-xyz",
         "notion_page_content": "Phase context",
@@ -133,10 +125,8 @@ class TestMapPhase:
         assert entity.notes == "Focus on aerobic base"
         assert entity.phase_type == "Base"
         assert entity.focus_tags == ["Endurance", "Aerobic"]
-        assert entity.weekly_structure == "Mon: Run, Wed: Bike"
-        assert entity.timeframe_start == _DT
-        assert entity.timeframe_end == _DT2
-        assert entity.timeframe_is_datetime is False
+        assert entity.start_date == _DT.date()
+        assert entity.end_date == _DT2.date()
 
     def test_create_new_entity_has_no_fk_ids_by_default(self) -> None:
         source = _make_notion_phase()
@@ -176,19 +166,17 @@ class TestMapPhase:
     def test_none_values_are_propagated(self) -> None:
         source = _make_notion_phase(
             notes=None,
-            phase_type=None,
-            weekly_structure=None,
-            timeframe_start=None,
-            timeframe_end=None,
+            phase_type="Unknown",
+            start_date=_DT.date(),
+            end_date=_DT2.date(),
             url=None,
         )
         entity = map_phase(source)
 
         assert entity.notes is None
-        assert entity.phase_type is None
-        assert entity.weekly_structure is None
-        assert entity.timeframe_start is None
-        assert entity.timeframe_end is None
+        assert entity.phase_type == "Unknown"
+        assert entity.start_date == _DT.date()
+        assert entity.end_date == _DT2.date()
         assert entity.notion_url is None
 
     def test_focus_tags_list_is_copied(self) -> None:
@@ -221,21 +209,19 @@ def _make_notion_workout(**overrides: object) -> NotionWorkout:
     defaults: dict[str, object] = {
         "notion_id": "workout-abc",
         "name": "Morning Run",
-        "date_start": _DT,
-        "date_end": _DT2,
-        "date_is_datetime": True,
+        "planned_date": _DT.date(),
         "category": "Run",
         "difficulty": "Moderate",
         "equipment": ["Shoes"],
         "impact": "Low",
         "metrics_to_record": ["HR", "Pace"],
         "purpose": ["Aerobic"],
-        "primarily_used_muscle_group": ["Legs"],
+        "primary_muscle_groups": ["Legs"],
         "planned_distance_km": 10.0,
         "planned_duration_min": 60.0,
         "planned_rpe": 6.0,
-        "planned_training_load": 360.0,
         "planned_week_number": 3.0,
+        "planned_week_start_date": _DT.date(),
         "actual_duration_min": 58.0,
         "actual_distance_km": 10.4,
         "actual_training_load": 389.0,
@@ -243,9 +229,8 @@ def _make_notion_workout(**overrides: object) -> NotionWorkout:
         "weighted_hrr_intensity_sum": 141.2,
         "actual_hrr_intensity": 2.43,
         "actual_rpe": 5.5,
-        "done_date_start": _DT,
-        "done_date_end": None,
-        "done_date_is_datetime": True,
+        "done_at": _DT,
+        "session_count": 1,
         "status": "Done",
         "training_load_method": "Weighted HRR",
         "additional_info": "Easy effort",
@@ -270,21 +255,20 @@ class TestMapWorkout:
         assert entity.notion_url == "https://notion.so/workout-abc"
         assert entity.notion_page_content == "Workout instructions"
         assert entity.name == "Morning Run"
-        assert entity.date_start == _DT
-        assert entity.date_end == _DT2
-        assert entity.date_is_datetime is True
+        assert entity.planned_date == _DT.date()
         assert entity.category == "Run"
         assert entity.difficulty == "Moderate"
         assert entity.equipment == ["Shoes"]
         assert entity.impact == "Low"
         assert entity.metrics_to_record == ["HR", "Pace"]
         assert entity.purpose == ["Aerobic"]
-        assert entity.primarily_used_muscle_group == ["Legs"]
+        assert entity.primary_muscle_groups == ["Legs"]
         assert entity.planned_distance_km == pytest.approx(10.0)
         assert entity.planned_duration_min == pytest.approx(60.0)
         assert entity.planned_rpe == pytest.approx(6.0)
         assert entity.planned_training_load == pytest.approx(360.0)
         assert entity.planned_week_number == pytest.approx(3.0)
+        assert entity.planned_week_start_date == _DT.date()
         assert entity.actual_duration_min == pytest.approx(58.0)
         assert entity.actual_distance_km == pytest.approx(10.4)
         assert entity.actual_training_load == pytest.approx(389.0)
@@ -336,15 +320,13 @@ class TestMapWorkout:
 
     def test_none_values_are_propagated(self) -> None:
         source = _make_notion_workout(
-            date_start=None,
-            date_end=None,
-            category=None,
+            planned_date=None,
+            category="Unknown",
             difficulty=None,
             impact=None,
             planned_distance_km=None,
             planned_duration_min=None,
             planned_rpe=None,
-            planned_training_load=None,
             planned_week_number=None,
             actual_duration_min=None,
             actual_distance_km=None,
@@ -353,8 +335,8 @@ class TestMapWorkout:
             weighted_hrr_intensity_sum=None,
             actual_hrr_intensity=None,
             actual_rpe=None,
-            done_date_start=None,
-            done_date_end=None,
+            done_at=None,
+            session_count=0,
             status=None,
             training_load_method=None,
             additional_info=None,
@@ -362,9 +344,8 @@ class TestMapWorkout:
         )
         entity = map_workout(source)
 
-        assert entity.date_start is None
-        assert entity.date_end is None
-        assert entity.category is None
+        assert entity.planned_date is None
+        assert entity.category == "Unknown"
         assert entity.difficulty is None
         assert entity.impact is None
         assert entity.planned_distance_km is None
@@ -414,21 +395,15 @@ def _make_notion_event(**overrides: object) -> NotionEvent:
         "notion_id": "event-abc",
         "name": "Goal Race",
         "event_type": "Race",
+        "sport": "Run",
+        "status": "Planned",
         "target": "Sub-3 marathon",
         "event_format": "Road marathon",
         "notes": "Primary event",
         "priority": "A",
-        "start_date_start": _DT,
-        "start_date_end": None,
-        "start_date_is_datetime": False,
-        "end_date_start": _DT2,
-        "end_date_end": None,
-        "end_date_is_datetime": False,
-        "place_name": "Amsterdam",
-        "place_address": "Museumplein",
-        "place_latitude": 52.3584,
-        "place_longitude": 4.8811,
-        "place_google_place_id": "place-123",
+        "start_at": _DT,
+        "end_at": _DT2,
+        "location": "Amsterdam",
         "plan_notion_id": "plan-xyz",
         "race_workout_notion_id": "workout-xyz",
         "notion_page_content": "Event context",
@@ -449,14 +424,14 @@ class TestMapEvent:
         assert entity.notion_url == "https://notion.so/event-abc"
         assert entity.notion_page_content == "Event context"
         assert entity.event_type == "Race"
-        assert entity.place_name == "Amsterdam"
+        assert entity.location == "Amsterdam"
         assert entity.plan_id == 7
         assert entity.race_workout_id == 11
 
     def test_update_existing_entity(self) -> None:
         existing = Event()
         existing.name = "Old Event"
-        existing.priority = "C"
+        existing.priority = "C"  # type: ignore[assignment]
 
         result = map_event(_make_notion_event(name="Updated Event", priority="A"), existing)
 
@@ -665,12 +640,9 @@ def _make_notion_session(**overrides: object) -> NotionSession:
         "source": "Apple Health",
         "session_type": "Running",
         "external_id": "ext-123",
-        "start_start": _DT,
-        "start_end": None,
-        "start_is_datetime": True,
-        "end_start": _DT2,
-        "end_end": None,
-        "end_is_datetime": True,
+        "start_at": _DT,
+        "end_at": _DT2,
+        "actual_rpe": 6.0,
         "active_energy_kj": 1200.0,
         "active_energy_burned_kj": 1100.0,
         "avg_hr": 145.0,
@@ -705,12 +677,9 @@ class TestMapSession:
         assert entity.source == "Apple Health"
         assert entity.session_type == "Running"
         assert entity.external_id == "ext-123"
-        assert entity.start_start == _DT
-        assert entity.start_end is None
-        assert entity.start_is_datetime is True
-        assert entity.end_start == _DT2
-        assert entity.end_end is None
-        assert entity.end_is_datetime is True
+        assert entity.start_at == _DT
+        assert entity.end_at == _DT2
+        assert entity.actual_rpe == pytest.approx(6.0)
         assert entity.active_energy_kj == pytest.approx(1200.0)
         assert entity.active_energy_burned_kj == pytest.approx(1100.0)
         assert entity.avg_hr == pytest.approx(145.0)
@@ -759,11 +728,11 @@ class TestMapSession:
 
     def test_none_values_are_propagated(self) -> None:
         source = _make_notion_session(
-            source=None,
-            session_type=None,
+            source="Unknown",
+            session_type="Unknown",
             external_id=None,
-            start_start=None,
-            end_start=None,
+            start_at=_DT,
+            end_at=None,
             avg_hr=None,
             max_hr=None,
             distance_km=None,
@@ -772,11 +741,11 @@ class TestMapSession:
         )
         entity = map_session(source)
 
-        assert entity.source is None
-        assert entity.session_type is None
+        assert entity.source == "Unknown"
+        assert entity.session_type == "Unknown"
         assert entity.external_id is None
-        assert entity.start_start is None
-        assert entity.end_start is None
+        assert entity.start_at == _DT
+        assert entity.end_at is None
         assert entity.avg_hr is None
         assert entity.max_hr is None
         assert entity.distance_km is None

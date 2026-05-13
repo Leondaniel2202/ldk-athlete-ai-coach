@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from datetime import datetime
 
-from sqlalchemy import and_, or_, select
+from sqlalchemy import and_, select
 from sqlalchemy.orm import Session
 
 from ldk_athlete_ai_coach.db.models.training import Phase
@@ -20,18 +20,16 @@ class PhaseRepository(TrainingBaseRepository[Phase]):
 
     def get_active_for_datetime(self, now: datetime) -> Phase | None:
         """Return the active phase at *now*."""
+        today = now.date()
         stmt = (
             select(Phase)
             .where(
                 and_(
-                    and_(Phase.timeframe_start.is_not(None), Phase.timeframe_end.is_not(None)),
-                    Phase.timeframe_start <= now,
-                    Phase.timeframe_end >= now,
+                    Phase.start_date <= today,
+                    Phase.end_date >= today,
                 )
             )
-            .order_by(
-                Phase.timeframe_start.is_(None), Phase.timeframe_start.desc(), Phase.id.desc()
-            )
+            .order_by(Phase.start_date.desc(), Phase.id.desc())
             .limit(1)
         )
         return self._session.execute(stmt).scalar_one_or_none()
@@ -41,18 +39,16 @@ class PhaseRepository(TrainingBaseRepository[Phase]):
 
         If multiple phases match, return the one with the latest timeframe start date.
         """
+        day = date.date()
         stmt = (
             select(Phase)
             .where(
                 and_(
-                    or_(Phase.timeframe_start.is_not(None), Phase.timeframe_end.is_not(None)),
-                    or_(Phase.timeframe_start.is_(None), Phase.timeframe_start <= date),
-                    or_(Phase.timeframe_end.is_(None), Phase.timeframe_end >= date),
+                    Phase.start_date <= day,
+                    Phase.end_date >= day,
                 )
             )
-            .order_by(
-                Phase.timeframe_start.is_(None), Phase.timeframe_start.desc(), Phase.id.desc()
-            )
+            .order_by(Phase.start_date.desc(), Phase.id.desc())
             .limit(1)
         )
         return self._session.execute(stmt).scalar_one_or_none()
@@ -62,9 +58,7 @@ class PhaseRepository(TrainingBaseRepository[Phase]):
         stmt = (
             select(Phase)
             .where(Phase.plan_id == plan_id)
-            .order_by(
-                Phase.timeframe_start.is_(None), Phase.timeframe_start.desc(), Phase.id.desc()
-            )
+            .order_by(Phase.start_date.desc(), Phase.id.desc())
             .limit(1)
         )
         return self._session.execute(stmt).scalar_one_or_none()
@@ -76,15 +70,16 @@ class PhaseRepository(TrainingBaseRepository[Phase]):
 
     def list_by_timeframe_window(self, start: datetime, end: datetime) -> list[Phase]:
         """Return all phases with any overlap with the given timeframe window."""
+        start_date = start.date()
+        end_date = end.date()
         stmt = (
             select(Phase)
             .where(
                 and_(
-                    or_(Phase.timeframe_start.is_not(None), Phase.timeframe_end.is_not(None)),
-                    or_(Phase.timeframe_start.is_(None), Phase.timeframe_start <= end),
-                    or_(Phase.timeframe_end.is_(None), Phase.timeframe_end >= start),
+                    Phase.start_date <= end_date,
+                    Phase.end_date >= start_date,
                 )
             )
-            .order_by(Phase.timeframe_start.asc(), Phase.id.asc())
+            .order_by(Phase.start_date.asc(), Phase.id.asc())
         )
         return list(self._session.execute(stmt).scalars().all())

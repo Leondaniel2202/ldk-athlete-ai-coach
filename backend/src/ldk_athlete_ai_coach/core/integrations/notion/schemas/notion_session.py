@@ -5,6 +5,7 @@ from __future__ import annotations
 from datetime import datetime
 
 from ldk_athlete_ai_coach.core.integrations.notion.schemas.notion_base import NotionBaseSchema
+from ldk_athlete_ai_coach.domain.enums.session import SessionSource, SessionType
 
 
 class NotionSession(NotionBaseSchema):
@@ -15,15 +16,12 @@ class NotionSession(NotionBaseSchema):
     :class:`~ldk_athlete_ai_coach.db.models.training.TrackedSession`.
     """
 
-    source: str | None = None
-    session_type: str | None = None
+    source: SessionSource
+    session_type: SessionType
     external_id: str | None = None
-    start_start: datetime | None = None
-    start_end: datetime | None = None
-    start_is_datetime: bool = False
-    end_start: datetime | None = None
-    end_end: datetime | None = None
-    end_is_datetime: bool = False
+    start_at: datetime
+    end_at: datetime | None = None
+    actual_rpe: float | None = None
     active_energy_kj: float | None = None
     active_energy_burned_kj: float | None = None
     avg_hr: float | None = None

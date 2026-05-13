@@ -16,6 +16,55 @@ class WorkoutCategory(StrEnum):
     CROSS_TRAINING = "Cross-training"
     BOXING = "Boxing"
     CONDITIONING = "Conditioning"
+    UNKNOWN = "Unknown"
+
+    @classmethod
+    def _missing_(cls, _value: object) -> WorkoutCategory:
+        return cls.UNKNOWN
+
+
+class WorkoutPurpose(StrEnum):
+    """Purpose assigned to a planned workout."""
+
+    AEROBIC = "Aerobic"
+    SPEED = "Speed"
+    RECOVERY = "Recovery"
+    THRESHOLD = "Threshold"
+    RACE_SPECIFIC = "Race-specific"
+    STRENGTH = "Strength"
+    UNKNOWN = "Unknown"
+
+    @classmethod
+    def _missing_(cls, _value: object) -> WorkoutPurpose:
+        return cls.UNKNOWN
+
+
+class WorkoutEquipment(StrEnum):
+    """Equipment required for a planned workout."""
+
+    SHOES = "Shoes"
+    HR_MONITOR = "HR Monitor"
+    BIKE = "Bike"
+    HELMET = "Helmet"
+    UNKNOWN = "Unknown"
+
+    @classmethod
+    def _missing_(cls, _value: object) -> WorkoutEquipment:
+        return cls.UNKNOWN
+
+
+class MuscleGroup(StrEnum):
+    """Primary muscle group targeted by a workout."""
+
+    LEGS = "Legs"
+    FULL_BODY = "Full Body"
+    CORE = "Core"
+    UPPER_BODY = "Upper Body"
+    UNKNOWN = "Unknown"
+
+    @classmethod
+    def _missing_(cls, _value: object) -> MuscleGroup:
+        return cls.UNKNOWN
 
 
 @dataclass(frozen=True)

@@ -23,21 +23,18 @@ def map_event(
 
     entity.name = source.name
     entity.event_type = source.event_type
+    entity.sport = source.sport
+    entity.priority = source.priority
+    entity.status = source.status
+    entity.role_in_plan = source.role_in_plan
     entity.target = source.target
     entity.event_format = source.event_format
+    entity.target_time_seconds = source.target_time_seconds
+    entity.target_distance_km = source.target_distance_km
+    entity.start_at = source.start_at
+    entity.end_at = source.end_at
+    entity.location = source.location
     entity.notes = source.notes
-    entity.priority = source.priority
-    entity.start_date_start = source.start_date_start
-    entity.start_date_end = source.start_date_end
-    entity.start_date_is_datetime = source.start_date_is_datetime
-    entity.end_date_start = source.end_date_start
-    entity.end_date_end = source.end_date_end
-    entity.end_date_is_datetime = source.end_date_is_datetime
-    entity.place_name = source.place_name
-    entity.place_address = source.place_address
-    entity.place_latitude = source.place_latitude
-    entity.place_longitude = source.place_longitude
-    entity.place_google_place_id = source.place_google_place_id
     entity.plan_id = plan_id
     entity.race_workout_id = race_workout_id
 

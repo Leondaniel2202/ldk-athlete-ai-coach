@@ -66,6 +66,18 @@ def _title_prop(text: str) -> dict[str, Any]:
     return {"type": "title", "title": [{"plain_text": text}]}
 
 
+def _date_prop(start: str, end: str | None = None) -> dict[str, Any]:
+    return {"type": "date", "date": {"start": start, "end": end}}
+
+
+def _select_prop(name: str) -> dict[str, Any]:
+    return {"type": "select", "select": {"name": name}}
+
+
+def _formula_date_prop(start: str) -> dict[str, Any]:
+    return {"type": "formula", "formula": {"type": "date", "date": {"start": start, "end": None}}}
+
+
 def _raw_phase(notion_id: str = "phase-1", name: str = "Base Phase") -> dict[str, Any]:
     return {
         "id": notion_id,
@@ -75,6 +87,9 @@ def _raw_phase(notion_id: str = "phase-1", name: str = "Base Phase") -> dict[str
         "last_edited_time": "2024-03-01T08:00:00.000Z",
         "properties": {
             "Name": _title_prop(name),
+            "Phase type": _select_prop("Base"),
+            "Focus tags": {"type": "multi_select", "multi_select": []},
+            "Timeframe": _date_prop("2024-03-01", "2024-03-31"),
         },
     }
 
@@ -88,6 +103,8 @@ def _raw_plan(notion_id: str = "plan-1", name: str = "Base Plan") -> dict[str, A
         "last_edited_time": "2024-03-01T08:00:00.000Z",
         "properties": {
             "Name": _title_prop(name),
+            "Start date": _date_prop("2024-03-01"),
+            "End date": _date_prop("2024-03-31"),
         },
     }
 
@@ -117,6 +134,12 @@ def _raw_workout(notion_id: str = "workout-1", name: str = "Long Run") -> dict[s
         "last_edited_time": "2024-03-01T08:00:00.000Z",
         "properties": {
             "Name": _title_prop(name),
+            "Category": _select_prop("Run"),
+            "Equipment": {"type": "multi_select", "multi_select": []},
+            "Metrics to record": {"type": "multi_select", "multi_select": []},
+            "Purpose": {"type": "multi_select", "multi_select": []},
+            "Primarily used muscle group": {"type": "multi_select", "multi_select": []},
+            "Planned Week Startdate": _formula_date_prop("2024-03-04"),
         },
     }
 
@@ -130,6 +153,10 @@ def _raw_event(notion_id: str = "event-1", name: str = "Goal Race") -> dict[str,
         "last_edited_time": "2024-03-01T08:00:00.000Z",
         "properties": {
             "Name": _title_prop(name),
+            "Type": _select_prop("Race"),
+            "Sport": _select_prop("Run"),
+            "Priority": _select_prop("A"),
+            "Status": _select_prop("Planned"),
         },
     }
 
@@ -143,6 +170,9 @@ def _raw_session(notion_id: str = "session-1", name: str = "Morning Run") -> dic
         "last_edited_time": "2024-03-01T08:00:00.000Z",
         "properties": {
             "Name": _title_prop(name),
+            "Source": _select_prop("Apple Health"),
+            "Session Type": _select_prop("Running"),
+            "Start": _date_prop("2024-03-01T08:00:00+00:00"),
         },
     }
 

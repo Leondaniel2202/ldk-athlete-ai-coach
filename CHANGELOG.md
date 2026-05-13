@@ -43,6 +43,7 @@ _Issue [#73](../../issues/73) — Initial frontend app shell and dashboard (pare
 - CI workflows split into backend and frontend workflows. Backend CI uses `backend-` prefixed make commands and the `backend/uv.lock` cache key; frontend CI runs quality, unit, integration, and E2E checks.
 - `AGENTS.md` updated to document the V2 monorepo structure, branch policy, and new command names.
 - `docs/getting-started/local-dev.md`, `docs/testing.md`, and `docs/operations/runbook.md` updated to reflect the new directory layout and command names.
+- Refactored training persistence toward backend-owned V2 shapes: plans now use `description` and date ranges, phases use strict start/end dates plus enum-backed focus tags, events use `event_format`/`target` with plan collections, workouts separate planned fields from optional `WorkoutMetrics`, and tracked sessions use `start_at`/`end_at`.
 
 ---
 

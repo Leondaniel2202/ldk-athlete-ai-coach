@@ -53,7 +53,7 @@ def test_get_plan_summary_returns_summary(client: TestClient, db_session: Sessio
         "id": plan.id,
         "name": "Summary Plan",
         "plan_goal": None,
-        "start_date_start": _iso_z(start),
+        "start_date_start": "2026-04-01T00:00:00",
         "end_date_end": None,
     }
 
@@ -135,9 +135,9 @@ def test_get_phase_summary_returns_summary(client: TestClient, db_session: Sessi
     assert response.json() == {
         "id": phase.id,
         "name": "Summary Phase",
-        "phase_type": None,
-        "timeframe_start": _iso_z(start),
-        "timeframe_end": _iso_z(end),
+        "phase_type": "Base",
+        "timeframe_start": "2026-04-07T00:00:00",
+        "timeframe_end": "2026-04-20T00:00:00",
     }
 
 
@@ -300,8 +300,8 @@ def test_get_workout_summary_returns_summary(client: TestClient, db_session: Ses
     assert response.json() == {
         "id": workout.id,
         "name": "Summary Workout",
-        "date_start": _iso_z(start),
-        "date_end": _iso_z(end),
+        "date_start": "2026-04-12T00:00:00",
+        "date_end": None,
     }
 
 
@@ -367,10 +367,10 @@ def test_get_session_summary_returns_summary(client: TestClient, db_session: Ses
     assert response.json() == {
         "id": tracked.id,
         "name": "Summary Session",
-        "source": None,
-        "session_type": None,
+        "source": "Apple Health",
+        "session_type": "Running",
         "start_start": _iso_z(start),
-        "end_end": "2026-04-12T10:15:00Z",
+        "end_end": None,
     }
 
 

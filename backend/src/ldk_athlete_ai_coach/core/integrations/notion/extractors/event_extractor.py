@@ -8,13 +8,22 @@ from ldk_athlete_ai_coach.core.integrations.notion.extractors import NotionExtra
 from ldk_athlete_ai_coach.core.integrations.notion.extractors._helpers import (
     get_date,
     get_first_relation,
+    get_number,
     get_page_datetime,
     get_place,
+    get_property_by_alias,
     get_rich_text,
     get_select,
     get_title,
 )
 from ldk_athlete_ai_coach.core.integrations.notion.schemas.notion_event import NotionEvent
+from ldk_athlete_ai_coach.domain.enums.event import (
+    EventPlanRole,
+    EventPriority,
+    EventStatus,
+    EventType,
+)
+from ldk_athlete_ai_coach.domain.enums.workout import WorkoutCategory
 
 
 def extract_event(raw_page: dict[str, Any]) -> NotionEvent:
@@ -29,37 +38,52 @@ def extract_event(raw_page: dict[str, Any]) -> NotionEvent:
                 f"Event page {notion_id!r} is missing required 'Name' property"
             )
 
-        start_date_start, start_date_end, start_date_is_datetime = get_date(
-            props.get("Start date", {})
-        )
-        end_date_start, end_date_end, end_date_is_datetime = get_date(props.get("End date", {}))
+        start_at, _, _ = get_date(props.get("Start date", {}))
+        end_at, _, _ = get_date(props.get("End date", {}))
         (
             place_name,
             place_address,
-            place_latitude,
-            place_longitude,
-            place_google_place_id,
+            _place_latitude,
+            _place_longitude,
+            _place_google_place_id,
         ) = get_place(props.get("Place", {}))
 
         return NotionEvent(
             notion_id=notion_id,
             name=name,
-            event_type=get_select(props.get("Type", {})),
+            event_type=EventType(get_select(props.get("Type", {})) or EventType.UNKNOWN),
+            sport=WorkoutCategory(get_select(props.get("Sport", {})) or WorkoutCategory.UNKNOWN),
+            priority=EventPriority(get_select(props.get("Priority", {})) or EventPriority.UNKNOWN),
+            status=EventStatus(get_select(props.get("Status", {})) or EventStatus.UNKNOWN),
+            role_in_plan=(
+                EventPlanRole(role_value)
+                if (role_value := get_select(get_property_by_alias(props, "Role in plan", "Role")))
+                else None
+            ),
             target=get_rich_text(props.get("Target", {})),
             event_format=get_rich_text(props.get("Format", {})),
+            target_time_seconds=(
+                int(target_time)
+                if (
+                    target_time := get_number(
+                        get_property_by_alias(
+                            props,
+                            "Target time (seconds)",
+                            "Target Time (seconds)",
+                            "Target time seconds",
+                        )
+                    )
+                )
+                is not None
+                else None
+            ),
+            target_distance_km=get_number(
+                get_property_by_alias(props, "Target distance (km)", "Target Distance (km)")
+            ),
+            start_at=start_at,
+            end_at=end_at,
+            location=place_name or place_address,
             notes=get_rich_text(props.get("Notes", {})),
-            priority=get_select(props.get("Priority", {})),
-            start_date_start=start_date_start,
-            start_date_end=start_date_end,
-            start_date_is_datetime=start_date_is_datetime,
-            end_date_start=end_date_start,
-            end_date_end=end_date_end,
-            end_date_is_datetime=end_date_is_datetime,
-            place_name=place_name,
-            place_address=place_address,
-            place_latitude=place_latitude,
-            place_longitude=place_longitude,
-            place_google_place_id=place_google_place_id,
             plan_notion_id=get_first_relation(props.get("Plan", {})),
             race_workout_notion_id=get_first_relation(props.get("Race Workout", {})),
             created_time=get_page_datetime(raw_page, "created_time"),

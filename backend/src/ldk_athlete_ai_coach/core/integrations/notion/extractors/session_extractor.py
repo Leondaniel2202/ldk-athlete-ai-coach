@@ -16,6 +16,7 @@ from ldk_athlete_ai_coach.core.integrations.notion.extractors._helpers import (
     get_title,
 )
 from ldk_athlete_ai_coach.core.integrations.notion.schemas.notion_session import NotionSession
+from ldk_athlete_ai_coach.domain.enums.session import SessionSource, SessionType
 
 
 def extract_session(raw_page: dict[str, Any]) -> NotionSession:
@@ -42,23 +43,24 @@ def extract_session(raw_page: dict[str, Any]) -> NotionSession:
                 f"Session page {notion_id!r} is missing required 'Name' property"
             )
 
-        start_start, start_end, start_is_datetime = get_date(props.get("Start", {}))
-        end_start, end_end, end_is_datetime = get_date(props.get("End", {}))
+        start_at, _, _ = get_date(props.get("Start", {}))
+        if start_at is None:
+            raise NotionExtractionError(
+                f"Session page {notion_id!r} is missing required 'Start' property"
+            )
+        end_at, _, _ = get_date(props.get("End", {}))
         session_type_prop = get_property_by_alias(props, "Session Type", "Type")
         workout_prop = get_property_by_alias(props, "Workout", "Workouts")
 
         return NotionSession(
             notion_id=notion_id,
             name=name,
-            source=get_select(props.get("Source", {})),
-            session_type=get_select(session_type_prop),
+            source=SessionSource(get_select(props.get("Source", {})) or SessionSource.UNKNOWN),
+            session_type=SessionType(get_select(session_type_prop) or SessionType.UNKNOWN),
             external_id=get_rich_text(props.get("External ID", {})),
-            start_start=start_start,
-            start_end=start_end,
-            start_is_datetime=start_is_datetime,
-            end_start=end_start,
-            end_end=end_end,
-            end_is_datetime=end_is_datetime,
+            start_at=start_at,
+            end_at=end_at,
+            actual_rpe=get_number(get_property_by_alias(props, "Actual RPE", "RPE")),
             active_energy_kj=get_number(props.get("Active Energy (kJ)", {})),
             active_energy_burned_kj=get_number(props.get("Active Energy Burned (kJ)", {})),
             avg_hr=get_number(props.get("Avg HR", {})),

@@ -12,6 +12,7 @@ from ldk_athlete_ai_coach.core.integrations.notion.extractors._helpers import (
     get_title,
 )
 from ldk_athlete_ai_coach.core.integrations.notion.schemas.notion_plan import NotionPlan
+from ldk_athlete_ai_coach.utils.date_utils import coerce_to_date
 
 
 def extract_plan(raw_page: dict[str, Any]) -> NotionPlan:
@@ -26,23 +27,23 @@ def extract_plan(raw_page: dict[str, Any]) -> NotionPlan:
                 f"Plan page {notion_id!r} is missing required 'Name' property"
             )
 
-        start_date_start, start_date_end, start_date_is_datetime = get_date(
-            props.get("Start date", {})
-        )
-        end_date_start, end_date_end, end_date_is_datetime = get_date(props.get("End date", {}))
+        start_date, _, _ = get_date(props.get("Start date", {}))
+        end_date, _, _ = get_date(props.get("End date", {}))
+        if start_date is None or end_date is None:
+            raise NotionExtractionError(
+                f"Plan page {notion_id!r} is missing required start/end date properties"
+            )
+        start_date_value = coerce_to_date(start_date)
+        end_date_value = coerce_to_date(end_date)
+        assert start_date_value is not None
+        assert end_date_value is not None
 
         return NotionPlan(
             notion_id=notion_id,
             name=name,
-            plan_goal=get_rich_text(props.get("Plan goal", {})),
-            constraints=get_rich_text(props.get("Constraints", {})),
-            rules_weekly_rhythm=get_rich_text(props.get("Rules / weekly rhythm", {})),
-            start_date_start=start_date_start,
-            start_date_end=start_date_end,
-            start_date_is_datetime=start_date_is_datetime,
-            end_date_start=end_date_start,
-            end_date_end=end_date_end,
-            end_date_is_datetime=end_date_is_datetime,
+            description=get_rich_text(props.get("Plan goal", {})),
+            start_date=start_date_value,
+            end_date=end_date_value,
             created_time=get_page_datetime(raw_page, "created_time"),
             last_edited_time=get_page_datetime(raw_page, "last_edited_time"),
             archived=bool(raw_page.get("archived", False)),

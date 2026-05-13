@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from datetime import UTC, datetime
 from typing import Any
 
 from ldk_athlete_ai_coach.core.integrations.notion.schemas.notion_event import NotionEvent
@@ -26,6 +27,9 @@ def make_notion_plan(
     defaults: dict[str, Any] = {
         "notion_id": notion_id,
         "name": name,
+        "description": f"Description for {notion_id}",
+        "start_date": datetime(2024, 3, 1, tzinfo=UTC).date(),
+        "end_date": datetime(2024, 3, 31, tzinfo=UTC).date(),
         "notion_page_content": f"Content for {notion_id}",
         "url": f"https://notion.so/{notion_id}",
     }
@@ -42,6 +46,10 @@ def make_notion_phase(
     defaults: dict[str, Any] = {
         "notion_id": notion_id,
         "name": name,
+        "phase_type": "Base",
+        "focus_tags": [],
+        "start_date": datetime(2024, 3, 1, tzinfo=UTC).date(),
+        "end_date": datetime(2024, 3, 31, tzinfo=UTC).date(),
         "notion_page_content": f"Content for {notion_id}",
         "url": f"https://notion.so/{notion_id}",
     }
@@ -58,6 +66,11 @@ def make_notion_workout(
     defaults: dict[str, Any] = {
         "notion_id": notion_id,
         "name": name,
+        "category": "Run",
+        "equipment": [],
+        "purpose": [],
+        "primary_muscle_groups": [],
+        "planned_week_start_date": datetime(2024, 3, 4, tzinfo=UTC).date(),
         "notion_page_content": f"Content for {notion_id}",
         "url": f"https://notion.so/{notion_id}",
     }
@@ -90,6 +103,10 @@ def make_notion_event(
     defaults: dict[str, Any] = {
         "notion_id": notion_id,
         "name": name,
+        "event_type": "Race",
+        "sport": "Run",
+        "priority": "A",
+        "status": "Planned",
         "notion_page_content": f"Content for {notion_id}",
         "url": f"https://notion.so/{notion_id}",
     }
@@ -106,6 +123,9 @@ def make_notion_session(
     defaults: dict[str, Any] = {
         "notion_id": notion_id,
         "name": name,
+        "source": "Apple Health",
+        "session_type": "Running",
+        "start_at": datetime(2024, 3, 1, 8, 0, tzinfo=UTC),
         "notion_page_content": f"Content for {notion_id}",
         "url": f"https://notion.so/{notion_id}",
     }

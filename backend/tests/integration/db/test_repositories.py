@@ -369,13 +369,13 @@ def test_workout_repository_list_within_effective_date_window_respects_phase_fil
     )
 
     assert [workout.id for workout in all_workouts] == [
-        with_effective_done_date.id,
         without_phase.id,
         with_phase.id,
+        with_effective_done_date.id,
     ]
     assert [workout.id for workout in with_phase_only] == [
-        with_effective_done_date.id,
         with_phase.id,
+        with_effective_done_date.id,
     ]
     assert [workout.id for workout in without_phase_only] == [without_phase.id]
 

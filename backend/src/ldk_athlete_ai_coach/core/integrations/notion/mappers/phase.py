@@ -42,10 +42,8 @@ def map_phase(
     entity.notes = source.notes
     entity.phase_type = source.phase_type
     entity.focus_tags = list(source.focus_tags)
-    entity.weekly_structure = source.weekly_structure
-    entity.timeframe_start = source.timeframe_start
-    entity.timeframe_end = source.timeframe_end
-    entity.timeframe_is_datetime = source.timeframe_is_datetime
+    entity.start_date = source.start_date
+    entity.end_date = source.end_date
 
     # --- scalar foreign key fields -------------------------------------------
     # Callers that have already resolved Notion page IDs to local DB IDs should

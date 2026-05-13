@@ -16,7 +16,8 @@ from ldk_athlete_ai_coach.core.integrations.notion.extractors._helpers import (
     get_title,
 )
 from ldk_athlete_ai_coach.core.integrations.notion.schemas.notion_phase import NotionPhase
-from ldk_athlete_ai_coach.domain.enums.phase import PhaseType
+from ldk_athlete_ai_coach.domain.enums.phase import PhaseFocusTag, PhaseType
+from ldk_athlete_ai_coach.utils.date_utils import coerce_to_date
 
 
 def extract_phase(raw_page: dict[str, Any]) -> NotionPhase:
@@ -43,15 +44,18 @@ def extract_phase(raw_page: dict[str, Any]) -> NotionPhase:
                 f"Phase page {notion_id!r} is missing required 'Name' property"
             )
 
-        timeframe_start, timeframe_end, timeframe_is_datetime = get_date(props.get("Timeframe", {}))
+        start_date, end_date, _ = get_date(props.get("Timeframe", {}))
+        if start_date is None or end_date is None:
+            raise NotionExtractionError(
+                f"Phase page {notion_id!r} is missing required 'Timeframe' property"
+            )
+        start_date_value = coerce_to_date(start_date)
+        end_date_value = coerce_to_date(end_date)
+        assert start_date_value is not None
+        assert end_date_value is not None
         phase_type_prop = get_property_by_alias(props, "Phase type", "Phase Type")
-        phase_type = (
-            PhaseType(phase_type_value)
-            if (phase_type_value := get_select(phase_type_prop))
-            else None
-        )
+        phase_type = PhaseType(get_select(phase_type_prop) or PhaseType.UNKNOWN)
         focus_tags_prop = get_property_by_alias(props, "Focus tags", "Focus Tags")
-        weekly_structure_prop = get_property_by_alias(props, "Weekly structure", "Weekly Structure")
         nutrition_guideline_prop = get_property_by_alias(
             props, "Nutrition Guidelines", "Nutrition Guideline"
         )
@@ -61,11 +65,9 @@ def extract_phase(raw_page: dict[str, Any]) -> NotionPhase:
             name=name,
             notes=get_rich_text(props.get("Notes", {})),
             phase_type=phase_type,
-            focus_tags=get_multi_select(focus_tags_prop),
-            weekly_structure=get_rich_text(weekly_structure_prop),
-            timeframe_start=timeframe_start,
-            timeframe_end=timeframe_end,
-            timeframe_is_datetime=timeframe_is_datetime,
+            focus_tags=[PhaseFocusTag(value) for value in get_multi_select(focus_tags_prop)],
+            start_date=start_date_value,
+            end_date=end_date_value,
             plan_notion_id=get_first_relation(props.get("Plan", {})),
             nutrition_guideline_notion_id=get_first_relation(nutrition_guideline_prop),
             created_time=get_page_datetime(raw_page, "created_time"),

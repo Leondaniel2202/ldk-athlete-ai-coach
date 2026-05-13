@@ -45,7 +45,7 @@ def get_week_end_for_date(date: datetime) -> datetime:
     return get_week_start_for_date(date) + timedelta(days=6)
 
 
-def get_phase_week_number_for_date(phase_start_date: datetime, date: datetime) -> int:
+def get_phase_week_number_for_date(phase_start_date: date | datetime, date: date | datetime) -> int:
     """Return the relative week number within a phase for a given date.
 
     Week 1 begins on ``phase_start_date``. Each subsequent week starts every
@@ -58,7 +58,11 @@ def get_phase_week_number_for_date(phase_start_date: datetime, date: datetime) -
     Returns:
         A 1-based week number relative to the phase start.
     """
-    delta_days = (date - phase_start_date).days
+    phase_start = coerce_to_date(phase_start_date)
+    current = coerce_to_date(date)
+    if phase_start is None or current is None:
+        raise ValueError("phase_start_date and date must both be defined")
+    delta_days = (current - phase_start).days
     return (delta_days // 7) + 1
 
 

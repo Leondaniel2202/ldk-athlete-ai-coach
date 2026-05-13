@@ -9,6 +9,7 @@ from ldk_athlete_ai_coach.db.models.training import (
     TrackedSession,
     WeeklyFeedback,
     Workout,
+    WorkoutMetrics,
 )
 
 __all__ = [
@@ -20,4 +21,5 @@ __all__ = [
     "TrackedSession",
     "WeeklyFeedback",
     "Workout",
+    "WorkoutMetrics",
 ]

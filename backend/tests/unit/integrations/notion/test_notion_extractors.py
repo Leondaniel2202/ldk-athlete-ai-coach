@@ -160,7 +160,6 @@ _PHASE_PAGE: dict[str, Any] = {
         "Notes": _rich_text_prop("Focus on aerobic base"),
         "Phase type": _select_prop("Base"),
         "Focus tags": _multi_select_prop("Endurance", "Aerobic"),
-        "Weekly structure": _rich_text_prop("Mon: Run, Wed: Bike, Fri: Run"),
         "Timeframe": _date_prop("2024-02-01", "2024-03-15"),
         "Plan": _relation_prop("plan-page-id"),
         "Nutrition Guidelines": _relation_prop("nutrition-page-id"),
@@ -187,8 +186,11 @@ _WORKOUT_PAGE: dict[str, Any] = {
         "Planned Distance (km)": _number_prop(20.0),
         "Planned duration (min)": _number_prop(110.0),
         "Planned RPE": _number_prop(6.0),
-        "Planned Training Load": _formula_number_prop(660.0),
         "Planned Week Number": _number_prop(3.0),
+        "Planned Week Startdate": {
+            "type": "formula",
+            "formula": {"type": "date", "date": {"start": "2024-02-05", "end": None}},
+        },
         "Actual Duration (min)": _rollup_number_prop(108.0),
         "Actual Distance": _rollup_number_prop(20.1),
         "Actual Training Load": _rollup_number_prop(705.0),
@@ -216,10 +218,12 @@ _EVENT_PAGE: dict[str, Any] = {
     "properties": {
         "Name": _title_prop("Goal Race"),
         "Type": _select_prop("Race"),
+        "Sport": _select_prop("Run"),
         "Target": _rich_text_prop("Sub-3 marathon"),
         "Format": _rich_text_prop("Road marathon"),
         "Notes": _rich_text_prop("Primary A race"),
         "Priority": _select_prop("A"),
+        "Status": _select_prop("Planned"),
         "Start date": _date_prop("2024-10-20"),
         "End date": _date_prop("2024-10-20"),
         "Place": _place_prop(
@@ -314,11 +318,9 @@ class TestExtractPlan:
 
         assert plan.notion_id == "plan-page-id"
         assert plan.name == "Race Build Plan"
-        assert plan.plan_goal == "Build toward the target race."
-        assert plan.constraints == "No double threshold days."
-        assert plan.rules_weekly_rhythm == "Long run Sunday."
-        assert plan.start_date_start == datetime(2024, 2, 1, 0, 0)
-        assert plan.end_date_start == datetime(2024, 5, 1, 0, 0)
+        assert plan.description == "Build toward the target race."
+        assert plan.start_date.isoformat() == "2024-02-01"
+        assert plan.end_date.isoformat() == "2024-05-01"
         assert plan.created_time == datetime(2024, 1, 5, 7, 30, tzinfo=UTC)
         assert plan.last_edited_time == datetime(2024, 1, 6, 8, 45, tzinfo=UTC)
         assert plan.archived is False
@@ -357,17 +359,15 @@ class TestExtractPhase:
         assert phase.notes == "Focus on aerobic base"
         assert phase.phase_type == "Base"
         assert phase.focus_tags == ["Endurance", "Aerobic"]
-        assert phase.weekly_structure == "Mon: Run, Wed: Bike, Fri: Run"
-        assert phase.timeframe_start == datetime(2024, 2, 1, 0, 0)
-        assert phase.timeframe_end == datetime(2024, 3, 15, 0, 0)
-        assert phase.timeframe_is_datetime is False
+        assert phase.start_date.isoformat() == "2024-02-01"
+        assert phase.end_date.isoformat() == "2024-03-15"
         assert phase.plan_notion_id == "plan-page-id"
         assert phase.nutrition_guideline_notion_id == "nutrition-page-id"
         assert phase.created_time == datetime(2024, 1, 10, 8, 0, tzinfo=UTC)
         assert phase.archived is False
         assert phase.url == "https://www.notion.so/phase-page-id"
 
-    def test_optional_fields_absent(self) -> None:
+    def test_missing_timeframe_raises_extraction_error(self) -> None:
         page: dict[str, Any] = {
             **_PHASE_PAGE,
             "properties": {
@@ -375,23 +375,13 @@ class TestExtractPhase:
                 "Notes": _empty_prop("rich_text"),
                 "Phase type": _empty_prop("select"),
                 "Focus tags": _empty_prop("multi_select"),
-                "Weekly structure": _empty_prop("rich_text"),
                 "Timeframe": _empty_prop("date"),
                 "Plan": _empty_prop("relation"),
                 "Nutrition Guidelines": _empty_prop("relation"),
             },
         }
-        phase = extract_phase(page)
-
-        assert phase.name == "Minimal Phase"
-        assert phase.notes is None
-        assert phase.phase_type is None
-        assert phase.focus_tags == []
-        assert phase.weekly_structure is None
-        assert phase.timeframe_start is None
-        assert phase.timeframe_end is None
-        assert phase.plan_notion_id is None
-        assert phase.nutrition_guideline_notion_id is None
+        with pytest.raises(NotionExtractionError, match="missing required 'Timeframe'"):
+            extract_phase(page)
 
     def test_legacy_property_aliases_supported(self) -> None:
         page: dict[str, Any] = {
@@ -401,7 +391,6 @@ class TestExtractPhase:
                 "Notes": _rich_text_prop("Legacy naming still syncs"),
                 "Phase Type": _select_prop("Base"),
                 "Focus Tags": _multi_select_prop("Endurance", "Aerobic"),
-                "Weekly Structure": _rich_text_prop("Mon: Run, Wed: Bike, Fri: Run"),
                 "Timeframe": _date_prop("2024-02-01", "2024-03-15"),
                 "Plan": _relation_prop("plan-page-id"),
                 "Nutrition Guideline": _relation_prop("nutrition-page-id"),
@@ -413,7 +402,6 @@ class TestExtractPhase:
         assert phase.name == "Legacy Phase"
         assert phase.phase_type == "Base"
         assert phase.focus_tags == ["Endurance", "Aerobic"]
-        assert phase.weekly_structure == "Mon: Run, Wed: Bike, Fri: Run"
         assert phase.nutrition_guideline_notion_id == "nutrition-page-id"
 
     def test_missing_name_raises_extraction_error(self) -> None:
@@ -425,17 +413,6 @@ class TestExtractPhase:
         page = {k: v for k, v in _PHASE_PAGE.items() if k != "id"}
         with pytest.raises(NotionExtractionError):
             extract_phase(page)
-
-    def test_timeframe_datetime_flag(self) -> None:
-        page: dict[str, Any] = {
-            **_PHASE_PAGE,
-            "properties": {
-                **_PHASE_PAGE["properties"],
-                "Timeframe": _date_prop("2024-02-01T06:00:00+00:00", "2024-02-28T06:00:00+00:00"),
-            },
-        }
-        phase = extract_phase(page)
-        assert phase.timeframe_is_datetime is True
 
     def test_multiple_relations_uses_first(self) -> None:
         page: dict[str, Any] = {
@@ -465,21 +442,21 @@ class TestExtractWorkout:
 
         assert workout.notion_id == "workout-page-id"
         assert workout.name == "Long Run"
-        assert workout.date_start == datetime(2024, 2, 5, 0, 0)
-        assert workout.date_end is None
-        assert workout.date_is_datetime is False
+        assert workout.planned_date is not None
+        assert workout.planned_date.isoformat() == "2024-02-05"
         assert workout.category == "Run"
         assert workout.difficulty == "3 - Moderate"
         assert workout.equipment == ["Shoes", "HR Monitor"]
         assert workout.impact == "High"
         assert workout.metrics_to_record == ["Heart Rate", "Pace"]
         assert workout.purpose == ["Aerobic"]
-        assert workout.primarily_used_muscle_group == ["Legs"]
+        assert workout.primary_muscle_groups == ["Legs"]
         assert workout.planned_distance_km == 20.0
         assert workout.planned_duration_min == 110.0
         assert workout.planned_rpe == 6.0
-        assert workout.planned_training_load == 660.0
         assert workout.planned_week_number == 3.0
+        assert workout.planned_week_start_date is not None
+        assert workout.planned_week_start_date.isoformat() == "2024-02-05"
         assert workout.actual_duration_min == 108.0
         assert workout.actual_distance_km == 20.1
         assert workout.actual_training_load == 705.0
@@ -487,9 +464,7 @@ class TestExtractWorkout:
         assert workout.weighted_hrr_intensity_sum == 312.4
         assert workout.actual_hrr_intensity == 2.89
         assert workout.actual_rpe == 7.0
-        assert workout.done_date_start == datetime(2024, 2, 5, 8, 55, tzinfo=UTC)
-        assert workout.done_date_end is None
-        assert workout.done_date_is_datetime is True
+        assert workout.done_at == datetime(2024, 2, 5, 8, 55, tzinfo=UTC)
         assert workout.status == "Done"
         assert workout.training_load_method == "Weighted HRR"
         assert workout.additional_info == "https://example.com/workouts/long-run"
@@ -514,8 +489,11 @@ class TestExtractWorkout:
                 "Planned Distance (km)": _empty_prop("number"),
                 "Planned duration (min)": _empty_prop("number"),
                 "Planned RPE": _empty_prop("number"),
-                "Planned Training Load": _formula_number_prop(None),
                 "Planned Week Number": _empty_prop("number"),
+                "Planned Week Startdate": {
+                    "type": "formula",
+                    "formula": {"type": "date", "date": {"start": "2024-02-05", "end": None}},
+                },
                 "Actual Duration (min)": _rollup_number_prop(None),
                 "Actual Distance": _rollup_number_prop(None),
                 "Actual Training Load": _rollup_number_prop(None),
@@ -535,18 +513,17 @@ class TestExtractWorkout:
         workout = extract_workout(page)
 
         assert workout.name == "Minimal Workout"
-        assert workout.date_start is None
-        assert workout.category is None
+        assert workout.planned_date is None
+        assert workout.category == "Unknown"
         assert workout.equipment == []
         assert workout.planned_distance_km is None
-        assert workout.planned_training_load is None
         assert workout.actual_duration_min is None
         assert workout.actual_distance_km is None
         assert workout.actual_training_load is None
         assert workout.actual_calories_burned_kcal is None
         assert workout.weighted_hrr_intensity_sum is None
         assert workout.actual_hrr_intensity is None
-        assert workout.done_date_start is None
+        assert workout.done_at is None
         assert workout.status is None
         assert workout.training_load_method is None
         assert workout.additional_info is None
@@ -564,12 +541,16 @@ class TestExtractWorkout:
                 "Equipment": _multi_select_prop("Shoes"),
                 "Impact": _select_prop("High"),
                 "Metrics to Record": _multi_select_prop("HR", "Pace"),
-                "Purpose": _multi_select_prop("Aerobic Capacity"),
+                "Purpose": _multi_select_prop("Aerobic"),
                 "Primarily Used Muscle Group": _multi_select_prop("Legs"),
                 "Planned Distance (km)": _number_prop(18.0),
                 "Planned Duration (min)": _number_prop(95.0),
                 "Planned RPE": _number_prop(5.0),
                 "Planned Week Number": _number_prop(2.0),
+                "Planned Week Startdate": {
+                    "type": "formula",
+                    "formula": {"type": "date", "date": {"start": "2024-02-05", "end": None}},
+                },
                 "Actual RPE": _number_prop(6.0),
                 "Additional Info": _rich_text_prop("Legacy text content"),
                 "Cancelled": _checkbox_prop(False),
@@ -581,9 +562,10 @@ class TestExtractWorkout:
         workout = extract_workout(page)
 
         assert workout.name == "Legacy Workout"
-        assert workout.date_start == datetime(2024, 2, 5, 0, 0)
+        assert workout.planned_date is not None
+        assert workout.planned_date.isoformat() == "2024-02-05"
         assert workout.metrics_to_record == ["HR", "Pace"]
-        assert workout.primarily_used_muscle_group == ["Legs"]
+        assert workout.primary_muscle_groups == ["Legs"]
         assert workout.planned_duration_min == 95.0
         assert workout.additional_info == "Legacy text content"
 
@@ -591,20 +573,6 @@ class TestExtractWorkout:
         page: dict[str, Any] = {**_WORKOUT_PAGE, "properties": {"Name": _empty_prop("title")}}
         with pytest.raises(NotionExtractionError, match="missing required 'Name'"):
             extract_workout(page)
-
-    def test_date_with_range_and_datetime_flag(self) -> None:
-        page: dict[str, Any] = {
-            **_WORKOUT_PAGE,
-            "properties": {
-                **_WORKOUT_PAGE["properties"],
-                "Planned Date": _date_prop(
-                    "2024-02-05T07:00:00+00:00", "2024-02-05T09:00:00+00:00"
-                ),
-            },
-        }
-        workout = extract_workout(page)
-        assert workout.date_is_datetime is True
-        assert workout.date_end is not None
 
     def test_cancelled_checkbox_true(self) -> None:
         page: dict[str, Any] = {
@@ -637,17 +605,15 @@ class TestExtractEvent:
         assert event.notion_id == "event-page-id"
         assert event.name == "Goal Race"
         assert event.event_type == "Race"
+        assert event.sport == "Run"
         assert event.target == "Sub-3 marathon"
         assert event.event_format == "Road marathon"
         assert event.notes == "Primary A race"
         assert event.priority == "A"
-        assert event.start_date_start == datetime(2024, 10, 20, 0, 0)
-        assert event.end_date_start == datetime(2024, 10, 20, 0, 0)
-        assert event.place_name == "Amsterdam"
-        assert event.place_address == "Museumplein, Amsterdam"
-        assert event.place_latitude == pytest.approx(52.3584)
-        assert event.place_longitude == pytest.approx(4.8811)
-        assert event.place_google_place_id == "place-123"
+        assert event.status == "Planned"
+        assert event.start_at == datetime(2024, 10, 20, 0, 0)
+        assert event.end_at == datetime(2024, 10, 20, 0, 0)
+        assert event.location == "Amsterdam"
         assert event.plan_notion_id == "plan-page-id"
         assert event.race_workout_notion_id == "workout-page-id"
         assert event.created_time == datetime(2024, 1, 10, 8, 0, tzinfo=UTC)
@@ -658,10 +624,12 @@ class TestExtractEvent:
             "properties": {
                 "Name": _title_prop("Minimal Event"),
                 "Type": _empty_prop("select"),
+                "Sport": _empty_prop("select"),
                 "Target": _empty_prop("rich_text"),
                 "Format": _empty_prop("rich_text"),
                 "Notes": _empty_prop("rich_text"),
                 "Priority": _empty_prop("select"),
+                "Status": _empty_prop("select"),
                 "Start date": _empty_prop("date"),
                 "End date": _empty_prop("date"),
                 "Place": _empty_prop("place"),
@@ -672,12 +640,14 @@ class TestExtractEvent:
 
         event = extract_event(page)
 
-        assert event.event_type is None
+        assert event.event_type == "Unknown"
+        assert event.sport == "Unknown"
         assert event.target is None
         assert event.event_format is None
         assert event.notes is None
-        assert event.priority is None
-        assert event.place_name is None
+        assert event.priority == "Unknown"
+        assert event.status == "Unknown"
+        assert event.location is None
         assert event.plan_notion_id is None
         assert event.race_workout_notion_id is None
 
@@ -701,8 +671,8 @@ class TestExtractSession:
         assert session.source == "Apple Health"
         assert session.session_type == "Running"
         assert session.external_id == "ext-abc123"
-        assert session.start_is_datetime is True
-        assert session.end_is_datetime is True
+        assert session.start_at == datetime(2024, 2, 5, 6, 0, tzinfo=UTC)
+        assert session.end_at == datetime(2024, 2, 5, 8, 0, tzinfo=UTC)
         assert session.active_energy_kj == 2500.0
         assert session.avg_hr == 148.0
         assert session.max_hr == 175.0
@@ -714,7 +684,7 @@ class TestExtractSession:
         assert session.workout_notion_id == "workout-page-id"
         assert session.url == "https://www.notion.so/session-page-id"
 
-    def test_optional_fields_absent(self) -> None:
+    def test_missing_start_raises_extraction_error(self) -> None:
         page: dict[str, Any] = {
             **_SESSION_PAGE,
             "properties": {
@@ -723,28 +693,10 @@ class TestExtractSession:
                 "Session Type": _empty_prop("select"),
                 "External ID": _empty_prop("rich_text"),
                 "Start": _empty_prop("date"),
-                "End": _empty_prop("date"),
-                "Active Energy (kJ)": _empty_prop("number"),
-                "Active Energy Burned (kJ)": _empty_prop("number"),
-                "Avg HR": _empty_prop("number"),
-                "Max HR": _empty_prop("number"),
-                "Calories (kcal)": _empty_prop("number"),
-                "Distance (km)": _empty_prop("number"),
-                "Duration (min)": _empty_prop("number"),
-                "Elevation Ascended (m)": _empty_prop("number"),
-                "Elevation Descended (m)": _empty_prop("number"),
-                "Intensity (kcal/hr/kg)": _empty_prop("number"),
-                "Step Cadence (count/min)": _empty_prop("number"),
-                "Steps": _empty_prop("number"),
-                "Workout": _empty_prop("relation"),
             },
         }
-        session = extract_session(page)
-
-        assert session.name == "Minimal Session"
-        assert session.source is None
-        assert session.avg_hr is None
-        assert session.workout_notion_id is None
+        with pytest.raises(NotionExtractionError, match="missing required 'Start'"):
+            extract_session(page)
 
     def test_relation_and_type_aliases_supported(self) -> None:
         page: dict[str, Any] = {
@@ -772,7 +724,7 @@ class TestExtractSession:
 
     def test_date_parsed_from_datetime_string(self) -> None:
         session = extract_session(_SESSION_PAGE)
-        assert session.start_start == datetime(2024, 2, 5, 6, 0, tzinfo=UTC)
+        assert session.start_at == datetime(2024, 2, 5, 6, 0, tzinfo=UTC)
 
     def test_missing_id_key_raises_extraction_error(self) -> None:
         page = {k: v for k, v in _SESSION_PAGE.items() if k != "id"}

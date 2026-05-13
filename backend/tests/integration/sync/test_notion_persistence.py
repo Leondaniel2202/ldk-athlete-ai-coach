@@ -30,6 +30,9 @@ from ldk_athlete_ai_coach.db.models.training import (
     Workout,
 )
 from ldk_athlete_ai_coach.db.repositories.training_base_repository import TrainingBaseRepository
+from ldk_athlete_ai_coach.domain.enums.phase import PhaseType
+from ldk_athlete_ai_coach.domain.enums.session import SessionSource, SessionType
+from ldk_athlete_ai_coach.domain.enums.workout import WorkoutCategory
 
 pytestmark = pytest.mark.integration
 
@@ -39,6 +42,10 @@ def _phase_entity(notion_id: str, name: str = "Base Phase") -> Phase:
     entity.notion_page_id = notion_id
     entity.notion_url = f"https://notion.so/{notion_id}"
     entity.name = name
+    entity.phase_type = PhaseType.BASE
+    entity.focus_tags = []
+    entity.start_date = datetime(2024, 3, 1, tzinfo=UTC).date()
+    entity.end_date = datetime(2024, 3, 31, tzinfo=UTC).date()
     return entity
 
 
@@ -47,6 +54,11 @@ def _workout_entity(notion_id: str, name: str = "Long Run") -> Workout:
     entity.notion_page_id = notion_id
     entity.notion_url = f"https://notion.so/{notion_id}"
     entity.name = name
+    entity.category = WorkoutCategory.RUN
+    entity.equipment = []
+    entity.purpose = []
+    entity.primary_muscle_groups = []
+    entity.planned_week_start_date = datetime(2024, 3, 4, tzinfo=UTC).date()
     return entity
 
 
@@ -55,6 +67,9 @@ def _session_entity(notion_id: str, name: str = "Morning Run") -> TrackedSession
     entity.notion_page_id = notion_id
     entity.notion_url = f"https://notion.so/{notion_id}"
     entity.name = name
+    entity.source = SessionSource.APPLE_HEALTH
+    entity.session_type = SessionType.RUNNING
+    entity.start_at = datetime(2024, 3, 1, 8, 0, tzinfo=UTC)
     return entity
 
 
@@ -233,7 +248,7 @@ class TestNotionPersistenceService:
 
         assert workout.phase_id == phase.id
 
-    def test_persist_workouts_stores_current_workout_fields(self, db_session: Session) -> None:
+    def test_persist_workouts_maps_planned_and_actual_fields(self, db_session: Session) -> None:
         svc = NotionPersistenceService(db_session)
 
         [workout] = svc.persist_workouts(
@@ -247,16 +262,15 @@ class TestNotionPersistenceService:
                     actual_calories_burned_kcal=720.0,
                     weighted_hrr_intensity_sum=145.5,
                     actual_hrr_intensity=2.51,
-                    done_date_start="2024-03-01T08:00:00+00:00",
-                    done_date_end=None,
-                    done_date_is_datetime=True,
+                    done_at="2024-03-01T08:00:00+00:00",
+                    session_count=1,
                     status="Done",
                     training_load_method="Weighted HRR",
                 )
             ]
         )
 
-        assert workout.planned_training_load == pytest.approx(410.0)
+        assert workout.planned_training_load is None
         assert workout.actual_duration_min == pytest.approx(58.0)
         assert workout.actual_distance_km == pytest.approx(10.2)
         assert workout.actual_training_load == pytest.approx(438.0)

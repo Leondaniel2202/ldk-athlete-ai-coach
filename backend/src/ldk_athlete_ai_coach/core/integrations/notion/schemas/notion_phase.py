@@ -2,12 +2,12 @@
 
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import date, datetime
 
 from pydantic import Field
 
 from ldk_athlete_ai_coach.core.integrations.notion.schemas.notion_base import NotionBaseSchema
-from ldk_athlete_ai_coach.domain.enums.phase import PhaseType
+from ldk_athlete_ai_coach.domain.enums.phase import PhaseFocusTag, PhaseType
 
 
 class NotionPhase(NotionBaseSchema):
@@ -21,12 +21,10 @@ class NotionPhase(NotionBaseSchema):
     """
 
     notes: str | None = None
-    phase_type: PhaseType | None = None
-    focus_tags: list[str] = Field(default_factory=list)
-    weekly_structure: str | None = None
-    timeframe_start: datetime | None = None
-    timeframe_end: datetime | None = None
-    timeframe_is_datetime: bool = False
+    phase_type: PhaseType
+    focus_tags: list[PhaseFocusTag] = Field(default_factory=list)
+    start_date: date
+    end_date: date
     plan_notion_id: str | None = None
     nutrition_guideline_notion_id: str | None = None
     created_time: datetime | None = None

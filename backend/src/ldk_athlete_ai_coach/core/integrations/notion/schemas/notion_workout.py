@@ -2,13 +2,18 @@
 
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import date, datetime
 
 from pydantic import Field
 
 from ldk_athlete_ai_coach.core.integrations.notion.schemas.notion_base import NotionBaseSchema
 from ldk_athlete_ai_coach.domain.enums.status import WorkoutStatus
-from ldk_athlete_ai_coach.domain.enums.workout import WorkoutCategory
+from ldk_athlete_ai_coach.domain.enums.workout import (
+    MuscleGroup,
+    WorkoutCategory,
+    WorkoutEquipment,
+    WorkoutPurpose,
+)
 
 
 class NotionWorkout(NotionBaseSchema):
@@ -19,22 +24,19 @@ class NotionWorkout(NotionBaseSchema):
     :class:`~ldk_athlete_ai_coach.db.models.training.Workout`.
     """
 
-    date_start: datetime | None = None
-    date_end: datetime | None = None
-    date_is_datetime: bool = False
-    category: WorkoutCategory | None = None
+    planned_date: date | None = None
+    category: WorkoutCategory
     difficulty: str | None = None
-    equipment: list[str] = Field(default_factory=list)
+    equipment: list[WorkoutEquipment] = Field(default_factory=list)
     impact: str | None = None
     metrics_to_record: list[str] = Field(default_factory=list)
-    purpose: list[str] = Field(default_factory=list)
-    primarily_used_muscle_group: list[str] = Field(default_factory=list)
+    purpose: list[WorkoutPurpose] = Field(default_factory=list)
+    primary_muscle_groups: list[MuscleGroup] = Field(default_factory=list)
     planned_distance_km: float | None = None
     planned_duration_min: float | None = None
     planned_rpe: float | None = None
-    planned_training_load: float | None = None
     planned_week_number: float | None = None
-    planned_week_start_date: datetime | None = None
+    planned_week_start_date: date
     actual_duration_min: float | None = None
     actual_distance_km: float | None = None
     actual_training_load: float | None = None
@@ -42,9 +44,9 @@ class NotionWorkout(NotionBaseSchema):
     weighted_hrr_intensity_sum: float | None = None
     actual_hrr_intensity: float | None = None
     actual_rpe: float | None = None
-    done_date_start: datetime | None = None
-    done_date_end: datetime | None = None
-    done_date_is_datetime: bool = False
+    done_at: datetime | None = None
+    session_count: int = 0
+    calculation_version: str = "notion-v1"
     status: WorkoutStatus | None = None
     training_load_method: str | None = None
     additional_info: str | None = None

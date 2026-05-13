@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from collections import Counter, defaultdict
-from datetime import UTC, datetime
+from datetime import UTC, date, datetime, timedelta
 from typing import cast
 
 from ldk_athlete_ai_coach.api.v1.schemas.adherence import WorkoutAdherenceSummaryResponse
@@ -31,8 +31,8 @@ from ldk_athlete_ai_coach.domain.calculators.training_metrics_calculator import 
 )
 from ldk_athlete_ai_coach.domain.enums.status import PhaseStatus, WorkoutStatus
 from ldk_athlete_ai_coach.utils.date_utils import (
+    coerce_to_date,
     get_phase_week_number_for_date,
-    get_week_end_for_date,
 )
 
 
@@ -187,8 +187,8 @@ class PhaseContextService:
     def _build_training_metrics_response(
         self,
         workouts: list[Workout],
-        timeframe_start: datetime | None,
-        timeframe_end: datetime | None,
+        timeframe_start: date | datetime | None,
+        timeframe_end: date | datetime | None,
     ) -> TrainingMetricsResponse:
         """Calculate training metrics for a list of workouts.
 
@@ -204,8 +204,8 @@ class PhaseContextService:
 
         """
         return TrainingMetricsResponse(
-            timeframe_start=timeframe_start.date() if timeframe_start else None,
-            timeframe_end=timeframe_end.date() if timeframe_end else None,
+            timeframe_start=coerce_to_date(timeframe_start),
+            timeframe_end=coerce_to_date(timeframe_end),
             training_metrics=self._metrics_calculator.calculate(workouts=workouts),
         )
 
@@ -244,7 +244,7 @@ class PhaseContextService:
             all_workouts=all_workouts
         )
 
-        weekly_workouts: dict[datetime, list[Workout]] = defaultdict(list)
+        weekly_workouts: dict[date, list[Workout]] = defaultdict(list)
         for workout in all_workouts:
             if workout.planned_week_start_date is not None:
                 weekly_workouts[workout.planned_week_start_date].append(workout)
@@ -255,7 +255,7 @@ class PhaseContextService:
                 self._build_training_metrics_response(
                     workouts=workouts,
                     timeframe_start=week_start,
-                    timeframe_end=get_week_end_for_date(week_start),
+                    timeframe_end=week_start + timedelta(days=6),
                 )
                 for week_start, workouts in sorted(weekly_workouts.items())
             ]
@@ -377,7 +377,7 @@ class PhaseContextService:
         metrics: TrainingMetricsResponse = self._build_training_metrics_response(
             workouts=all_workouts,
             timeframe_start=week_start_date,
-            timeframe_end=get_week_end_for_date(week_start_date),
+            timeframe_end=week_start_date + timedelta(days=6),
         )
 
         data_gaps: list[str] = []
@@ -434,7 +434,7 @@ class PhaseContextService:
             if phase.timeframe_start
             else 0,
             phase_week_start_date=week_start_date,
-            phase_week_end_date=get_week_end_for_date(week_start_date),
+            phase_week_end_date=week_start_date + timedelta(days=6),
         )
         plan_summary: PlanSummaryResponse = PlanSummaryResponse.model_validate(phase.plan)
         phase_summary: PhaseSummaryResponse = PhaseSummaryResponse.model_validate(phase)

@@ -6,6 +6,22 @@ from dataclasses import dataclass
 from enum import StrEnum
 
 
+class PhaseFocusTag(StrEnum):
+    """Focus tag assigned to a training phase."""
+
+    ENDURANCE = "Endurance"
+    AEROBIC = "Aerobic"
+    SPEED = "Speed"
+    HILLS = "Hills"
+    STRENGTH = "Strength"
+    RECOVERY = "Recovery"
+    UNKNOWN = "Unknown"
+
+    @classmethod
+    def _missing_(cls, _value: object) -> PhaseFocusTag:
+        return cls.UNKNOWN
+
+
 class PhaseType(StrEnum):
     """Type of a training phase."""
 
@@ -14,6 +30,11 @@ class PhaseType(StrEnum):
     PEAK = "Peak"
     TAPER = "Taper"
     RECOVERY = "Recovery"
+    UNKNOWN = "Unknown"
+
+    @classmethod
+    def _missing_(cls, _value: object) -> PhaseType:
+        return cls.UNKNOWN
 
 
 @dataclass(frozen=True)

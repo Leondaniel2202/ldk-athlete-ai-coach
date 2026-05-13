@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import UTC, datetime
+from datetime import UTC, date, datetime
 
 from sqlalchemy.orm import Session
 
@@ -18,14 +18,14 @@ def create_plan(
     end_date_start: datetime | None = None,
 ) -> Plan:
     """Insert a minimal Plan into the database and return it."""
+    start_date = (start_date_start or datetime.now(tz=UTC)).date()
+    end_date = (end_date_start or datetime.now(tz=UTC)).date()
     plan = Plan(
         notion_page_id=notion_page_id or f"plan-{name}",
         notion_url=f"https://notion.so/plan-{name}",
         name=name,
-        start_date_start=start_date_start,
-        end_date_start=end_date_start,
-        start_date_is_datetime=False,
-        end_date_is_datetime=False,
+        start_date=start_date,
+        end_date=end_date,
     )
     db.add(plan)
     db.flush()
@@ -43,16 +43,17 @@ def create_phase(
     timeframe_end: datetime | None = None,
 ) -> Phase:
     """Insert a minimal Phase into the database and return it."""
+    if plan is None:
+        plan = create_plan(db, name=f"{name}-plan")
     phase = Phase(
         notion_page_id=notion_page_id or f"phase-{name}",
         notion_url=f"https://notion.so/phase-{name}",
         name=name,
-        phase_type=phase_type,
+        phase_type=phase_type or "Base",
         focus_tags=[],
-        timeframe_start=timeframe_start,
-        timeframe_end=timeframe_end,
-        timeframe_is_datetime=False,
-        plan_id=plan.id if plan is not None else None,
+        start_date=(timeframe_start or datetime.now(tz=UTC)).date(),
+        end_date=(timeframe_end or datetime.now(tz=UTC)).date(),
+        plan_id=plan.id,
     )
     db.add(phase)
     db.flush()
@@ -93,7 +94,7 @@ def create_workout(
         equipment=[],
         metrics_to_record=[],
         purpose=[],
-        primarily_used_muscle_group=[],
+        primary_muscle_groups=[],
         planned_training_load=planned_training_load,
         actual_training_load=actual_training_load,
         actual_rpe=actual_rpe,
@@ -102,16 +103,18 @@ def create_workout(
         actual_calories_burned_kcal=actual_calories_burned_kcal,
         weighted_hrr_intensity_sum=weighted_hrr_intensity_sum,
         actual_hrr_intensity=actual_hrr_intensity,
-        date_start=date_start,
+        planned_date=date_start.date() if date_start is not None else None,
         done_date_start=done_date_start,
         status=status,
         training_load_method="Weighted HRR",
         planned_week_number=planned_week_number,
-        planned_week_start_date=planned_week_start_date,
-        date_is_datetime=date_start is not None,
+        planned_week_start_date=(
+            planned_week_start_date.date()
+            if planned_week_start_date is not None
+            else date.today()
+        ),
         cancelled=cancelled,
         skipped=skipped,
-        done_date_is_datetime=done_date_start is not None,
         phase_id=phase.id if phase is not None else None,
     )
     db.add(workout)
@@ -132,9 +135,9 @@ def create_tracked_session(
         notion_page_id=notion_page_id or f"session-{name}",
         notion_url=f"https://notion.so/session-{name}",
         name=name,
-        start_is_datetime=True,
-        end_is_datetime=False,
-        start_start=start or datetime.now(tz=UTC),
+        source="Apple Health",
+        session_type="Running",
+        start_at=start or datetime.now(tz=UTC),
         workout_id=workout.id if workout else None,
     )
     db.add(tracked)

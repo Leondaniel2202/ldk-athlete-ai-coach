@@ -25,7 +25,13 @@ from ldk_athlete_ai_coach.core.integrations.notion.extractors._helpers import (
 )
 from ldk_athlete_ai_coach.core.integrations.notion.schemas.notion_workout import NotionWorkout
 from ldk_athlete_ai_coach.domain.enums.status import WorkoutStatus
-from ldk_athlete_ai_coach.domain.enums.workout import WorkoutCategory
+from ldk_athlete_ai_coach.domain.enums.workout import (
+    MuscleGroup,
+    WorkoutCategory,
+    WorkoutEquipment,
+    WorkoutPurpose,
+)
+from ldk_athlete_ai_coach.utils.date_utils import coerce_to_date
 
 
 def extract_workout(raw_page: dict[str, Any]) -> NotionWorkout:
@@ -52,60 +58,83 @@ def extract_workout(raw_page: dict[str, Any]) -> NotionWorkout:
                 f"Workout page {notion_id!r} is missing required 'Name' property"
             )
 
-        date_start, date_end, date_is_datetime = get_date(props.get("Planned Date", {}))
-        done_date_start, done_date_end, done_date_is_datetime = get_rollup_date(
-            props.get("Done Date", {})
-        )
+        planned_date, _, _ = get_date(props.get("Planned Date", {}))
+        done_at, _, _ = get_rollup_date(props.get("Done Date", {}))
         additional_info_prop = get_property_by_alias(props, "Additional Info")
-        category = (
-            WorkoutCategory(category_value)
-            if (category_value := get_select(props.get("Category", {})))
-            else None
+        category = WorkoutCategory(get_select(props.get("Category", {})) or WorkoutCategory.UNKNOWN)
+        planned_week_start_date = get_formula_date(props.get("Planned Week Startdate", {}))[0]
+        if planned_week_start_date is None:
+            raise NotionExtractionError(
+                f"Workout page {notion_id!r} is missing required 'Planned Week Startdate' property"
+            )
+        planned_week_start_date_value = coerce_to_date(planned_week_start_date)
+        assert planned_week_start_date_value is not None
+        actual_duration_min = get_rollup_number(props.get("Actual Duration (min)", {}))
+        actual_distance_km = get_rollup_number(props.get("Actual Distance", {}))
+        actual_training_load = get_rollup_number(props.get("Actual Training Load", {}))
+        actual_calories_burned_kcal = get_rollup_number(
+            props.get("Actual calories burned (kcal)", {})
+        )
+        weighted_hrr_intensity_sum = get_rollup_number(
+            props.get("Weighted HRR Intensity Sum", {})
+        )
+        actual_hrr_intensity = get_formula_number(props.get("Actual HRR Intensity", {}))
+        actual_rpe = get_number(props.get("Actual RPE", {}))
+        has_actual_metrics = any(
+            value is not None
+            for value in (
+                actual_duration_min,
+                actual_distance_km,
+                actual_training_load,
+                actual_calories_burned_kcal,
+                weighted_hrr_intensity_sum,
+                actual_hrr_intensity,
+                actual_rpe,
+                done_at,
+            )
         )
 
         return NotionWorkout(
             notion_id=notion_id,
             name=name,
-            date_start=date_start,
-            date_end=date_end,
-            date_is_datetime=date_is_datetime,
+            planned_date=coerce_to_date(planned_date),
             category=category,
             difficulty=get_select(props.get("Difficulty", {})),
-            equipment=get_multi_select(props.get("Equipment", {})),
+            equipment=[
+                WorkoutEquipment(value)
+                for value in get_multi_select(props.get("Equipment", {}))
+            ],
             impact=get_select(props.get("Impact", {})),
             metrics_to_record=get_multi_select(
                 get_property_by_alias(props, "Metrics to record", "Metrics to Record")
             ),
-            purpose=get_multi_select(props.get("Purpose", {})),
-            primarily_used_muscle_group=get_multi_select(
-                get_property_by_alias(
-                    props,
-                    "Primarily used muscle group",
-                    "Primarily Used Muscle Group",
+            purpose=[WorkoutPurpose(value) for value in get_multi_select(props.get("Purpose", {}))],
+            primary_muscle_groups=[
+                MuscleGroup(value)
+                for value in get_multi_select(
+                    get_property_by_alias(
+                        props,
+                        "Primarily used muscle group",
+                        "Primarily Used Muscle Group",
+                    )
                 )
-            ),
+            ],
             planned_distance_km=get_number(props.get("Planned Distance (km)", {})),
             planned_duration_min=get_number(
                 get_property_by_alias(props, "Planned duration (min)", "Planned Duration (min)")
             ),
             planned_rpe=get_number(props.get("Planned RPE", {})),
-            planned_training_load=get_formula_number(props.get("Planned Training Load", {})),
             planned_week_number=get_number(props.get("Planned Week Number", {})),
-            planned_week_start_date=get_formula_date(props.get("Planned Week Startdate", {}))[0],
-            actual_duration_min=get_rollup_number(props.get("Actual Duration (min)", {})),
-            actual_distance_km=get_rollup_number(props.get("Actual Distance", {})),
-            actual_training_load=get_rollup_number(props.get("Actual Training Load", {})),
-            actual_calories_burned_kcal=get_rollup_number(
-                props.get("Actual calories burned (kcal)", {})
-            ),
-            weighted_hrr_intensity_sum=get_rollup_number(
-                props.get("Weighted HRR Intensity Sum", {})
-            ),
-            actual_hrr_intensity=get_formula_number(props.get("Actual HRR Intensity", {})),
-            actual_rpe=get_number(props.get("Actual RPE", {})),
-            done_date_start=done_date_start,
-            done_date_end=done_date_end,
-            done_date_is_datetime=done_date_is_datetime,
+            planned_week_start_date=planned_week_start_date_value,
+            actual_duration_min=actual_duration_min,
+            actual_distance_km=actual_distance_km,
+            actual_training_load=actual_training_load,
+            actual_calories_burned_kcal=actual_calories_burned_kcal,
+            weighted_hrr_intensity_sum=weighted_hrr_intensity_sum,
+            actual_hrr_intensity=actual_hrr_intensity,
+            actual_rpe=actual_rpe,
+            done_at=done_at,
+            session_count=1 if has_actual_metrics else 0,
             status=(
                 WorkoutStatus(status_value)
                 if (status_value := get_formula_string(props.get("Status", {})))
