@@ -109,7 +109,7 @@ class Event(TrainingEntityMixin, Base):
 
     @start_date_end.setter
     def start_date_end(self, _value: datetime | None) -> None:
-        return None
+        pass
 
     @property
     def start_date_is_datetime(self) -> bool:
@@ -129,7 +129,7 @@ class Event(TrainingEntityMixin, Base):
 
     @end_date_end.setter
     def end_date_end(self, _value: datetime | None) -> None:
-        return None
+        pass
 
     @property
     def end_date_is_datetime(self) -> bool:
@@ -176,7 +176,7 @@ class Plan(TrainingEntityMixin, Base):
 
     @constraints.setter
     def constraints(self, _value: str | None) -> None:
-        return None
+        pass
 
     @property
     def rules_weekly_rhythm(self) -> None:
@@ -184,7 +184,7 @@ class Plan(TrainingEntityMixin, Base):
 
     @rules_weekly_rhythm.setter
     def rules_weekly_rhythm(self, _value: str | None) -> None:
-        return None
+        pass
 
     @property
     def start_date_start(self) -> datetime | None:
@@ -201,7 +201,7 @@ class Plan(TrainingEntityMixin, Base):
 
     @start_date_end.setter
     def start_date_end(self, _value: datetime | None) -> None:
-        return None
+        pass
 
     @property
     def start_date_is_datetime(self) -> bool:
@@ -209,7 +209,7 @@ class Plan(TrainingEntityMixin, Base):
 
     @start_date_is_datetime.setter
     def start_date_is_datetime(self, _value: bool) -> None:
-        return None
+        pass
 
     @property
     def end_date_start(self) -> datetime | None:
@@ -226,7 +226,7 @@ class Plan(TrainingEntityMixin, Base):
 
     @end_date_end.setter
     def end_date_end(self, _value: datetime | None) -> None:
-        return None
+        pass
 
     @property
     def end_date_is_datetime(self) -> bool:
@@ -234,7 +234,7 @@ class Plan(TrainingEntityMixin, Base):
 
     @end_date_is_datetime.setter
     def end_date_is_datetime(self, _value: bool) -> None:
-        return None
+        pass
 
 
 class NutritionGuideline(TrainingEntityMixin, Base):
@@ -294,7 +294,7 @@ class Phase(TrainingEntityMixin, Base):
 
     @weekly_structure.setter
     def weekly_structure(self, _value: str | None) -> None:
-        return None
+        pass
 
     @property
     def timeframe_start(self) -> datetime | None:
@@ -320,7 +320,7 @@ class Phase(TrainingEntityMixin, Base):
 
     @timeframe_is_datetime.setter
     def timeframe_is_datetime(self, _value: bool) -> None:
-        return None
+        pass
 
 
 class Workout(TrainingEntityMixin, Base):
@@ -407,7 +407,7 @@ class Workout(TrainingEntityMixin, Base):
 
     @date_end.setter
     def date_end(self, _value: datetime | None) -> None:
-        return None
+        pass
 
     @property
     def date_is_datetime(self) -> bool:
@@ -415,7 +415,7 @@ class Workout(TrainingEntityMixin, Base):
 
     @date_is_datetime.setter
     def date_is_datetime(self, _value: bool) -> None:
-        return None
+        pass
 
     @property
     def primarily_used_muscle_group(self) -> list[MuscleGroup]:
@@ -507,7 +507,7 @@ class Workout(TrainingEntityMixin, Base):
 
     @done_date_end.setter
     def done_date_end(self, _value: datetime | None) -> None:
-        return None
+        pass
 
     @property
     def done_date_is_datetime(self) -> bool:
@@ -515,7 +515,7 @@ class Workout(TrainingEntityMixin, Base):
 
     @done_date_is_datetime.setter
     def done_date_is_datetime(self, _value: bool) -> None:
-        return None
+        pass
 
     @property
     def status(self) -> WorkoutStatus | None:
@@ -610,7 +610,7 @@ class TrackedSession(TrainingEntityMixin, Base):
 
     @start_end.setter
     def start_end(self, _value: datetime | None) -> None:
-        return None
+        pass
 
     @property
     def start_is_datetime(self) -> bool:
@@ -618,7 +618,7 @@ class TrackedSession(TrainingEntityMixin, Base):
 
     @start_is_datetime.setter
     def start_is_datetime(self, _value: bool) -> None:
-        return None
+        pass
 
     @property
     def end_start(self) -> datetime | None:
@@ -634,7 +634,7 @@ class TrackedSession(TrainingEntityMixin, Base):
 
     @end_end.setter
     def end_end(self, _value: datetime | None) -> None:
-        return None
+        pass
 
     @property
     def end_is_datetime(self) -> bool:
@@ -642,7 +642,7 @@ class TrackedSession(TrainingEntityMixin, Base):
 
     @end_is_datetime.setter
     def end_is_datetime(self, _value: bool) -> None:
-        return None
+        pass
 
 
 class WeeklyFeedback(TrainingEntityMixin, Base):
