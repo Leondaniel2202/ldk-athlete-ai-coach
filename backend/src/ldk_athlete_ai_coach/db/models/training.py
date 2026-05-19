@@ -2,9 +2,9 @@
 
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import date, datetime
 
-from sqlalchemy import JSON, Boolean, DateTime, Float, ForeignKey, Integer, String, Text
+from sqlalchemy import JSON, Boolean, Date, DateTime, Float, ForeignKey, Integer, String, Text
 from sqlalchemy.ext.mutable import MutableList
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -71,20 +71,15 @@ class Event(TrainingEntityMixin, Base):
 
 
 class Plan(TrainingEntityMixin, Base):
-    """Editable fields from the Notion Plans database."""
+    """Top-level dated training plan grouping phases and events."""
 
     __tablename__ = "plans"
 
     name: Mapped[str] = mapped_column(String(255), nullable=False)
-    plan_goal: Mapped[str | None] = mapped_column(Text)
-    constraints: Mapped[str | None] = mapped_column(Text)
-    rules_weekly_rhythm: Mapped[str | None] = mapped_column(Text)
-    start_date_start: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
-    start_date_end: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
-    start_date_is_datetime: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
-    end_date_start: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
-    end_date_end: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
-    end_date_is_datetime: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    description: Mapped[str | None] = mapped_column(Text)
+
+    start_date: Mapped[date] = mapped_column(Date, nullable=False)
+    end_date: Mapped[date] = mapped_column(Date, nullable=False)
 
     events: Mapped[list[Event]] = relationship(
         "Event",

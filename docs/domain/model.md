@@ -23,10 +23,9 @@ Represents the highest-level training block.
 Key fields:
 
 - `name`
-- `plan_goal`
-- `constraints`
-- `rules_weekly_rhythm`
-- start and end date ranges
+- `description`
+- `start_date`
+- `end_date`
 
 Relationships:
 

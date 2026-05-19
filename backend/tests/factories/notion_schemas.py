@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from datetime import datetime
 from typing import Any
 
 from ldk_athlete_ai_coach.core.integrations.notion.schemas.notion_event import NotionEvent
@@ -26,6 +27,8 @@ def make_notion_plan(
     defaults: dict[str, Any] = {
         "notion_id": notion_id,
         "name": name,
+        "start_date_start": datetime(2026, 1, 1),
+        "end_date_start": datetime(2026, 12, 31),
         "notion_page_content": f"Content for {notion_id}",
         "url": f"https://notion.so/{notion_id}",
     }

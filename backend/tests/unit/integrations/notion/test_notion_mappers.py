@@ -83,7 +83,9 @@ class TestMapPlan:
         assert entity.notion_url == "https://notion.so/plan-abc"
         assert entity.notion_page_content == "Plan context"
         assert entity.name == "Base Plan"
-        assert entity.plan_goal == "Finish strong"
+        assert entity.description == "Finish strong"
+        assert entity.start_date == _DT.date()
+        assert entity.end_date == _DT2.date()
 
     def test_update_existing_entity(self) -> None:
         existing = Plan()
@@ -93,6 +95,35 @@ class TestMapPlan:
 
         assert result is existing
         assert result.name == "Updated Plan"
+
+    def test_end_date_uses_fallback_values(self) -> None:
+        entity = map_plan(
+            _make_notion_plan(
+                end_date_start=None,
+                start_date_end=_DT2,
+                end_date_end=None,
+            )
+        )
+
+        assert entity.end_date == _DT2.date()
+
+    @pytest.mark.parametrize(
+        ("field_overrides", "message"),
+        [
+            ({"start_date_start": None}, "Plan is missing required start_date"),
+            (
+                {"end_date_start": None, "start_date_end": None, "end_date_end": None},
+                "Plan is missing required end_date",
+            ),
+        ],
+    )
+    def test_missing_required_dates_raise(
+        self,
+        field_overrides: dict[str, object],
+        message: str,
+    ) -> None:
+        with pytest.raises(ValueError, match=message):
+            map_plan(_make_notion_plan(**field_overrides))
 
 
 # ===========================================================================

@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import UTC, datetime
+from datetime import UTC, date, datetime
 
 from sqlalchemy.orm import Session
 
@@ -14,6 +14,9 @@ def create_plan(
     name: str = "Base Plan",
     *,
     notion_page_id: str | None = None,
+    description: str | None = None,
+    start_date: date | None = None,
+    end_date: date | None = None,
     start_date_start: datetime | None = None,
     end_date_start: datetime | None = None,
 ) -> Plan:
@@ -22,10 +25,10 @@ def create_plan(
         notion_page_id=notion_page_id or f"plan-{name}",
         notion_url=f"https://notion.so/plan-{name}",
         name=name,
-        start_date_start=start_date_start,
-        end_date_start=end_date_start,
-        start_date_is_datetime=False,
-        end_date_is_datetime=False,
+        description=description,
+        start_date=start_date
+        or (start_date_start.date() if start_date_start else date(2026, 1, 1)),
+        end_date=end_date or (end_date_start.date() if end_date_start else date(2026, 12, 31)),
     )
     db.add(plan)
     db.flush()

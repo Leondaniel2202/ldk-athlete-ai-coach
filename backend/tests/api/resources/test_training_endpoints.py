@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, date, datetime, timedelta
 
 import pytest
 from fastapi.testclient import TestClient
@@ -52,9 +52,9 @@ def test_get_plan_summary_returns_summary(client: TestClient, db_session: Sessio
     assert response.json() == {
         "id": plan.id,
         "name": "Summary Plan",
-        "plan_goal": None,
-        "start_date_start": _iso_z(start),
-        "end_date_end": None,
+        "description": None,
+        "start_date": date(2026, 4, 1).isoformat(),
+        "end_date": date(2026, 12, 31).isoformat(),
     }
 
 

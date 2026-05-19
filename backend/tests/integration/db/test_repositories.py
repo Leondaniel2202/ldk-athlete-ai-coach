@@ -158,11 +158,11 @@ def test_plan_repository_get_active_for_datetime_returns_latest_active_plan(
     assert active.id != earlier_active.id
 
 
-def test_plan_repository_get_latest_falls_back_to_primary_key_order_when_dates_missing(
+def test_plan_repository_get_latest_falls_back_to_primary_key_order_for_same_start_date(
     db_session: Session,
 ) -> None:
-    first = create_plan(db_session, name="Undated Plan A")
-    second = create_plan(db_session, name="Undated Plan B")
+    first = create_plan(db_session, name="Same Start Plan A")
+    second = create_plan(db_session, name="Same Start Plan B")
 
     latest = PlanRepository(db_session).get_latest()
 

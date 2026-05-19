@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import date
 
 from pydantic import BaseModel, ConfigDict
 
@@ -18,15 +18,9 @@ class PlanResponse(BaseModel):
     notion_page_id: str
     notion_url: str
     name: str
-    plan_goal: str | None
-    constraints: str | None
-    rules_weekly_rhythm: str | None
-    start_date_start: datetime | None
-    start_date_end: datetime | None
-    start_date_is_datetime: bool
-    end_date_start: datetime | None
-    end_date_end: datetime | None
-    end_date_is_datetime: bool
+    description: str | None
+    start_date: date
+    end_date: date
 
 
 class PlanDetailResponse(PlanResponse):
@@ -42,6 +36,6 @@ class PlanSummaryResponse(BaseModel):
 
     id: int
     name: str
-    plan_goal: str | None
-    start_date_start: datetime | None
-    end_date_end: datetime | None
+    description: str | None
+    start_date: date
+    end_date: date

@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import UTC, datetime
+from datetime import UTC, date, datetime
 
 from ldk_athlete_ai_coach.db.models.training import Phase, Plan, TrackedSession, Workout
 from ldk_athlete_ai_coach.domain.enums.status import WorkoutStatus
@@ -14,15 +14,9 @@ def build_plan(*, plan_id: int = 1, name: str = "Build Plan") -> Plan:
         notion_page_id=f"plan-{plan_id}",
         notion_url=f"https://notion.so/plan-{plan_id}",
         name=name,
-        plan_goal="Race prep",
-        constraints=None,
-        rules_weekly_rhythm=None,
-        start_date_start=None,
-        start_date_end=None,
-        start_date_is_datetime=False,
-        end_date_start=None,
-        end_date_end=None,
-        end_date_is_datetime=False,
+        description="Race prep",
+        start_date=date(2026, 1, 1),
+        end_date=date(2026, 12, 31),
     )
 
 
