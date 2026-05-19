@@ -5,6 +5,7 @@ from __future__ import annotations
 from datetime import UTC, date, datetime
 
 from ldk_athlete_ai_coach.db.models.training import Phase, Plan, TrackedSession, Workout
+from ldk_athlete_ai_coach.domain.enums.phase import PhaseType
 from ldk_athlete_ai_coach.domain.enums.status import WorkoutStatus
 
 
@@ -24,6 +25,8 @@ def build_phase(
     *,
     phase_id: int = 2,
     plan: Plan | None,
+    start_date: date | None = None,
+    end_date: date | None = None,
     timeframe_start: datetime | None = None,
     timeframe_end: datetime | None = None,
 ) -> Phase:
@@ -32,13 +35,12 @@ def build_phase(
         notion_page_id=f"phase-{phase_id}",
         notion_url=f"https://notion.so/phase-{phase_id}",
         name="Specific Build",
-        notes=None,
-        phase_type="Build",
+        description=None,
+        phase_type=PhaseType.BUILD,
         focus_tags=[],
         weekly_structure=None,
-        timeframe_start=timeframe_start,
-        timeframe_end=timeframe_end,
-        timeframe_is_datetime=False,
+        start_date=start_date or (timeframe_start.date() if timeframe_start else date(2026, 1, 1)),
+        end_date=end_date or (timeframe_end.date() if timeframe_end else date(2026, 12, 31)),
         plan_id=plan.id if plan is not None else None,
         nutrition_guideline_id=None,
         plan=plan,

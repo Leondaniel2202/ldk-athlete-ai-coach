@@ -10,7 +10,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from ldk_athlete_ai_coach.db.base import Base
 from ldk_athlete_ai_coach.domain.enums.event import EventPriority, EventStatus, EventType
-from ldk_athlete_ai_coach.domain.enums.phase import PhaseType
+from ldk_athlete_ai_coach.domain.enums.phase import PhaseFocusTag, PhaseType
 from ldk_athlete_ai_coach.domain.enums.status import WorkoutStatus
 from ldk_athlete_ai_coach.domain.enums.workout import WorkoutCategory
 
@@ -110,20 +110,19 @@ class NutritionGuideline(TrainingEntityMixin, Base):
 
 
 class Phase(TrainingEntityMixin, Base):
-    """Editable fields from the Notion Phases database."""
+    """Dated training block within a plan."""
 
     __tablename__ = "phases"
 
     name: Mapped[str] = mapped_column(String(255), nullable=False)
-    notes: Mapped[str | None] = mapped_column(Text)
-    phase_type: Mapped[PhaseType | None] = mapped_column(String(64))
-    focus_tags: Mapped[list[str]] = mapped_column(
+    description: Mapped[str | None] = mapped_column(Text)
+    phase_type: Mapped[PhaseType] = mapped_column(String(64), nullable=False)
+    focus_tags: Mapped[list[PhaseFocusTag]] = mapped_column(
         MutableList.as_mutable(JSON), default=list, nullable=False
     )
     weekly_structure: Mapped[str | None] = mapped_column(Text)
-    timeframe_start: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
-    timeframe_end: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
-    timeframe_is_datetime: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    start_date: Mapped[date] = mapped_column(Date, nullable=False)
+    end_date: Mapped[date] = mapped_column(Date, nullable=False)
     plan_id: Mapped[int | None] = mapped_column(ForeignKey("plans.id"))
     nutrition_guideline_id: Mapped[int | None] = mapped_column(
         ForeignKey("nutrition_guidelines.id")

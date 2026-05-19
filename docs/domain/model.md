@@ -40,10 +40,13 @@ Key fields:
 
 - `name`
 - `phase_type`
-- `notes`
-- `focus_tags`
+- `description`
+- `focus_tags`: `Run engine`, `Threshold`, `VO2`, `Strength`, `HYROX skills`,
+  `Mobility`, `Rehab`, `Conditioning`, `Power`, `Prepare`, `Fat Loss`, or
+  `Maintenance`
 - `weekly_structure`
-- timeframe start/end
+- `start_date`
+- `end_date`
 
 Relationships:
 
@@ -174,8 +177,7 @@ The backend calculates status in `domain/calculators/status_calculator.py`.
 
 ### Phase and Plan Status
 
-Phase and plan statuses are derived from timeframe boundaries relative to an `as_of`
-date.
+Phase and plan statuses are derived from date boundaries relative to an `as_of` date.
 
 Possible values:
 
@@ -184,7 +186,9 @@ Possible values:
 - `Past`
 - `Unknown`
 
-`Unknown` is returned when timeframe data is missing or inconsistent.
+`Unknown` is returned when boundary data is missing or inconsistent. Persisted V2 plans
+and phases require start and end dates, so unknown status mainly applies to legacy or
+non-persistent inputs.
 
 ### Workout Status
 
@@ -284,8 +288,8 @@ them.
 
 Examples of current `data_gaps` messages:
 
-- missing phase timeframe, which prevents status resolution
-- unlinked tracked sessions inside a phase timeframe
+- missing phase timeframe in legacy/non-persistent inputs, which prevents status resolution
+- unlinked tracked sessions inside a phase date range
 - workouts with `Unknown` status
 - workouts that were missed
 

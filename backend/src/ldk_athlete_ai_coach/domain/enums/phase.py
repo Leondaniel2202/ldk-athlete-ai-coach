@@ -16,6 +16,23 @@ class PhaseType(StrEnum):
     RECOVERY = "Recovery"
 
 
+class PhaseFocusTag(StrEnum):
+    """Focus tags available for a training phase."""
+
+    RUN_ENGINE = "Run engine"
+    THRESHOLD = "Threshold"
+    VO2 = "VO2"
+    STRENGTH = "Strength"
+    HYROX_SKILLS = "HYROX skills"
+    MOBILITY = "Mobility"
+    REHAB = "Rehab"
+    CONDITIONING = "Conditioning"
+    POWER = "Power"
+    PREPARE = "Prepare"
+    FAT_LOSS = "Fat Loss"
+    MAINTENANCE = "Maintenance"
+
+
 @dataclass(frozen=True)
 class PhaseTypeDetails:
     """Human-readable details for a phase type."""

@@ -128,6 +128,10 @@ Important characteristics:
 - entities are matched by `notion_page_id`
 - new rows are inserted only when no existing entity with that Notion page ID exists
 - existing rows are updated in place through the mapper layer
+- mapper functions translate selected Notion-shaped fields into the backend-owned model
+  shape, for example phase `Notes` into `description` and `Timeframe` into required
+  `start_date` / `end_date`; phase focus-tag labels are normalized to the configured
+  backend focus-tag enum
 - foreign keys are resolved by looking up related entities using their Notion page IDs
 - each entity type flushes before the next dependent type is persisted
 

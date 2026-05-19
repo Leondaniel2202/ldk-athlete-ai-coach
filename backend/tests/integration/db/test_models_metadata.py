@@ -37,6 +37,14 @@ def test_sport_manager_foreign_keys_are_exposed_in_metadata() -> None:
     assert "plan_id" not in Base.metadata.tables["plans"].c
     assert "primary_event_id" not in Base.metadata.tables["plans"].c
     assert "parent_phase_id" not in phases.c
+    assert "notes" not in phases.c
+    assert "timeframe_start" not in phases.c
+    assert "timeframe_end" not in phases.c
+    assert "timeframe_is_datetime" not in phases.c
+    assert {"description", "start_date", "end_date"}.issubset(phases.c.keys())
+    assert phases.c.phase_type.nullable is False
+    assert phases.c.start_date.nullable is False
+    assert phases.c.end_date.nullable is False
     assert {fk.target_fullname for fk in events.c.plan_id.foreign_keys} == {"plans.id"}
     assert {fk.target_fullname for fk in events.c.race_workout_id.foreign_keys} == {"workouts.id"}
     assert not any(

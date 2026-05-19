@@ -7,6 +7,7 @@ from datetime import UTC, date, datetime
 from sqlalchemy.orm import Session
 
 from ldk_athlete_ai_coach.db.models.training import Phase, Plan, TrackedSession, Workout
+from ldk_athlete_ai_coach.domain.enums.phase import PhaseType
 
 
 def create_plan(
@@ -41,7 +42,10 @@ def create_phase(
     plan: Plan | None = None,
     *,
     notion_page_id: str | None = None,
-    phase_type: str | None = None,
+    description: str | None = None,
+    phase_type: PhaseType | str = PhaseType.BASE,
+    start_date: date | None = None,
+    end_date: date | None = None,
     timeframe_start: datetime | None = None,
     timeframe_end: datetime | None = None,
 ) -> Phase:
@@ -50,11 +54,11 @@ def create_phase(
         notion_page_id=notion_page_id or f"phase-{name}",
         notion_url=f"https://notion.so/phase-{name}",
         name=name,
+        description=description,
         phase_type=phase_type,
         focus_tags=[],
-        timeframe_start=timeframe_start,
-        timeframe_end=timeframe_end,
-        timeframe_is_datetime=False,
+        start_date=start_date or (timeframe_start.date() if timeframe_start else date(2026, 1, 1)),
+        end_date=end_date or (timeframe_end.date() if timeframe_end else date(2026, 12, 31)),
         plan_id=plan.id if plan is not None else None,
     )
     db.add(phase)

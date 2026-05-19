@@ -135,9 +135,9 @@ def test_get_phase_summary_returns_summary(client: TestClient, db_session: Sessi
     assert response.json() == {
         "id": phase.id,
         "name": "Summary Phase",
-        "phase_type": None,
-        "timeframe_start": _iso_z(start),
-        "timeframe_end": _iso_z(end),
+        "phase_type": "Base",
+        "start_date": date(2026, 4, 7).isoformat(),
+        "end_date": date(2026, 4, 20).isoformat(),
     }
 
 

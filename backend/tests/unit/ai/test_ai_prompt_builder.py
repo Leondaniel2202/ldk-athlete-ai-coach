@@ -20,6 +20,7 @@ from ldk_athlete_ai_coach.api.v1.schemas.workouts import (
     WorkoutContentResponse,
     WorkoutDetailResponse,
 )
+from ldk_athlete_ai_coach.domain.enums.phase import PhaseFocusTag, PhaseType
 from ldk_athlete_ai_coach.domain.enums.status import PhaseStatus, WorkoutStatus
 from ldk_athlete_ai_coach.domain.models.training_metrics import TrainingMetrics
 
@@ -32,13 +33,12 @@ def _context() -> PhaseContextResponse:
         notion_page_id="phase-2",
         notion_url="https://notion.so/phase-2",
         name="Hyrox Specific",
-        notes="More threshold work.",
-        phase_type="Build",
-        focus_tags=["hyrox", "running"],
+        description="More threshold work.",
+        phase_type=PhaseType.BUILD,
+        focus_tags=[PhaseFocusTag.HYROX_SKILLS, PhaseFocusTag.RUN_ENGINE],
         weekly_structure="2 quality sessions",
-        timeframe_start=None,
-        timeframe_end=None,
-        timeframe_is_datetime=False,
+        start_date=date(2026, 4, 1),
+        end_date=date(2026, 4, 30),
         plan_id=1,
         nutrition_guideline_id=None,
     )
@@ -195,8 +195,8 @@ def test_workout_prompt_builder_labels_workout_payload_correctly() -> None:
             id=phase_context.phase.id,
             name=phase_context.phase.name,
             phase_type=phase_context.phase.phase_type,
-            timeframe_start=phase_context.phase.timeframe_start,
-            timeframe_end=phase_context.phase.timeframe_end,
+            start_date=phase_context.phase.start_date,
+            end_date=phase_context.phase.end_date,
         ),
         workout_status=WorkoutStatus.OPEN,
         workout_details=WorkoutDetailResponse(

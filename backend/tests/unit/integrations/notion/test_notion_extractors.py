@@ -159,7 +159,7 @@ _PHASE_PAGE: dict[str, Any] = {
         "Name": _title_prop("Base Phase"),
         "Notes": _rich_text_prop("Focus on aerobic base"),
         "Phase type": _select_prop("Base"),
-        "Focus tags": _multi_select_prop("Endurance", "Aerobic"),
+        "Focus tags": _multi_select_prop("Run engine", "Threshold"),
         "Weekly structure": _rich_text_prop("Mon: Run, Wed: Bike, Fri: Run"),
         "Timeframe": _date_prop("2024-02-01", "2024-03-15"),
         "Plan": _relation_prop("plan-page-id"),
@@ -356,7 +356,7 @@ class TestExtractPhase:
         assert phase.name == "Base Phase"
         assert phase.notes == "Focus on aerobic base"
         assert phase.phase_type == "Base"
-        assert phase.focus_tags == ["Endurance", "Aerobic"]
+        assert phase.focus_tags == ["Run engine", "Threshold"]
         assert phase.weekly_structure == "Mon: Run, Wed: Bike, Fri: Run"
         assert phase.timeframe_start == datetime(2024, 2, 1, 0, 0)
         assert phase.timeframe_end == datetime(2024, 3, 15, 0, 0)
@@ -400,7 +400,7 @@ class TestExtractPhase:
                 "Name": _title_prop("Legacy Phase"),
                 "Notes": _rich_text_prop("Legacy naming still syncs"),
                 "Phase Type": _select_prop("Base"),
-                "Focus Tags": _multi_select_prop("Endurance", "Aerobic"),
+                "Focus Tags": _multi_select_prop("Run engine", "Threshold"),
                 "Weekly Structure": _rich_text_prop("Mon: Run, Wed: Bike, Fri: Run"),
                 "Timeframe": _date_prop("2024-02-01", "2024-03-15"),
                 "Plan": _relation_prop("plan-page-id"),
@@ -412,7 +412,7 @@ class TestExtractPhase:
 
         assert phase.name == "Legacy Phase"
         assert phase.phase_type == "Base"
-        assert phase.focus_tags == ["Endurance", "Aerobic"]
+        assert phase.focus_tags == ["Run engine", "Threshold"]
         assert phase.weekly_structure == "Mon: Run, Wed: Bike, Fri: Run"
         assert phase.nutrition_guideline_notion_id == "nutrition-page-id"
 

@@ -2,9 +2,9 @@
 
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import date as date_type, datetime
 
-from sqlalchemy import and_, or_, select
+from sqlalchemy import and_, select
 from sqlalchemy.orm import Session
 
 from ldk_athlete_ai_coach.db.models.training import Phase
@@ -20,51 +20,45 @@ class PhaseRepository(TrainingBaseRepository[Phase]):
 
     def get_active_for_datetime(self, now: datetime) -> Phase | None:
         """Return the active phase at *now*."""
+        current_date = now.date()
         stmt = (
             select(Phase)
             .where(
                 and_(
-                    and_(Phase.timeframe_start.is_not(None), Phase.timeframe_end.is_not(None)),
-                    Phase.timeframe_start <= now,
-                    Phase.timeframe_end >= now,
+                    Phase.start_date <= current_date,
+                    Phase.end_date >= current_date,
                 )
             )
-            .order_by(
-                Phase.timeframe_start.is_(None), Phase.timeframe_start.desc(), Phase.id.desc()
-            )
+            .order_by(Phase.start_date.desc(), Phase.id.desc())
             .limit(1)
         )
         return self._session.execute(stmt).scalar_one_or_none()
 
-    def get_by_date(self, date: datetime) -> Phase | None:
+    def get_by_date(self, date: datetime | date_type) -> Phase | None:
         """Return the phase active at the given date, or ``None`` if no such phase exists.
 
-        If multiple phases match, return the one with the latest timeframe start date.
+        If multiple phases match, return the one with the latest start date.
         """
+        phase_date = date.date() if isinstance(date, datetime) else date
         stmt = (
             select(Phase)
             .where(
                 and_(
-                    or_(Phase.timeframe_start.is_not(None), Phase.timeframe_end.is_not(None)),
-                    or_(Phase.timeframe_start.is_(None), Phase.timeframe_start <= date),
-                    or_(Phase.timeframe_end.is_(None), Phase.timeframe_end >= date),
+                    Phase.start_date <= phase_date,
+                    Phase.end_date >= phase_date,
                 )
             )
-            .order_by(
-                Phase.timeframe_start.is_(None), Phase.timeframe_start.desc(), Phase.id.desc()
-            )
+            .order_by(Phase.start_date.desc(), Phase.id.desc())
             .limit(1)
         )
         return self._session.execute(stmt).scalar_one_or_none()
 
     def get_latest_by_plan_id(self, plan_id: int) -> Phase | None:
-        """Return the latest phase for the given plan by timeframe start date."""
+        """Return the latest phase for the given plan by start date."""
         stmt = (
             select(Phase)
             .where(Phase.plan_id == plan_id)
-            .order_by(
-                Phase.timeframe_start.is_(None), Phase.timeframe_start.desc(), Phase.id.desc()
-            )
+            .order_by(Phase.start_date.desc(), Phase.id.desc())
             .limit(1)
         )
         return self._session.execute(stmt).scalar_one_or_none()
@@ -76,15 +70,16 @@ class PhaseRepository(TrainingBaseRepository[Phase]):
 
     def list_by_timeframe_window(self, start: datetime, end: datetime) -> list[Phase]:
         """Return all phases with any overlap with the given timeframe window."""
+        start_date = start.date()
+        end_date = end.date()
         stmt = (
             select(Phase)
             .where(
                 and_(
-                    or_(Phase.timeframe_start.is_not(None), Phase.timeframe_end.is_not(None)),
-                    or_(Phase.timeframe_start.is_(None), Phase.timeframe_start <= end),
-                    or_(Phase.timeframe_end.is_(None), Phase.timeframe_end >= start),
+                    Phase.start_date <= end_date,
+                    Phase.end_date >= start_date,
                 )
             )
-            .order_by(Phase.timeframe_start.asc(), Phase.id.asc())
+            .order_by(Phase.start_date.asc(), Phase.id.asc())
         )
         return list(self._session.execute(stmt).scalars().all())

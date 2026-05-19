@@ -34,6 +34,7 @@ from ldk_athlete_ai_coach.db.models.training import (
     Workout,
 )
 from ldk_athlete_ai_coach.domain.enums.event import EventPriority, EventStatus, EventType
+from ldk_athlete_ai_coach.domain.enums.phase import PhaseFocusTag, PhaseType
 from ldk_athlete_ai_coach.domain.enums.workout import WorkoutCategory
 
 pytestmark = pytest.mark.unit
@@ -137,7 +138,7 @@ def _make_notion_phase(**overrides: object) -> NotionPhase:
         "name": "Base Phase",
         "notes": "Focus on aerobic base",
         "phase_type": "Base",
-        "focus_tags": ["Endurance", "Aerobic"],
+        "focus_tags": ["Run engine", "Threshold"],
         "weekly_structure": "Mon: Run, Wed: Bike",
         "timeframe_start": _DT,
         "timeframe_end": _DT2,
@@ -162,13 +163,12 @@ class TestMapPhase:
         assert entity.notion_url == "https://notion.so/phase-abc"
         assert entity.notion_page_content == "Phase context"
         assert entity.name == "Base Phase"
-        assert entity.notes == "Focus on aerobic base"
-        assert entity.phase_type == "Base"
-        assert entity.focus_tags == ["Endurance", "Aerobic"]
+        assert entity.description == "Focus on aerobic base"
+        assert entity.phase_type == PhaseType.BASE
+        assert entity.focus_tags == [PhaseFocusTag.RUN_ENGINE, PhaseFocusTag.THRESHOLD]
         assert entity.weekly_structure == "Mon: Run, Wed: Bike"
-        assert entity.timeframe_start == _DT
-        assert entity.timeframe_end == _DT2
-        assert entity.timeframe_is_datetime is False
+        assert entity.start_date == _DT.date()
+        assert entity.end_date == _DT2.date()
 
     def test_create_new_entity_has_no_fk_ids_by_default(self) -> None:
         source = _make_notion_phase()
@@ -187,14 +187,14 @@ class TestMapPhase:
     def test_update_existing_entity(self) -> None:
         existing = Phase()
         existing.name = "Old Name"
-        existing.notes = "Old notes"
+        existing.description = "Old notes"
 
         source = _make_notion_phase(name="Updated Phase", notes="New notes")
         result = map_phase(source, existing)
 
         assert result is existing
         assert result.name == "Updated Phase"
-        assert result.notes == "New notes"
+        assert result.description == "New notes"
 
     def test_overwrite_existing_fk_with_new_value(self) -> None:
         existing = Phase()
@@ -208,29 +208,43 @@ class TestMapPhase:
     def test_none_values_are_propagated(self) -> None:
         source = _make_notion_phase(
             notes=None,
-            phase_type=None,
             weekly_structure=None,
-            timeframe_start=None,
-            timeframe_end=None,
             url=None,
         )
         entity = map_phase(source)
 
-        assert entity.notes is None
-        assert entity.phase_type is None
+        assert entity.description is None
         assert entity.weekly_structure is None
-        assert entity.timeframe_start is None
-        assert entity.timeframe_end is None
         assert entity.notion_url is None
 
+    @pytest.mark.parametrize(
+        ("field_overrides", "message"),
+        [
+            ({"phase_type": None}, "Phase is missing required phase_type"),
+            ({"timeframe_start": None}, "Phase is missing required start_date"),
+            ({"timeframe_end": None}, "Phase is missing required end_date"),
+        ],
+    )
+    def test_missing_required_fields_raise(
+        self,
+        field_overrides: dict[str, object],
+        message: str,
+    ) -> None:
+        with pytest.raises(ValueError, match=message):
+            map_phase(_make_notion_phase(**field_overrides))
+
     def test_focus_tags_list_is_copied(self) -> None:
-        tags = ["Speed", "Hills"]
+        tags = ["Strength", "HYROX skills"]
         source = _make_notion_phase(focus_tags=tags)
         entity = map_phase(source)
 
         # Mutating the original list must not affect the entity
         tags.append("Extra")
-        assert entity.focus_tags == ["Speed", "Hills"]
+        assert entity.focus_tags == [PhaseFocusTag.STRENGTH, PhaseFocusTag.HYROX_SKILLS]
+
+    def test_unknown_focus_tag_raises(self) -> None:
+        with pytest.raises(ValueError, match="Phase has unknown focus tag: Unknown"):
+            map_phase(_make_notion_phase(focus_tags=["Unknown"]))
 
     def test_fk_fields_reset_to_none_when_not_passed(self) -> None:
         existing = Phase()

@@ -3,8 +3,7 @@
 from __future__ import annotations
 
 from collections import Counter, defaultdict
-from datetime import UTC, datetime
-from typing import cast
+from datetime import UTC, date as date_type, datetime, time
 
 from ldk_athlete_ai_coach.api.v1.schemas.adherence import WorkoutAdherenceSummaryResponse
 from ldk_athlete_ai_coach.api.v1.schemas.common import ContextMetadataResponse
@@ -31,6 +30,7 @@ from ldk_athlete_ai_coach.domain.calculators.training_metrics_calculator import 
 )
 from ldk_athlete_ai_coach.domain.enums.status import PhaseStatus, WorkoutStatus
 from ldk_athlete_ai_coach.utils.date_utils import (
+    coerce_to_date,
     get_phase_week_number_for_date,
     get_week_end_for_date,
 )
@@ -95,9 +95,13 @@ class PhaseContextService:
         return {status: counts.get(status, 0) for status in WorkoutStatus}
 
     @staticmethod
+    def _date_to_datetime(value: date_type, boundary: time = time.min) -> datetime:
+        """Convert a phase date into a UTC datetime for session-window queries."""
+        return datetime.combine(value, boundary, tzinfo=UTC)
+
+    @staticmethod
     def _can_check_unlinked_sessions(
         *,
-        phase: Phase,
         phase_status: PhaseStatus,
     ) -> bool:
         """Return whether unlinked-session detection is possible for a phase.
@@ -106,17 +110,12 @@ class PhaseContextService:
         bounded timeframe so that a session window can be derived.
 
         Args:
-            phase: The training phase being evaluated.
             phase_status: Pre-calculated lifecycle status of the phase.
 
         Returns:
             ``True`` when unlinked-session detection can meaningfully run.
         """
-        return (
-            phase_status in {PhaseStatus.ACTIVE, PhaseStatus.PAST}
-            and phase.timeframe_start is not None
-            and phase.timeframe_end is not None
-        )
+        return phase_status in {PhaseStatus.ACTIVE, PhaseStatus.PAST}
 
     def _build_open_workout_content_responses(
         self,
@@ -187,8 +186,8 @@ class PhaseContextService:
     def _build_training_metrics_response(
         self,
         workouts: list[Workout],
-        timeframe_start: datetime | None,
-        timeframe_end: datetime | None,
+        timeframe_start: date_type | datetime | None,
+        timeframe_end: date_type | datetime | None,
     ) -> TrainingMetricsResponse:
         """Calculate training metrics for a list of workouts.
 
@@ -204,8 +203,8 @@ class PhaseContextService:
 
         """
         return TrainingMetricsResponse(
-            timeframe_start=timeframe_start.date() if timeframe_start else None,
-            timeframe_end=timeframe_end.date() if timeframe_end else None,
+            timeframe_start=coerce_to_date(timeframe_start),
+            timeframe_end=coerce_to_date(timeframe_end),
             training_metrics=self._metrics_calculator.calculate(workouts=workouts),
         )
 
@@ -228,8 +227,8 @@ class PhaseContextService:
             raise ValueError("Phase not found")
 
         phase_status: PhaseStatus = self._status_calculator.calculate_phase_status(
-            timeframe_start=phase.timeframe_start.date() if phase.timeframe_start else None,
-            timeframe_end=phase.timeframe_end.date() if phase.timeframe_end else None,
+            timeframe_start=phase.start_date,
+            timeframe_end=phase.end_date,
             as_of_date=as_of.date(),
         )
 
@@ -263,8 +262,8 @@ class PhaseContextService:
             weekly_metrics = [
                 self._build_training_metrics_response(
                     workouts=all_workouts,
-                    timeframe_start=phase.timeframe_start,
-                    timeframe_end=phase.timeframe_end,
+                    timeframe_start=phase.start_date,
+                    timeframe_end=phase.end_date,
                 )
             ]
         else:
@@ -277,12 +276,12 @@ class PhaseContextService:
                 "Phase timeframe is not fully defined; unable to determine phase status."
             )
 
-        if self._can_check_unlinked_sessions(phase=phase, phase_status=phase_status):
+        if self._can_check_unlinked_sessions(phase_status=phase_status):
             unlinked_sessions: list[SessionResponse] = [
                 SessionResponse.model_validate(session)
                 for session in self._session_repository.list_unlinked_within_window(
-                    start=cast(datetime, phase.timeframe_start),
-                    end=cast(datetime, phase.timeframe_end),
+                    start=self._date_to_datetime(phase.start_date),
+                    end=self._date_to_datetime(phase.end_date, time.max),
                 )
             ]
             if unlinked_sessions:
@@ -363,8 +362,8 @@ class PhaseContextService:
             raise ValueError("No phase found for the given week start date.")
 
         phase_status: PhaseStatus = self._status_calculator.calculate_phase_status(
-            timeframe_start=phase.timeframe_start,
-            timeframe_end=phase.timeframe_end,
+            timeframe_start=phase.start_date,
+            timeframe_end=phase.end_date,
             as_of_date=as_of.date(),
         )
 
@@ -387,12 +386,12 @@ class PhaseContextService:
                 "Phase timeframe is not fully defined; unable to determine phase status."
             )
 
-        if self._can_check_unlinked_sessions(phase=phase, phase_status=phase_status):
+        if self._can_check_unlinked_sessions(phase_status=phase_status):
             unlinked_sessions: list[SessionResponse] = [
                 SessionResponse.model_validate(session)
                 for session in self._session_repository.list_unlinked_within_window(
-                    start=cast(datetime, phase.timeframe_start),
-                    end=cast(datetime, phase.timeframe_end),
+                    start=self._date_to_datetime(phase.start_date),
+                    end=self._date_to_datetime(phase.end_date, time.max),
                 )
             ]
             if unlinked_sessions:
@@ -429,10 +428,9 @@ class PhaseContextService:
             as_of_date=as_of.date(),
             timezone=as_of.tzname() or "UTC",
             phase_week_number=get_phase_week_number_for_date(
-                phase_start_date=phase.timeframe_start, date=week_start_date
-            )
-            if phase.timeframe_start
-            else 0,
+                phase_start_date=self._date_to_datetime(phase.start_date),
+                date=week_start_date,
+            ),
             phase_week_start_date=week_start_date,
             phase_week_end_date=get_week_end_for_date(week_start_date),
         )

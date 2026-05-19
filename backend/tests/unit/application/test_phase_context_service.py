@@ -78,10 +78,15 @@ def test_get_specific_phase_context_groups_workouts_and_builds_weekly_metrics() 
     assert context.data_gaps == []
 
 
-def test_get_specific_phase_context_reports_unknown_phase_timeframe_gap() -> None:
+def test_get_specific_phase_context_reports_unknown_workout_gap() -> None:
     service, phase_repository, workout_repository, session_repository = _service()
+    now = datetime.now(tz=UTC)
     plan = build_plan()
-    phase = build_phase(plan=plan, timeframe_start=None, timeframe_end=None)
+    phase = build_phase(
+        plan=plan,
+        timeframe_start=now + timedelta(days=7),
+        timeframe_end=now + timedelta(days=21),
+    )
     workout = build_workout(
         workout_id=12,
         name="Unknown Workout",
@@ -97,10 +102,6 @@ def test_get_specific_phase_context_reports_unknown_phase_timeframe_gap() -> Non
     context = service.get_specific_phase_context(phase_id=phase.id)
 
     assert len(context.weekly_metrics) == 1
-    assert (
-        "Phase timeframe is not fully defined; unable to determine phase status."
-        in context.data_gaps
-    )
     assert "1 workout in this phase has an unknown status." in context.data_gaps
     session_repository.list_unlinked_within_window.assert_not_called()
 

@@ -2,13 +2,14 @@
 
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import date
 
 from pydantic import BaseModel, ConfigDict
 
 from ldk_athlete_ai_coach.api.v1.schemas.workouts import (
     WorkoutDetailResponse,
 )
+from ldk_athlete_ai_coach.domain.enums.phase import PhaseFocusTag, PhaseType
 
 
 class PhaseResponse(BaseModel):
@@ -20,13 +21,12 @@ class PhaseResponse(BaseModel):
     notion_page_id: str
     notion_url: str
     name: str
-    notes: str | None
-    phase_type: str | None
-    focus_tags: list[str]
+    description: str | None
+    phase_type: PhaseType
+    focus_tags: list[PhaseFocusTag]
     weekly_structure: str | None
-    timeframe_start: datetime | None
-    timeframe_end: datetime | None
-    timeframe_is_datetime: bool
+    start_date: date
+    end_date: date
     plan_id: int | None
     nutrition_guideline_id: int | None
 
@@ -44,6 +44,6 @@ class PhaseSummaryResponse(BaseModel):
 
     id: int
     name: str
-    phase_type: str | None
-    timeframe_start: datetime | None
-    timeframe_end: datetime | None
+    phase_type: PhaseType
+    start_date: date
+    end_date: date
