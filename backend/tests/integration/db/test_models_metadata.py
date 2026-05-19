@@ -5,6 +5,7 @@ from __future__ import annotations
 import pytest
 from sqlalchemy import UniqueConstraint
 
+import ldk_athlete_ai_coach.db.models  # noqa: F401
 from ldk_athlete_ai_coach.db.base import Base
 
 pytestmark = pytest.mark.integration
