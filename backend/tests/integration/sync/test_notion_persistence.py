@@ -30,6 +30,7 @@ from ldk_athlete_ai_coach.db.models.training import (
     Workout,
 )
 from ldk_athlete_ai_coach.db.repositories.training_base_repository import TrainingBaseRepository
+from ldk_athlete_ai_coach.domain.enums.event import EventPriority
 
 pytestmark = pytest.mark.integration
 
@@ -313,7 +314,7 @@ class TestNotionPersistenceService:
         [updated] = svc.persist_events([make_notion_event("event-upd", priority="A")])
 
         assert updated.id == original_id
-        assert updated.priority == "A"
+        assert updated.priority == EventPriority.PRIMARY
         rows = (
             db_session.execute(select(Event).where(Event.notion_page_id == "event-upd"))
             .scalars()

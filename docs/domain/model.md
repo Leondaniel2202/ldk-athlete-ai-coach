@@ -31,7 +31,7 @@ Key fields:
 Relationships:
 
 - has many `Phase`
-- optionally has one primary `Event`
+- has many `Event` rows
 
 ## Phase
 
@@ -114,12 +114,14 @@ workout.
 
 Key fields:
 
+- `name`
 - `event_type`
-- `target`
-- `event_format`
+- `sport`
 - `priority`
-- start and end date ranges
-- place information
+- optional target metrics
+- start and end timestamps
+- `location`
+- `status`
 
 Relationships:
 
@@ -159,7 +161,7 @@ This is what makes one-way sync and update matching possible.
 ```mermaid
 erDiagram
     PLAN ||--o{ PHASE : contains
-    PLAN ||--o| EVENT : primary_event
+    PLAN ||--o{ EVENT : anchors
     NUTRITION_GUIDELINE ||--o{ PHASE : supports
     PHASE ||--o{ WORKOUT : contains
     PHASE ||--o{ WEEKLY_FEEDBACK : receives

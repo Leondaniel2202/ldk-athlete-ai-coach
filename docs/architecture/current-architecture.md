@@ -145,7 +145,8 @@ The database layer is responsible for persistent storage of structured training 
   - Feedback
 - Repository pattern for data access
 
-This layer mirrors the core structure currently defined in Notion and serves as the foundation for future system ownership.
+This layer mirrors source data from Notion while incrementally reshaping selected
+resources, such as events, around backend-owned domain concepts.
 
 ---
 
@@ -229,7 +230,9 @@ The current system is built around a set of core training concepts that represen
 
 ### Event
 
-An Event represents a certain type of race or competiton that a plan is usually working towards or supporting. 
+An Event represents a race, competition, benchmark, training event, or milestone that
+anchors a plan. Events have backend-owned classification fields such as type, sport,
+priority, and lifecycle status while retaining Notion identity fields for one-way sync.
 
 ### Plan
 
@@ -290,6 +293,7 @@ Nutrition guidelines represent supporting training guidance and can be linked to
 ### Events
 
 Events represent higher-level milestones or external anchors associated with a plan.
+A plan can have multiple events rather than a one-to-one primary event relationship.
 
 ---
 

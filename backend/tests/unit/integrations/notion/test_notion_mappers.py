@@ -33,6 +33,7 @@ from ldk_athlete_ai_coach.db.models.training import (
     TrackedSession,
     Workout,
 )
+from ldk_athlete_ai_coach.domain.enums.event import EventPriority, EventStatus, EventType
 from ldk_athlete_ai_coach.domain.enums.workout import WorkoutCategory
 
 pytestmark = pytest.mark.unit
@@ -448,21 +449,73 @@ class TestMapEvent:
         assert entity.notion_page_id == "event-abc"
         assert entity.notion_url == "https://notion.so/event-abc"
         assert entity.notion_page_content == "Event context"
-        assert entity.event_type == "Race"
-        assert entity.place_name == "Amsterdam"
+        assert entity.name == "Goal Race"
+        assert entity.event_type == EventType.RACE
+        assert entity.sport == WorkoutCategory.CROSS_TRAINING
+        assert entity.priority == EventPriority.PRIMARY
+        assert entity.target_time_seconds is None
+        assert entity.target_distance_km is None
+        assert entity.start_at == _DT
+        assert entity.end_at == _DT2
+        assert entity.location == "Amsterdam"
+        assert entity.notes == "Primary event"
+        assert entity.status == EventStatus.PLANNED
         assert entity.plan_id == 7
         assert entity.race_workout_id == 11
 
     def test_update_existing_entity(self) -> None:
         existing = Event()
         existing.name = "Old Event"
-        existing.priority = "C"
+        existing.priority = EventPriority.LOW
 
         result = map_event(_make_notion_event(name="Updated Event", priority="A"), existing)
 
         assert result is existing
         assert result.name == "Updated Event"
-        assert result.priority == "A"
+        assert result.priority == EventPriority.PRIMARY
+
+    def test_defaults_missing_or_unknown_classification(self) -> None:
+        source = _make_notion_event(
+            name="Open Day",
+            event_type=None,
+            priority="unexpected",
+            event_format=None,
+            start_date_start=None,
+            start_date_end=_DT,
+            end_date_start=None,
+            end_date_end=_DT2,
+            start_date_is_datetime=True,
+            place_name=None,
+            place_address="Fallback address",
+        )
+
+        entity = map_event(source)
+
+        assert entity.event_type == EventType.OTHER
+        assert entity.priority == EventPriority.SECONDARY
+        assert entity.sport == WorkoutCategory.CROSS_TRAINING
+        assert entity.start_at is None
+        assert entity.end_at == _DT
+        assert entity.location == "Fallback address"
+
+    @pytest.mark.parametrize(
+        ("name", "event_format", "expected_sport"),
+        [
+            ("HYROX Amsterdam", None, WorkoutCategory.HYROX),
+            ("Spartan Super", None, WorkoutCategory.CONDITIONING),
+            ("City 10k", None, WorkoutCategory.RUN),
+            ("Obstacle course", "Strength milestone", WorkoutCategory.CONDITIONING),
+        ],
+    )
+    def test_infers_sport(
+        self,
+        name: str,
+        event_format: str | None,
+        expected_sport: WorkoutCategory,
+    ) -> None:
+        entity = map_event(_make_notion_event(name=name, event_format=event_format))
+
+        assert entity.sport == expected_sport
 
     def test_foreign_keys_reset_to_none_when_not_passed(self) -> None:
         existing = Event()

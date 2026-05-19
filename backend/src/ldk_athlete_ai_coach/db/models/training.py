@@ -4,11 +4,12 @@ from __future__ import annotations
 
 from datetime import datetime
 
-from sqlalchemy import JSON, Boolean, DateTime, Float, ForeignKey, String, Text
+from sqlalchemy import JSON, Boolean, DateTime, Float, ForeignKey, Integer, String, Text
 from sqlalchemy.ext.mutable import MutableList
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from ldk_athlete_ai_coach.db.base import Base
+from ldk_athlete_ai_coach.domain.enums.event import EventPriority, EventStatus, EventType
 from ldk_athlete_ai_coach.domain.enums.phase import PhaseType
 from ldk_athlete_ai_coach.domain.enums.status import WorkoutStatus
 from ldk_athlete_ai_coach.domain.enums.workout import WorkoutCategory
@@ -24,33 +25,42 @@ class TrainingEntityMixin:
 
 
 class Event(TrainingEntityMixin, Base):
-    """Editable fields from the Notion Events database."""
+    """Race, competition, benchmark, or milestone that anchors training."""
 
     __tablename__ = "events"
 
     name: Mapped[str] = mapped_column(String(255), nullable=False)
-    event_type: Mapped[str | None] = mapped_column(String(64))
-    target: Mapped[str | None] = mapped_column(Text)
-    event_format: Mapped[str | None] = mapped_column(Text)
+
+    event_type: Mapped[EventType] = mapped_column(String(64), nullable=False)
+    sport: Mapped[WorkoutCategory] = mapped_column(String(64), nullable=False)
+
+    priority: Mapped[EventPriority] = mapped_column(
+        String(64),
+        default=EventPriority.SECONDARY,
+        nullable=False,
+    )
+
+    target_time_seconds: Mapped[int | None] = mapped_column(Integer)
+    target_distance_km: Mapped[float | None] = mapped_column(Float)
+
+    start_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    end_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+    location: Mapped[str | None] = mapped_column(String(255))
     notes: Mapped[str | None] = mapped_column(Text)
-    priority: Mapped[str | None] = mapped_column(String(8))
-    start_date_start: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
-    start_date_end: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
-    start_date_is_datetime: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
-    end_date_start: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
-    end_date_end: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
-    end_date_is_datetime: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
-    place_name: Mapped[str | None] = mapped_column(String(255))
-    place_address: Mapped[str | None] = mapped_column(Text)
-    place_latitude: Mapped[float | None] = mapped_column(Float)
-    place_longitude: Mapped[float | None] = mapped_column(Float)
-    place_google_place_id: Mapped[str | None] = mapped_column(String(255))
-    plan_id: Mapped[int | None] = mapped_column(ForeignKey("plans.id"), unique=True)
+
+    status: Mapped[EventStatus] = mapped_column(
+        String(64),
+        default=EventStatus.PLANNED,
+        nullable=False,
+    )
+
+    plan_id: Mapped[int | None] = mapped_column(ForeignKey("plans.id"))
     race_workout_id: Mapped[int | None] = mapped_column(ForeignKey("workouts.id"))
 
     plan: Mapped[Plan | None] = relationship(
         "Plan",
-        back_populates="primary_event",
+        back_populates="events",
         foreign_keys=[plan_id],
     )
     race_workout: Mapped[Workout | None] = relationship(
@@ -76,11 +86,10 @@ class Plan(TrainingEntityMixin, Base):
     end_date_end: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     end_date_is_datetime: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
 
-    primary_event: Mapped[Event | None] = relationship(
+    events: Mapped[list[Event]] = relationship(
         "Event",
         back_populates="plan",
         foreign_keys="Event.plan_id",
-        uselist=False,
     )
     phases: Mapped[list[Phase]] = relationship("Phase", back_populates="plan")
 
