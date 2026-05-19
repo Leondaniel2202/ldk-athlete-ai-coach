@@ -164,7 +164,7 @@ class TestNotionPersistenceService:
         )
 
         assert updated.id == original_id
-        assert updated.goal == "Gain"
+        assert updated.objective == "Gain"
         rows = (
             db_session.execute(
                 select(NutritionGuideline).where(

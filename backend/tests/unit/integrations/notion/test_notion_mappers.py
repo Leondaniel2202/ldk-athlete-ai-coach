@@ -607,14 +607,17 @@ class TestMapNutritionGuideline:
         assert entity.notion_page_id == "nutrition-abc"
         assert entity.notion_url == "https://notion.so/nutrition-abc"
         assert entity.notion_page_content == "Nutrition context"
-        assert entity.goal == "Performance"
-        assert entity.applies_to == ["Endurance", "Hybrid"]
-        assert entity.timing_rules == "Carbs before and during sessions"
+        assert entity.objective == "Performance"
+        assert entity.applicable_contexts == ["Endurance", "Hybrid"]
+        assert entity.carbohydrate_strategy == "Fuel key sessions"
+        assert entity.hydration_guidance == "500-750ml/hr"
+        assert entity.supplement_guidance == "Creatine"
+        assert entity.timing_guidance == "Carbs before and during sessions"
 
     def test_update_existing_entity(self) -> None:
         existing = NutritionGuideline()
         existing.name = "Old Guideline"
-        existing.goal = "Maintain"
+        existing.objective = "Maintain"
 
         result = map_nutrition(
             _make_notion_nutrition(name="Updated Guideline", goal="Gain"), existing
@@ -622,14 +625,14 @@ class TestMapNutritionGuideline:
 
         assert result is existing
         assert result.name == "Updated Guideline"
-        assert result.goal == "Gain"
+        assert result.objective == "Gain"
 
     def test_list_field_is_copied(self) -> None:
         applies_to = ["Endurance"]
         entity = map_nutrition(_make_notion_nutrition(applies_to=applies_to))
 
         applies_to.append("Strength")
-        assert entity.applies_to == ["Endurance"]
+        assert entity.applicable_contexts == ["Endurance"]
 
     def test_none_values_are_propagated(self) -> None:
         entity = map_nutrition(
@@ -644,9 +647,11 @@ class TestMapNutritionGuideline:
             )
         )
 
-        assert entity.goal is None
-        assert entity.carb_strategy is None
-        assert entity.timing_rules is None
+        assert entity.objective is None
+        assert entity.carbohydrate_strategy is None
+        assert entity.hydration_guidance is None
+        assert entity.supplement_guidance is None
+        assert entity.timing_guidance is None
         assert entity.notion_url is None
 
 

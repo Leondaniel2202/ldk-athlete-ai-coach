@@ -21,13 +21,13 @@ def map_nutrition(
     entity.notion_page_content = source.notion_page_content
 
     entity.name = source.name
-    entity.goal = source.goal
-    entity.applies_to = list(source.applies_to)
-    entity.carb_strategy = source.carb_strategy
+    entity.objective = source.goal
+    entity.applicable_contexts = list(source.applies_to)
+    entity.carbohydrate_strategy = source.carb_strategy
     entity.protein_target_g_per_kg = source.protein_target_g_per_kg
     entity.fat_target_g_per_kg = source.fat_target_g_per_kg
-    entity.hydration_electrolytes = source.hydration_electrolytes
-    entity.supplements = source.supplements
-    entity.timing_rules = source.timing_rules
+    entity.hydration_guidance = source.hydration_electrolytes
+    entity.supplement_guidance = source.supplements
+    entity.timing_guidance = source.timing_rules
 
     return entity

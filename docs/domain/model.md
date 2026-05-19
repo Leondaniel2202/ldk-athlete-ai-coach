@@ -136,11 +136,11 @@ Represents supporting guidance that can apply to one or more phases.
 
 Key fields:
 
-- `goal`
-- `applies_to`
-- `carb_strategy`
+- `objective`
+- `applicable_contexts`
+- `carbohydrate_strategy`
 - macro targets
-- hydration, supplement, and timing notes
+- hydration, supplement, and timing guidance
 
 Relationships:
 

@@ -90,21 +90,21 @@ class Plan(TrainingEntityMixin, Base):
 
 
 class NutritionGuideline(TrainingEntityMixin, Base):
-    """Editable fields from the Notion Nutrition Guidelines database."""
+    """Reusable nutrition guidance that can support one or more training phases."""
 
     __tablename__ = "nutrition_guidelines"
 
     name: Mapped[str] = mapped_column(String(255), nullable=False)
-    goal: Mapped[str | None] = mapped_column(String(64))
-    applies_to: Mapped[list[str]] = mapped_column(
+    objective: Mapped[str | None] = mapped_column(String(64))
+    applicable_contexts: Mapped[list[str]] = mapped_column(
         MutableList.as_mutable(JSON), default=list, nullable=False
     )
-    carb_strategy: Mapped[str | None] = mapped_column(Text)
+    carbohydrate_strategy: Mapped[str | None] = mapped_column(Text)
     protein_target_g_per_kg: Mapped[str | None] = mapped_column(String(64))
     fat_target_g_per_kg: Mapped[str | None] = mapped_column(String(64))
-    hydration_electrolytes: Mapped[str | None] = mapped_column(Text)
-    supplements: Mapped[str | None] = mapped_column(Text)
-    timing_rules: Mapped[str | None] = mapped_column(Text)
+    hydration_guidance: Mapped[str | None] = mapped_column(Text)
+    supplement_guidance: Mapped[str | None] = mapped_column(Text)
+    timing_guidance: Mapped[str | None] = mapped_column(Text)
 
     phases: Mapped[list[Phase]] = relationship("Phase", back_populates="nutrition_guideline")
 

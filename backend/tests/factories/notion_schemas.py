@@ -16,6 +16,7 @@ from ldk_athlete_ai_coach.core.integrations.notion.schemas.notion_weekly_feedbac
     NotionWeeklyFeedback,
 )
 from ldk_athlete_ai_coach.core.integrations.notion.schemas.notion_workout import NotionWorkout
+from ldk_athlete_ai_coach.domain.enums.phase import PhaseType
 
 
 def make_notion_plan(
@@ -45,6 +46,10 @@ def make_notion_phase(
     defaults: dict[str, Any] = {
         "notion_id": notion_id,
         "name": name,
+        "phase_type": PhaseType.BASE,
+        "focus_tags": ["Run engine"],
+        "timeframe_start": datetime(2026, 1, 1),
+        "timeframe_end": datetime(2026, 3, 31),
         "notion_page_content": f"Content for {notion_id}",
         "url": f"https://notion.so/{notion_id}",
     }

@@ -131,7 +131,8 @@ Important characteristics:
 - mapper functions translate selected Notion-shaped fields into the backend-owned model
   shape, for example phase `Notes` into `description` and `Timeframe` into required
   `start_date` / `end_date`; phase focus-tag labels are normalized to the configured
-  backend focus-tag enum
+  backend focus-tag enum; nutrition guideline text is mapped into objective, strategy,
+  and guidance fields
 - foreign keys are resolved by looking up related entities using their Notion page IDs
 - each entity type flushes before the next dependent type is persisted
 
