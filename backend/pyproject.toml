@@ -11,7 +11,6 @@ requires-python = ">=3.12,<3.13"
 dependencies = [
     "alembic>=1.14,<2.0",
     "fastapi>=0.115,<1.0",
-    "notion-client>=2.2,<2.6",
     "openai>=1.75,<2.0",
     "psycopg[binary]>=3.2,<4.0",
     "pydantic-settings>=2.8,<3.0",

@@ -4,7 +4,7 @@ from functools import lru_cache
 from pathlib import Path
 from urllib.parse import quote_plus
 
-from pydantic import AliasChoices, Field, computed_field, field_validator
+from pydantic import computed_field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 _BACKEND_ROOT = Path(__file__).resolve().parents[3]
@@ -31,41 +31,6 @@ class Settings(BaseSettings):
     postgres_host: str
     postgres_port: int = 5432
 
-    # Notion integration. The public API now queries data sources rather than the
-    # old single-source database query endpoint, but the legacy *_DB_ID env vars
-    # are still accepted so existing local setups keep working during migration.
-    notion_api_key: str
-    notion_plan_data_source_id: str = Field(
-        validation_alias=AliasChoices("NOTION_PLAN_DATA_SOURCE_ID", "NOTION_PLAN_DB_ID")
-    )
-    notion_phase_data_source_id: str = Field(
-        validation_alias=AliasChoices("NOTION_PHASE_DATA_SOURCE_ID", "NOTION_PHASE_DB_ID")
-    )
-    notion_nutrition_guideline_data_source_id: str = Field(
-        validation_alias=AliasChoices(
-            "NOTION_NUTRITION_GUIDELINE_DATA_SOURCE_ID",
-            "NOTION_NUTRITION_GUIDELINE_DB_ID",
-        )
-    )
-    notion_workout_data_source_id: str = Field(
-        validation_alias=AliasChoices("NOTION_WORKOUT_DATA_SOURCE_ID", "NOTION_WORKOUT_DB_ID")
-    )
-    notion_event_data_source_id: str = Field(
-        validation_alias=AliasChoices("NOTION_EVENT_DATA_SOURCE_ID", "NOTION_EVENT_DB_ID")
-    )
-    notion_session_data_source_id: str = Field(
-        validation_alias=AliasChoices("NOTION_SESSION_DATA_SOURCE_ID", "NOTION_SESSION_DB_ID")
-    )
-    notion_feedback_data_source_id: str = Field(
-        validation_alias=AliasChoices(
-            "NOTION_FEEDBACK_DATA_SOURCE_ID",
-            "NOTION_FEEDBACK_DB_ID",
-        )
-    )
-
-    notion_page_size: int = 100
-    notion_timeout_seconds: int = 30
-    notion_max_retries: int = 3
     cors_allowed_origins: str = "http://localhost:3000"
     openai_api_key: str | None = None
     openai_model: str = "gpt-4.1-mini"
