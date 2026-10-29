@@ -1,3 +1,5 @@
+> **V2 Notion carve-out (in progress):** On branch `refactor/remove-notion`, the Notion runtime integration and sync endpoint have been removed. PostgreSQL is authoritative. Legacy Notion-origin columns and API schemas are retained temporarily to protect existing data; see [migration notes](docs/architecture/notion-removal.md). This branch has not yet been validated with a complete test run.
+
 # ldk-athlete-ai-coach
 
 Backend-first training management and analysis platform for a personal athlete workflow.
